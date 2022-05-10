@@ -48,6 +48,7 @@ const argv = require('yargs/yargs')()
     },
     vaultLogic: {
       type: "string",
+      default: "0x9ED23756ECD0B9012E4D7ee807dA0E6Ec94A1a70"
     },
   }).argv;
 
