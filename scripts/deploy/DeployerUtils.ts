@@ -64,7 +64,11 @@ export class DeployerUtils {
 
   public static getVaultLogic(signer: SignerWithAddress) {
     console.log('argv.vaultLogic', argv.vaultLogic);
-    return ISmartVault__factory.connect(argv.vaultLogic, signer);
+    let logic = '0x9ED23756ECD0B9012E4D7ee807dA0E6Ec94A1a70';
+    if(!!argv.vaultLogic) {
+      logic = argv.vaultLogic;
+    }
+    return ISmartVault__factory.connect(logic, signer);
   }
 
   // ************ CONTRACT CONNECTION **************************
