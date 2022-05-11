@@ -4,7 +4,7 @@ import {
   IController,
   IStrategy__factory,
   ISmartVault,
-  StrategySplitter__factory
+  IStrategySplitter__factory
 } from "../../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
@@ -28,7 +28,7 @@ export class SplitterSpecificTests extends SpecificStrategyTest {
       const signer = deployInfo.signer as SignerWithAddress;
       const announcer = deployInfo.core?.announcer as IAnnouncer;
       const controller = deployInfo.core?.controller as IController;
-      const splitter = StrategySplitter__factory.connect(deployInfo.strategy?.address as string, signer);
+      const splitter = IStrategySplitter__factory.connect(deployInfo.strategy?.address as string, signer);
       expect(await splitter.strategiesLength()).is.eq(3)
 
       const stratForRemove = await splitter.strategies(0);
@@ -66,7 +66,7 @@ export class SplitterSpecificTests extends SpecificStrategyTest {
 
     it("SplitterSpecificTest: Request withdraw", async () => {
       const signer = deployInfo.signer as SignerWithAddress;
-      const splitter = StrategySplitter__factory.connect(deployInfo.strategy?.address as string, signer);
+      const splitter = IStrategySplitter__factory.connect(deployInfo.strategy?.address as string, signer);
       const vault = deployInfo.vault as ISmartVault;
       const underlying = deployInfo.underlying as string;
 
@@ -94,7 +94,7 @@ export class SplitterSpecificTests extends SpecificStrategyTest {
 
     it("SplitterSpecificTest: Common functions", async () => {
       const signer = deployInfo.signer as SignerWithAddress;
-      const splitter = StrategySplitter__factory.connect(deployInfo.strategy?.address as string, signer);
+      const splitter = IStrategySplitter__factory.connect(deployInfo.strategy?.address as string, signer);
 
       await splitter.setNeedRebalance(1)
       expect(await splitter.needRebalance()).is.eq(1);
@@ -118,9 +118,9 @@ export class SplitterSpecificTests extends SpecificStrategyTest {
       const signer = deployInfo.signer as SignerWithAddress;
       const announcer = deployInfo.core?.announcer as IAnnouncer;
       const controller = deployInfo.core?.controller as IController;
-      const splitterParent = StrategySplitter__factory.connect(deployInfo.strategy?.address as string, signer);
+      const splitterParent = IStrategySplitter__factory.connect(deployInfo.strategy?.address as string, signer);
       const splitterAdr = await splitterParent.strategies(0);
-      const splitter = StrategySplitter__factory.connect(splitterAdr, signer);
+      const splitter = IStrategySplitter__factory.connect(splitterAdr, signer);
       expect(await splitter.strategiesLength()).is.eq(2)
 
       const stratForRemove = await splitter.strategies(0);
@@ -156,9 +156,9 @@ export class SplitterSpecificTests extends SpecificStrategyTest {
 
     it("SplitterSpecificTest: Sub: Request withdraw", async () => {
       const signer = deployInfo.signer as SignerWithAddress;
-      const splitterParent = StrategySplitter__factory.connect(deployInfo.strategy?.address as string, signer);
+      const splitterParent = IStrategySplitter__factory.connect(deployInfo.strategy?.address as string, signer);
       const splitterAdr = await splitterParent.strategies(0);
-      const splitter = StrategySplitter__factory.connect(splitterAdr, signer);
+      const splitter = IStrategySplitter__factory.connect(splitterAdr, signer);
       const vault = deployInfo.vault as ISmartVault;
       const underlying = deployInfo.underlying as string;
 
@@ -184,9 +184,9 @@ export class SplitterSpecificTests extends SpecificStrategyTest {
 
     it("SplitterSpecificTest: Sub: Common functions", async () => {
       const signer = deployInfo.signer as SignerWithAddress;
-      const splitterParent = StrategySplitter__factory.connect(deployInfo.strategy?.address as string, signer);
+      const splitterParent = IStrategySplitter__factory.connect(deployInfo.strategy?.address as string, signer);
       const splitterAdr = await splitterParent.strategies(0);
-      const splitter = StrategySplitter__factory.connect(splitterAdr, signer);
+      const splitter = IStrategySplitter__factory.connect(splitterAdr, signer);
 
       await splitter.setNeedRebalance(1)
       expect(await splitter.needRebalance()).is.eq(1);

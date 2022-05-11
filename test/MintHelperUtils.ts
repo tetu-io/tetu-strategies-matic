@@ -2,7 +2,7 @@ import {utils} from "ethers";
 import {IAnnouncer, IController} from "../typechain";
 import {TimeUtils} from "./TimeUtils";
 import {TokenUtils} from "./TokenUtils";
-import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../scripts/deploy/DeployerUtilsLocal";
 
 export class MintHelperUtils {
 
@@ -18,8 +18,8 @@ export class MintHelperUtils {
     const tetu = await controller.rewardToken();
     const fundBal = await TokenUtils.balanceOf(tetu, fund);
     const distBal = await TokenUtils.balanceOf(tetu, distributor);
-    await TokenUtils.transfer(tetu, await DeployerUtils.impersonate(fund), destination, fundBal.toString());
-    await TokenUtils.transfer(tetu, await DeployerUtils.impersonate(distributor), destination, distBal.toString());
+    await TokenUtils.transfer(tetu, await DeployerUtilsLocal.impersonate(fund), destination, fundBal.toString());
+    await TokenUtils.transfer(tetu, await DeployerUtilsLocal.impersonate(distributor), destination, distBal.toString());
   }
 
 }

@@ -7,8 +7,8 @@ import {
   IMintHelper,
   IRewardToken,
   ISmartVault,
+  IStrategy,
   IVaultController,
-  NoopStrategy
 } from "../typechain";
 
 export class CoreContractsWrapper {
@@ -23,7 +23,7 @@ export class CoreContractsWrapper {
   public rewardToken: IRewardToken;
   public psVault: ISmartVault;
   public psVaultLogic: string;
-  public psEmptyStrategy: NoopStrategy;
+  public psEmptyStrategy: IStrategy;
   public fundKeeper: IFundKeeper;
   public fundKeeperLogic: string;
   public announcer: IAnnouncer;
@@ -32,7 +32,7 @@ export class CoreContractsWrapper {
   public vaultControllerLogic: string;
 
 
-  constructor(controller: IController, controllerLogic: string, feeRewardForwarder: IFeeRewardForwarder, feeRewardForwarderLogic: string, bookkeeper: IBookkeeper, bookkeeperLogic: string, mintHelper: IMintHelper, mintHelperLogic: string, rewardToken: IRewardToken, psVault: ISmartVault, psVaultLogic: string, psEmptyStrategy: NoopStrategy, fundKeeper: IFundKeeper, fundKeeperLogic: string, announcer: IAnnouncer, announcerLogic: string, vaultController: IVaultController, vaultControllerLogic: string) {
+  constructor(controller: IController, controllerLogic: string, feeRewardForwarder: IFeeRewardForwarder, feeRewardForwarderLogic: string, bookkeeper: IBookkeeper, bookkeeperLogic: string, mintHelper: IMintHelper, mintHelperLogic: string, rewardToken: IRewardToken, psVault: ISmartVault, psVaultLogic: string, psEmptyStrategy: IStrategy, fundKeeper: IFundKeeper, fundKeeperLogic: string, announcer: IAnnouncer, announcerLogic: string, vaultController: IVaultController, vaultControllerLogic: string) {
     this.controller = controller;
     this.controllerLogic = controllerLogic;
     this.feeRewardForwarder = feeRewardForwarder;

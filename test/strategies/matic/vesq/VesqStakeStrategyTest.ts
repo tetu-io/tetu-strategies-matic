@@ -7,7 +7,7 @@ import {DeployInfo} from "../../DeployInfo";
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {IFeeRewardForwarder, IStrategy, ISmartVault} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
@@ -88,7 +88,7 @@ describe.skip('Vesq staking tests', async () => {
           vaultAddress,
           underlying,
         ];
-        return DeployerUtils.deployContract(
+        return DeployerUtilsLocal.deployContract(
           signer,
           strategyContractName,
           ...strategyArgs

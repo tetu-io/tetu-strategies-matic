@@ -1,5 +1,5 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../deploy/DeployerUtilsLocal";
 import {MaticAddresses} from "../../addresses/MaticAddresses";
 import {
   IIronLpToken,
@@ -20,11 +20,11 @@ import {VaultUtils} from "../../../test/VaultUtils";
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
-  const core = await DeployerUtils.getCoreAddresses();
-  const tools = await DeployerUtils.getToolsAddresses();
+  const core = await DeployerUtilsLocal.getCoreAddresses();
+  const tools = await DeployerUtilsLocal.getToolsAddresses();
 
-  const controller = await DeployerUtils.connectInterface(signer, 'IronControllerInterface', MaticAddresses.IRON_CONTROLLER) as IronControllerInterface;
-  const priceCalculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
+  const controller = await DeployerUtilsLocal.connectInterface(signer, 'IronControllerInterface', MaticAddresses.IRON_CONTROLLER) as IronControllerInterface;
+  const priceCalculator = await DeployerUtilsLocal.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
 
   const markets = await controller.getAllMarkets();
   console.log('markets', markets.length);
@@ -40,7 +40,7 @@ async function main() {
     underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
     underlyingToVault.set(vInfo.underlying.toLowerCase(), vInfo.addr);
     if (vInfo.active) {
-      const vctr = await DeployerUtils.connectInterface(signer, 'SmartVault', vInfo.addr) as SmartVault;
+      const vctr = await DeployerUtilsLocal.connectInterface(signer, 'SmartVault', vInfo.addr) as SmartVault;
       currentRewards.set(vInfo.underlying.toLowerCase(), await VaultUtils.vaultRewardsAmount(vctr, core.psVault));
     }
   }
@@ -63,8 +63,8 @@ async function main() {
     const rTokenAdr = markets[i];
     const rTokenName = await TokenUtils.tokenSymbol(rTokenAdr);
     console.log('rTokenName', rTokenName, rTokenAdr)
-    const rTokenCtr = await DeployerUtils.connectInterface(signer, 'RTokenInterface', rTokenAdr) as RTokenInterface;
-    const rTokenCtr2 = await DeployerUtils.connectInterface(signer, 'RErc20Storage', rTokenAdr) as RErc20Storage;
+    const rTokenCtr = await DeployerUtilsLocal.connectInterface(signer, 'RTokenInterface', rTokenAdr) as RTokenInterface;
+    const rTokenCtr2 = await DeployerUtilsLocal.connectInterface(signer, 'RErc20Storage', rTokenAdr) as RErc20Storage;
     let token: string;
     if (i === 2) {
       token = MaticAddresses.WMATIC_TOKEN;
@@ -136,15 +136,15 @@ async function collectTokensInfo(signer: SignerWithAddress, lp: string, id: numb
 }
 
 async function collectTokensInfoIronSwap(signer: SignerWithAddress, lp: string): Promise<string[]> {
-  const lpContract = await DeployerUtils.connectInterface(signer, 'IIronLpToken', lp) as IIronLpToken;
+  const lpContract = await DeployerUtilsLocal.connectInterface(signer, 'IIronLpToken', lp) as IIronLpToken;
   const swapAddress = await lpContract.swap();
-  const swapContract = await DeployerUtils.connectInterface(signer, 'IIronSwap', swapAddress) as IIronSwap;
+  const swapContract = await DeployerUtilsLocal.connectInterface(signer, 'IIronSwap', swapAddress) as IIronSwap;
   return swapContract.getTokens();
 }
 
 async function collectTokensInfoUniswap(signer: SignerWithAddress, lp: string): Promise<string[]> {
   try {
-    const lpContract = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair;
+    const lpContract = await DeployerUtilsLocal.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair;
     const tokens = [];
 
     tokens.push(await lpContract.token0());

@@ -1,5 +1,5 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../deploy/DeployerUtilsLocal";
 import {
   IDragonLair,
   IStakingRewards,
@@ -15,18 +15,18 @@ const exclude = new Set<string>([]);
 
 async function start() {
   const signer = (await ethers.getSigners())[0];
-  const core = await DeployerUtils.getCoreAddresses();
-  const tools = await DeployerUtils.getToolsAddresses();
-  const factory = await DeployerUtils.connectInterface(signer, 'IStakingRewardsFactorySyrups', MaticAddresses.QUICK_STAKING_FACTORY_SYRUP) as IStakingRewardsFactorySyrups;
+  const core = await DeployerUtilsLocal.getCoreAddresses();
+  const tools = await DeployerUtilsLocal.getToolsAddresses();
+  const factory = await DeployerUtilsLocal.connectInterface(signer, 'IStakingRewardsFactorySyrups', MaticAddresses.QUICK_STAKING_FACTORY_SYRUP) as IStakingRewardsFactorySyrups;
 
-  const priceCalculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
+  const priceCalculator = await DeployerUtilsLocal.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
 
 
   // no info in contract
   const rewardTokensLength = 10000;
   const quickPrice = await priceCalculator.getPriceWithDefaultOutput(MaticAddresses.QUICK_TOKEN);
 
-  const dQuickCtr = await DeployerUtils.connectInterface(signer, 'IDragonLair', MaticAddresses.dQUICK_TOKEN) as IDragonLair;
+  const dQuickCtr = await DeployerUtilsLocal.connectInterface(signer, 'IDragonLair', MaticAddresses.dQUICK_TOKEN) as IDragonLair;
   const dQuickRatio = await dQuickCtr.dQUICKForQUICK(utils.parseUnits('1'));
   const dQuickPrice = quickPrice.mul(dQuickRatio).div(utils.parseUnits('1'));
   console.log('dQuickPrice', utils.formatUnits(dQuickPrice));

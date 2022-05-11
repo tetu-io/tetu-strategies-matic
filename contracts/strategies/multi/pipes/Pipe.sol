@@ -12,14 +12,13 @@
 
 pragma solidity 0.8.4;
 
-import "./../../../openzeppelin/IERC20.sol";
-import "./../../../openzeppelin/SafeERC20.sol";
-import "./../../../openzeppelin/Initializable.sol";
+import "@tetu_io/tetu-contracts/contracts/openzeppelin/IERC20.sol";
+import "@tetu_io/tetu-contracts/contracts/openzeppelin/SafeERC20.sol";
+import "@tetu_io/tetu-contracts/contracts/openzeppelin/Initializable.sol";
 import "../../../interface/strategies/IPipe.sol";
-import "../../../interface/IControllable.sol";
 import "./PipeLib.sol";
-import "../../../proxy/ControllableV2.sol";
-import "../../../lib/SlotsLib.sol";
+import "@tetu_io/tetu-contracts/contracts/base/governance/ControllableV2.sol";
+import "@tetu_io/tetu-contracts/contracts/base/SlotsLib.sol";
 
 /// @title Pipe Base Contract
 /// @author bogdoslav

@@ -12,13 +12,13 @@
 
 pragma solidity 0.8.4;
 
-import "./../../openzeppelin/SafeERC20.sol";
+import "@tetu_io/tetu-contracts/contracts/openzeppelin/SafeERC20.sol";
 import "./../../third_party/IERC20Extended.sol";
-import "./../ProxyStrategyBase.sol";
+import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
 import "./pipelines/LinearPipeline.sol";
 import "../../interface/strategies/IMaiStablecoinPipe.sol";
 import "../../interface/strategies/IAaveMaiBalStrategyBase.sol";
-import "../../third_party/uniswap/IUniswapV2Router02.sol";
+import "@tetu_io/tetu-contracts/contracts/third_party/uniswap/IUniswapV2Router02.sol";
 
 
 /// @title MAI->BAL Multi Strategy

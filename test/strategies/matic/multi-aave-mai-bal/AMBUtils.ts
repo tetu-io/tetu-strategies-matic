@@ -1,6 +1,10 @@
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
-import {MaiStablecoinPipe, StrategyAaveMaiBal} from "../../../../typechain";
+import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
+import {
+  MaiStablecoinPipe, MaiStablecoinPipe__factory,
+  StrategyAaveMaiBal,
+  StrategyAaveMaiBal__factory
+} from "../../../../typechain";
 import {TokenUtils} from "../../../TokenUtils";
 import {utils} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -58,9 +62,9 @@ export class AMBUtils {
   }
 
   public static async refuelMAI(signer: SignerWithAddress, strategy: string) {
-    const strCtr = await DeployerUtils.connectInterface(signer, 'StrategyAaveMaiBal', strategy) as StrategyAaveMaiBal;
+    const strCtr = StrategyAaveMaiBal__factory.connect(strategy, signer);
     const maiStbPipe = await strCtr.pipes(2);
-    const maiStbPipeCtr = await DeployerUtils.connectInterface(signer, 'MaiStablecoinPipe', maiStbPipe) as MaiStablecoinPipe;
+    const maiStbPipeCtr = MaiStablecoinPipe__factory.connect(maiStbPipe, signer);
     const stablecoin = await maiStbPipeCtr.stablecoin()
     await TokenUtils.getToken(MaticAddresses.miMATIC_TOKEN, stablecoin, utils.parseUnits('1000000'));
   }

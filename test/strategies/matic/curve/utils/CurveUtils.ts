@@ -6,8 +6,8 @@ import {
   IERC20,
   IERC20__factory,
   IRenBTCFtmPool,
-  IRenBTCPool,
-  ITricryptoPool,
+  IRenBTCPool, IRenBTCPool__factory,
+  ITricryptoPool, ITricryptoPool__factory,
   ITricryptoPoolFtm
 } from "../../../../../typechain";
 import {MaticAddresses} from "../../../../../scripts/addresses/MaticAddresses";
@@ -15,7 +15,7 @@ import {ethers} from "hardhat";
 import {expect} from "chai";
 import {UniswapUtils} from "../../../../UniswapUtils";
 import {TokenUtils} from "../../../../TokenUtils";
-import {DeployerUtils} from "../../../../../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../../../../scripts/deploy/DeployerUtilsLocal";
 import {parseUnits} from "ethers/lib/utils";
 
 export class CurveUtils {
@@ -101,7 +101,7 @@ export class CurveUtils {
     const token = MaticAddresses.DAI_TOKEN;
     const amount = parseUnits('10000', dec);
     await TokenUtils.getToken(token, signer.address, amount);
-    const pool = await DeployerUtils.connectInterface(signer, 'ITricryptoPool', MaticAddresses.CURVE_aTricrypto3_POOL) as ITricryptoPool;
+    const pool = ITricryptoPool__factory.connect(MaticAddresses.CURVE_aTricrypto3_POOL, signer);
     await TokenUtils.approve(token, signer, pool.address, amount.toString());
     await pool.exchange_underlying(0, 1, amount, 0, signer.address);
     console.log('swap tricrypto completed')
@@ -113,7 +113,7 @@ export class CurveUtils {
     console.log('swap ren')
     const amount = utils.parseUnits('1', 8);
     await TokenUtils.getToken(MaticAddresses.WBTC_TOKEN, signer.address, amount);
-    const pool = await DeployerUtils.connectInterface(signer, 'IRenBTCPool', MaticAddresses.CURVE_renBTC_POOL) as IRenBTCPool;
+    const pool = IRenBTCPool__factory.connect(MaticAddresses.CURVE_renBTC_POOL, signer);
     await TokenUtils.approve(MaticAddresses.WBTC_TOKEN, signer, pool.address, amount.mul(2).toString());
     await pool.exchange_underlying(0, 1, amount, 0);
     console.log('swap ren completed')

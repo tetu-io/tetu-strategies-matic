@@ -1,8 +1,8 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {DoHardWorkLoopBase} from "./DoHardWorkLoopBase";
-import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
-import {FoldingBase} from "../../typechain";
+import {DeployerUtilsLocal} from "../../scripts/deploy/DeployerUtilsLocal";
+import {FoldingBase, FoldingBase__factory} from "../../typechain";
 import {Misc} from "../../scripts/utils/tools/Misc";
 
 const {expect} = chai;
@@ -13,7 +13,7 @@ export class FoldingDoHardWork extends DoHardWorkLoopBase {
   public async loopStartActions(i: number) {
     await super.loopStartActions(i);
     const start = Date.now();
-    const foldContract = await DeployerUtils.connectInterface(this.signer, 'FoldingBase', this.strategy.address) as FoldingBase
+    const foldContract = FoldingBase__factory.connect(this.strategy.address, this.signer)
     let foldingState = (await foldContract.foldState()).toNumber();
     // switch off folding on the 1/3 of cycles
     if (i === Math.floor(this.loops / 3) && foldingState !== 2) {

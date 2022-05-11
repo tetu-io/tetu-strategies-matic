@@ -1,5 +1,5 @@
 import {ethers, web3} from "hardhat";
-import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../deploy/DeployerUtilsLocal";
 import {
   ERC20,
   IUniswapV2Pair,
@@ -32,10 +32,10 @@ export class McLpDownloader {
       onlyDeployed = false
   ) {
     const signer = (await ethers.getSigners())[0];
-    const core = await DeployerUtils.getCoreAddresses();
-    const tools = await DeployerUtils.getToolsAddresses();
+    const core = await DeployerUtilsLocal.getCoreAddresses();
+    const tools = await DeployerUtilsLocal.getToolsAddresses();
 
-    const priceCalculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
+    const priceCalculator = await DeployerUtilsLocal.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
 
     const vaultInfos = await VaultUtils.getVaultInfoFromServer();
     const underlyingStatuses = new Map<string, boolean>();
@@ -49,7 +49,7 @@ export class McLpDownloader {
       underlyingToVault.set(vInfo.underlying.toLowerCase(), vInfo.addr);
       if (vInfo.active) {
         console.log(vInfo.addr);
-        const vctr = await DeployerUtils.connectInterface(signer, 'SmartVault', vInfo.addr) as SmartVault;
+        const vctr = await DeployerUtilsLocal.connectInterface(signer, 'SmartVault', vInfo.addr) as SmartVault;
         const rts = await vctr.rewardTokens();
         const rewards = await VaultUtils.vaultRewardsAmount(vctr, rts[0]);
         console.log('rewards', rewards);
@@ -85,7 +85,7 @@ export class McLpDownloader {
           console.log('not deployed');
           continue;
         }
-        const lpContract = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair
+        const lpContract = await DeployerUtilsLocal.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair
 
         const allocPoint = poolInfo.allocPoint;
         const duration = currentBlock - poolInfo.lastUpdateTime;
@@ -111,7 +111,7 @@ export class McLpDownloader {
         let token1Name: string = '';
 
         try {
-          const _lpContract = await DeployerUtils.connectInterface(signer, 'IWaultSwapPair', lp) as IWaultSwapPair;
+          const _lpContract = await DeployerUtilsLocal.connectInterface(signer, 'IWaultSwapPair', lp) as IWaultSwapPair;
           token0 = await _lpContract.token0();
           token1 = await _lpContract.token1();
           token0Name = await TokenUtils.tokenSymbol(token0);
@@ -120,7 +120,7 @@ export class McLpDownloader {
         }
 
         if (token0 === '') {
-          const token = await DeployerUtils.connectInterface(signer, 'ERC20', lp) as ERC20;
+          const token = await DeployerUtilsLocal.connectInterface(signer, 'ERC20', lp) as ERC20;
           token0Name = await token.symbol();
         }
 

@@ -1,14 +1,14 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../deploy/DeployerUtilsLocal";
 import {MaticAddresses} from "../../addresses/MaticAddresses";
-import {IFossilFarms} from "../../../typechain";
+import {IFossilFarms, IFossilFarms__factory} from "../../../typechain";
 import {BigNumber} from "ethers";
 import {McLpDownloader} from "./McLpDownloader";
 
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
-  const chef = await DeployerUtils.connectInterface(signer, 'IFossilFarms', MaticAddresses.DINO_MASTERCHEF) as IFossilFarms;
+  const chef = IFossilFarms__factory.connect(MaticAddresses.DINO_MASTERCHEF, signer);
 
   await McLpDownloader.download(
       "8",

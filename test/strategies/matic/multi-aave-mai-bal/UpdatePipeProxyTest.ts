@@ -6,6 +6,9 @@ import {
   IController,
   IAnnouncer,
   IControllableExtended,
+  TetuProxyControlled__factory,
+  IAnnouncer__factory,
+  IControllableExtended__factory,
 } from "../../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
@@ -16,7 +19,7 @@ import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {network} from "hardhat";
 import {TokenUtils} from "../../../TokenUtils";
 import {VaultUtils} from "../../../VaultUtils";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {BigNumber} from "ethers";
 
 const {expect} = chai;
@@ -34,23 +37,23 @@ export class UpdatePipeProxyTest extends SpecificStrategyTest {
       const vault = deployInfo?.vault as ISmartVault;
       const core = deployInfo?.core as CoreContractsWrapper;
 
-      const controller = await DeployerUtils.connectInterface(signer, 'IController', core.controller.address) as IController;
-      const announcer = await DeployerUtils.connectInterface(signer, 'IAnnouncer', core.announcer.address) as IAnnouncer;
+      const controller = core.controller;
+      const announcer = core.announcer
 
       const strategyAaveMaiBal = deployInfo.strategy as StrategyAaveMaiBal;
       const strategyUser = strategyAaveMaiBal.connect(deployInfo.user as SignerWithAddress);
       const strategyGov = strategyAaveMaiBal.connect(deployInfo.signer as SignerWithAddress);
-      const strategyUserProxy = await DeployerUtils.connectInterface(deployInfo.user as SignerWithAddress, 'TetuProxyControlled', strategyAaveMaiBal.address) as TetuProxyControlled;
+      const strategyUserProxy = TetuProxyControlled__factory.connect(strategyAaveMaiBal.address, deployInfo.signer as SignerWithAddress);
 
       const info = infos.filter(i => i.underlying === underlying.toLowerCase())[0];
       console.log('info', info);
       expect(info).to.be.an('object', 'Unknown underlying');
 
       // ----- Deploy new Pipes
-      const aaveAmPipe = await DeployerUtils.deployContract(signer, 'AaveAmPipe');
-      const maiCamPipe = await DeployerUtils.deployContract(signer, 'MaiCamPipe');
-      const maiStablecoinPipe = await DeployerUtils.deployContract(signer, 'MaiStablecoinPipe');
-      const balVaultPipe = await DeployerUtils.deployContract(signer, 'BalVaultPipe');
+      const aaveAmPipe = await DeployerUtilsLocal.deployContract(signer, 'AaveAmPipe');
+      const maiCamPipe = await DeployerUtilsLocal.deployContract(signer, 'MaiCamPipe');
+      const maiStablecoinPipe = await DeployerUtilsLocal.deployContract(signer, 'MaiStablecoinPipe');
+      const balVaultPipe = await DeployerUtilsLocal.deployContract(signer, 'BalVaultPipe');
       const newPipeImpl: string[] = [
         aaveAmPipe.address,
         maiCamPipe.address,
@@ -73,8 +76,7 @@ export class UpdatePipeProxyTest extends SpecificStrategyTest {
       for (let i = newPipeImpl.length - 1; i >= 0; i--) {
         const totalAmountOutBefore = await strategyGov.totalAmountOut();
         const pipeAddress = await strategyUser.pipes(i);
-        const pipeProxyControlled = await DeployerUtils.connectInterface(
-            user, 'TetuProxyControlled', pipeAddress) as TetuProxyControlled;
+        const pipeProxyControlled = TetuProxyControlled__factory.connect(pipeAddress, user);
         const oldImplAddress = await pipeProxyControlled.implementation();
         console.log('oldImplAddress', oldImplAddress);
         const newPipeImplAddress = newPipeImpl[i];
@@ -85,7 +87,7 @@ export class UpdatePipeProxyTest extends SpecificStrategyTest {
         ).to.be.revertedWith('forbidden');
 
         // const balPipeSigner = await DeployerUtils.connectInterface(signer, 'Pipe', balPipeAddress) as Pipe;
-        const pipeControllableUser = await DeployerUtils.connectInterface(user, 'IControllableExtended', pipeAddress) as IControllableExtended;
+        const pipeControllableUser = IControllableExtended__factory.connect(pipeAddress, user);
         const pipeController = await pipeControllableUser.controller();
         console.log('pipeController', pipeController);
 

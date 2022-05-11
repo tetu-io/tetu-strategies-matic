@@ -13,7 +13,7 @@
 pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "../StrategyBase.sol";
+import "@tetu_io/tetu-contracts/contracts/base/strategies/StrategyBase.sol";
 import "../../third_party/wault/IWexPolyMaster.sol";
 
 /// @title Abstract contract for Wault strategy implementation

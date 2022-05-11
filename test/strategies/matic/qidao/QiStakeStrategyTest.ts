@@ -7,7 +7,7 @@ import {DeployInfo} from "../../DeployInfo";
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {IStrategy, ISmartVault, ISmartVault__factory, StrategyQiStaking} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
@@ -75,7 +75,7 @@ describe('Qi staking tests', async () => {
       core,
       vaultName,
       async vaultAddress => {
-        const strategy = await DeployerUtils.deployStrategyProxy(
+        const strategy = await DeployerUtilsLocal.deployStrategyProxy(
           signer,
           strategyContractName,
         ) as StrategyQiStaking;

@@ -1,6 +1,6 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../scripts/deploy/DeployerUtilsLocal";
 import {StrategyTestUtils} from "./StrategyTestUtils";
 import {IStrategy, ISmartVault} from "../../typechain";
 import {SpecificStrategyTest} from "./SpecificStrategyTest";
@@ -58,7 +58,7 @@ async function startDefaultSingleTokenStrategyTest(
             vaultAddress,
             underlying,
           ];
-          return DeployerUtils.deployContract(
+          return DeployerUtilsLocal.deployContract(
             signer,
             strategyContractName,
             ...strategyArgs

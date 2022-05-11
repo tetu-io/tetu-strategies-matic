@@ -12,9 +12,9 @@
 
 pragma solidity 0.8.4;
 
-import "../StrategyBase.sol";
-import "../../interface/ISmartVault.sol";
-import "../../interface/ITetuSwapPair.sol";
+import "@tetu_io/tetu-contracts/contracts/base/strategies/StrategyBase.sol";
+import "@tetu_io/tetu-contracts/contracts/base/interface/ISmartVault.sol";
+import "@tetu_io/tetu-contracts/contracts/swap/interfaces/ITetuSwapPair.sol";
 
 /// @title Abstract contract for Tetu swap strategy implementation
 /// @author belbix

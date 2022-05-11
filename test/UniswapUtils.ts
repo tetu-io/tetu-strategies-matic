@@ -5,7 +5,11 @@ import {
   IUniswapV2Factory,
   IUniswapV2Pair,
   IUniswapV2Router02,
-  IPriceCalculator
+  IPriceCalculator,
+  IFireBirdRouter__factory,
+  IFireBirdFactory__factory,
+  IUniswapV2Pair__factory,
+  IUniswapV2Router02__factory, IUniswapV2Factory__factory
 } from "../typechain";
 import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "./TokenUtils";
@@ -14,7 +18,7 @@ import {expect} from "chai";
 import {RunHelper} from "../scripts/utils/tools/RunHelper";
 import {MintHelperUtils} from "./MintHelperUtils";
 import {CoreContractsWrapper} from "./CoreContractsWrapper";
-import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../scripts/deploy/DeployerUtilsLocal";
 import {Misc} from "../scripts/utils/tools/Misc";
 import {PriceCalculatorUtils} from "./PriceCalculatorUtils";
 import {MaticAddresses} from "../scripts/addresses/MaticAddresses";
@@ -56,10 +60,10 @@ export class UniswapUtils {
     if (_router.toLowerCase() === MaticAddresses.FIREBIRD_ROUTER) {
       console.log("firebird swap")
       expect(_route.length === 2, 'firebird wrong length path');
-      const router = await ethers.getContractAt("IFireBirdRouter", _router, sender) as IFireBirdRouter;
+      const router = IFireBirdRouter__factory.connect(_router, sender);
       await TokenUtils.approve(_route[0], sender, router.address, amountToSell);
 
-      const fbFac = await DeployerUtils.connectInterface(sender, 'IFireBirdFactory', MaticAddresses.FIREBIRD_FACTORY) as IFireBirdFactory;
+      const fbFac = IFireBirdFactory__factory.connect(MaticAddresses.FIREBIRD_FACTORY, sender);
       const fbPair = await fbFac.getPair(_route[0], _route[1], 50, 20);
 
       return router.swapExactTokensForTokens(
@@ -128,7 +132,7 @@ export class UniswapUtils {
 
     if (_factory.toLowerCase() === MaticAddresses.FIREBIRD_FACTORY.toLowerCase()) {
       const pair = await UniswapUtils.getPairFromFactory(sender, tokenA, tokenB, _factory);
-      const router = await DeployerUtils.connectInterface(sender, 'IFireBirdRouter', _router) as IFireBirdRouter
+      const router = IFireBirdRouter__factory.connect(_router, sender);
       await RunHelper.runAndWait(() => router.addLiquidity(
         pair,
         tokenA,
@@ -185,15 +189,15 @@ export class UniswapUtils {
   }
 
   public static async connectRouter(router: string, signer: SignerWithAddress): Promise<IUniswapV2Router02> {
-    return await ethers.getContractAt("IUniswapV2Router02", router, signer) as IUniswapV2Router02;
+    return IUniswapV2Router02__factory.connect(router, signer);
   }
 
   public static async connectFactory(factory: string, signer: SignerWithAddress): Promise<IUniswapV2Factory> {
-    return await ethers.getContractAt("IUniswapV2Factory", factory, signer) as IUniswapV2Factory;
+    return IUniswapV2Factory__factory.connect(factory, signer);
   }
 
   public static async connectLpContract(adr: string, signer: SignerWithAddress): Promise<IUniswapV2Pair> {
-    return await ethers.getContractAt("IUniswapV2Pair", adr, signer) as IUniswapV2Pair;
+    return IUniswapV2Pair__factory.connect(adr, signer);
   }
 
   public static async getLpInfo(adr: string, signer: SignerWithAddress, targetToken: string): Promise<[number, string, number, number]> {
@@ -228,7 +232,7 @@ export class UniswapUtils {
     core: CoreContractsWrapper,
     amount: string
   ) {
-    const usdc = await DeployerUtils.getUSDCAddress();
+    const usdc = await DeployerUtilsLocal.getUSDCAddress();
     await TokenUtils.getToken(usdc, signer.address, utils.parseUnits(amount, 6))
     const rewardTokenAddress = core.rewardToken.address;
 
@@ -246,7 +250,7 @@ export class UniswapUtils {
     console.log('Token minted', tokenBal.toString());
     expect(+utils.formatUnits(tokenBal, 18)).is.greaterThanOrEqual(+amount);
 
-    const factory = await DeployerUtils.getDefaultNetworkFactory();
+    const factory = await DeployerUtilsLocal.getDefaultNetworkFactory();
     const lp = await UniswapUtils.addLiquidity(
       signer,
       rewardTokenAddress,
@@ -254,7 +258,7 @@ export class UniswapUtils {
       utils.parseUnits(amount, 18).toString(),
       utils.parseUnits(amount, 6).toString(),
       factory,
-      await DeployerUtils.getRouterByFactory(factory)
+      await DeployerUtilsLocal.getRouterByFactory(factory)
     );
     await core.feeRewardForwarder.addLargestLps([core.rewardToken.address], [lp]);
     return lp;
@@ -265,7 +269,7 @@ export class UniswapUtils {
     core: CoreContractsWrapper,
     amount: string
   ) {
-    const usdc = await DeployerUtils.getUSDCAddress();
+    const usdc = await DeployerUtilsLocal.getUSDCAddress();
     await TokenUtils.getToken(usdc, signer.address, utils.parseUnits(amount, 6))
     const rewardTokenAddress = core.rewardToken.address;
 
@@ -285,8 +289,8 @@ export class UniswapUtils {
       usdc,
       utils.parseUnits(amount, 18).toString(),
       utils.parseUnits(amount, 6).toString(),
-      await DeployerUtils.getDefaultNetworkFactory(),
-      await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory())
+      await DeployerUtilsLocal.getDefaultNetworkFactory(),
+      await DeployerUtilsLocal.getRouterByFactory(await DeployerUtilsLocal.getDefaultNetworkFactory())
     );
   }
 
@@ -296,14 +300,14 @@ export class UniswapUtils {
     amount: string
   ) {
     const start = Date.now();
-    const usdc = await DeployerUtils.getUSDCAddress();
+    const usdc = await DeployerUtilsLocal.getUSDCAddress();
     const tetu = core.rewardToken.address.toLowerCase();
     await TokenUtils.getToken(usdc, signer.address, utils.parseUnits(amount, 6));
     const usdcBal = await TokenUtils.balanceOf(usdc, signer.address);
     console.log('USDC bought', usdcBal.toString());
     expect(+utils.formatUnits(usdcBal, 6)).is.greaterThanOrEqual(+amount);
 
-    if (tetu === await DeployerUtils.getTETUAddress()) {
+    if (tetu === await DeployerUtilsLocal.getTETUAddress()) {
       await TokenUtils.getToken(tetu, signer.address, utils.parseUnits(amount));
     } else {
       await MintHelperUtils.mint(core.controller, core.announcer, amount, signer.address);
@@ -320,8 +324,8 @@ export class UniswapUtils {
       usdc,
       utils.parseUnits(amount).toString(),
       utils.parseUnits(amount, 6).toString(),
-      await DeployerUtils.getDefaultNetworkFactory(),
-      await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory())
+      await DeployerUtilsLocal.getDefaultNetworkFactory(),
+      await DeployerUtilsLocal.getRouterByFactory(await DeployerUtilsLocal.getDefaultNetworkFactory())
     );
     Misc.printDuration('createTetuUsdc completed', start);
     return result;
@@ -368,11 +372,11 @@ export class UniswapUtils {
   ) {
     console.log("UniswapUtils: buyTokensAndAddLiq");
     const start = Date.now();
-    const lpCtr = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair;
+    const lpCtr = IUniswapV2Pair__factory.connect(lp, signer);
     const token0 = await lpCtr.token0();
     const token1 = await lpCtr.token1();
     const factory = await lpCtr.factory();
-    const router = await DeployerUtils.getRouterByFactory(factory);
+    const router = await DeployerUtilsLocal.getRouterByFactory(factory);
     const token0Und = await TokenUtils.decimals(token0);
     const token1Und = await TokenUtils.decimals(token1);
 
@@ -409,7 +413,7 @@ export class UniswapUtils {
   public static async getPairFromFactory(signer: SignerWithAddress, token0: string, token1: string, factory: string): Promise<string> {
     if (factory.toLowerCase() === MaticAddresses.FIREBIRD_FACTORY.toLowerCase()) {
       console.log('Firebird factory');
-      const factoryCtr = await DeployerUtils.connectInterface(signer, 'IFireBirdFactory', factory) as IFireBirdFactory;
+      const factoryCtr = IFireBirdFactory__factory.connect(factory, signer);
       return factoryCtr.getPair(token0, token1, 50, 20);
     } else {
       const factoryCtr = await UniswapUtils.connectFactory(factory, signer);

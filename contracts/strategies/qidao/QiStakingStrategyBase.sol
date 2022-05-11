@@ -12,7 +12,7 @@
 
 pragma solidity 0.8.4;
 
-import "../ProxyStrategyBase.sol";
+import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
 import "../../third_party/qidao/IeQi.sol";
 import "../../third_party/IERC20Extended.sol";
 import "../../third_party/IDelegation.sol";

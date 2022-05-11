@@ -6,7 +6,7 @@ import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {DeployInfo} from "../../DeployInfo";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {IStrategy, ISmartVault, StrategyTetuSelfFarm} from "../../../../typechain";
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
@@ -36,7 +36,7 @@ const argv = require('yargs/yargs')()
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('Dino pool tests', async () => {
+describe('StrategyTetuSelfFarmTest', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
@@ -51,10 +51,10 @@ describe('Dino pool tests', async () => {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, argv.deployCoreContracts);
 
     // ----------
-    const _signer = await DeployerUtils.impersonate();
+    const _signer = await DeployerUtilsLocal.impersonate();
     const core = deployInfo.core as CoreContractsWrapper;
 
-    const [vaultLogic, vault, strategy] = await DeployerUtils.deployDefaultNoopStrategyAndVault(
+    const [vaultLogic, vault, strategy] = await DeployerUtilsLocal.deployDefaultNoopStrategyAndVault(
       _signer,
       core.controller,
       core.vaultController,
@@ -78,7 +78,7 @@ describe('Dino pool tests', async () => {
       core,
       'SF_' + tokenName,
       async vaultAddress => {
-        const strat = await DeployerUtils.deployStrategyProxy(
+        const strat = await DeployerUtilsLocal.deployStrategyProxy(
           signer,
           strategyName,
         ) as StrategyTetuSelfFarm;

@@ -1,5 +1,5 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../deploy/DeployerUtilsLocal";
 import {
   IFusePoolDirectory, IFusePoolLens, PriceCalculator__factory,
 } from "../../../typechain";
@@ -10,10 +10,10 @@ import {utils} from "ethers";
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
-  const tools = await DeployerUtils.getToolsAddresses();
-  const fusePoolDirectory = await DeployerUtils.connectInterface(signer, 'IFusePoolDirectory', MaticAddresses.MARKET_POOLDIRECTORY) as IFusePoolDirectory;
+  const tools = await DeployerUtilsLocal.getToolsAddresses();
+  const fusePoolDirectory = await DeployerUtilsLocal.connectInterface(signer, 'IFusePoolDirectory', MaticAddresses.MARKET_POOLDIRECTORY) as IFusePoolDirectory;
   // MARKET_POOLLENS address marked as deprecated in docs, but it's used here: https://github.com/marketxyz/market-dApp/blob/master/src/fuse-sdk/src/addrs.js
-  const fusePoolLens = await DeployerUtils.connectInterface(signer, 'IFusePoolLens', MaticAddresses.MARKET_POOLLENS) as IFusePoolLens;
+  const fusePoolLens = await DeployerUtilsLocal.connectInterface(signer, 'IFusePoolLens', MaticAddresses.MARKET_POOLLENS) as IFusePoolLens;
   const tokens = await fusePoolDirectory.getAllPools();
   console.log('Lending pools', tokens.length);
 

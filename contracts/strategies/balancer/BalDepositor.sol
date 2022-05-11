@@ -12,14 +12,14 @@
 
 pragma solidity 0.8.4;
 
-import "../../openzeppelin/SafeERC20.sol";
+import "@tetu_io/tetu-contracts/contracts/openzeppelin/SafeERC20.sol";
 import "../../third_party/balancer/IBVault.sol";
 import "../../third_party/polygon/IRootChainManager.sol";
 import "../../interface/ISmartVault.sol";
 import "../../interface/IStrategy.sol";
 import "../../third_party/uniswap/IWETH.sol";
-import "../../proxy/ControllableV2.sol";
-import "../../lib/SlotsLib.sol";
+import "@tetu_io/tetu-contracts/contracts/base/governance/ControllableV2.sol";
+import "@tetu_io/tetu-contracts/contracts/base/SlotsLib.sol";
 
 /// @title Cross chain depositor for BAL and WETH tokens to tetuBAL vault
 /// @author belbix

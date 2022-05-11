@@ -12,10 +12,10 @@
 
 pragma solidity 0.8.4;
 
-import "../interface/IControllable.sol";
-import "../interface/IControllableExtended.sol";
-import "./UpgradeableProxy.sol";
-import "../interface/ITetuProxy.sol";
+import "./interface/IControllable.sol";
+import "./interface/IControllableExtended.sol";
+import "./interface/ITetuProxy.sol";
+import "@tetu_io/tetu-contracts/contracts/base/UpgradeableProxy.sol";
 
 /// @title EIP1967 Upgradable proxy implementation.
 /// @dev Only Controller has access and should implement time-lock for upgrade action.

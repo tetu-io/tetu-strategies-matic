@@ -12,7 +12,7 @@
 pragma solidity 0.8.4;
 
 
-import "../../third_party/uniswap/IUniswapV2Pair.sol";
+import "@tetu_io/tetu-contracts/contracts/third_party/uniswap/IUniswapV2Pair.sol";
 import "../../strategies/masterchef-base/DinoStrategyV2AC.sol";
 
 contract StrategyDinoSwapV2LpAc is DinoStrategyV2AC {

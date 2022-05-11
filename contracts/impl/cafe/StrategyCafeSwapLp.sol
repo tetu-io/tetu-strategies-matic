@@ -11,8 +11,7 @@
 */
 pragma solidity 0.8.4;
 
-
-import "../../third_party/uniswap/IUniswapV2Pair.sol";
+import "@tetu_io/tetu-contracts/contracts/third_party/uniswap/IUniswapV2Pair.sol";
 import "../../strategies/masterchef-base/CafeStrategyBase.sol";
 
 contract StrategyCafeSwapLp is CafeStrategyBase {

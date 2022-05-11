@@ -12,9 +12,9 @@
 
 pragma solidity 0.8.4;
 
-import "../ProxyStrategyBase.sol";
+import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
 import "./IBalLocker.sol";
-import "../../lib/SlotsLib.sol";
+import "@tetu_io/tetu-contracts/contracts/base/SlotsLib.sol";
 
 /// @title Base contract for BAL stake into veBAL pool
 /// @author belbix

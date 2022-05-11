@@ -11,7 +11,7 @@
 */
 pragma solidity 0.8.4;
 
-import "../ProxyStrategyBase.sol";
+import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
 
 /// @title Strategy for autocompound tetuQi vault
 /// @author belbix

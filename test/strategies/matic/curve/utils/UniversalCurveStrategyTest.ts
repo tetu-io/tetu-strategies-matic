@@ -5,7 +5,7 @@ import {DeployInfo} from "../../../DeployInfo";
 import {SpecificStrategyTest} from "../../../SpecificStrategyTest";
 import {CoreContractsWrapper} from "../../../../CoreContractsWrapper";
 import {StrategyTestUtils} from "../../../StrategyTestUtils";
-import {DeployerUtils} from "../../../../../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../../../../scripts/deploy/DeployerUtilsLocal";
 import {IStrategy, ISmartVault} from "../../../../../typechain";
 import {ToolsContractsWrapper} from "../../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../../UniversalStrategyTest";
@@ -55,7 +55,7 @@ async function startCurveStratTest(
           underlying,
           vaultAddress,
         ];
-        return DeployerUtils.deployContract(
+        return DeployerUtilsLocal.deployContract(
           signer,
           strategyContractName,
           ...strategyArgs

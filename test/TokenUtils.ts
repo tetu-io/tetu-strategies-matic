@@ -5,8 +5,9 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {MaticAddresses} from "../scripts/addresses/MaticAddresses";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../scripts/deploy/DeployerUtilsLocal";
 import {Misc} from "../scripts/utils/tools/Misc";
+import {parseUnits} from "ethers/lib/utils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -92,8 +93,8 @@ export class TokenUtils {
   }
 
   public static async wrapNetworkToken(signer: SignerWithAddress, amount: string) {
-    const token = await ethers.getContractAt("IWmatic", await DeployerUtils.getNetworkTokenAddress(), signer) as IWmatic;
-    return token.deposit({value: utils.parseUnits(amount, 18).toString()})
+    const token = IWmatic__factory.connect(await DeployerUtilsLocal.getNetworkTokenAddress(), signer);
+    return token.deposit({value: parseUnits(amount), from: signer.address});
   }
 
   public static async decimals(tokenAddress: string): Promise<number> {
@@ -138,8 +139,8 @@ export class TokenUtils {
     const start = Date.now();
     console.log('transfer token from biggest holder', token, amount?.toString());
 
-    if (token.toLowerCase() === await DeployerUtils.getNetworkTokenAddress()) {
-      await IWmatic__factory.connect(token, await DeployerUtils.impersonate(to)).deposit({value: amount});
+    if (token.toLowerCase() === await DeployerUtilsLocal.getNetworkTokenAddress()) {
+      await IWmatic__factory.connect(token, await DeployerUtilsLocal.impersonate(to)).deposit({value: amount});
       return amount;
     }
 
@@ -147,7 +148,7 @@ export class TokenUtils {
     if (!holder) {
       throw new Error('Please add holder for ' + token);
     }
-    const signer = await DeployerUtils.impersonate(holder);
+    const signer = await DeployerUtilsLocal.impersonate(holder);
     const balance = (await TokenUtils.balanceOf(token, holder)).div(100);
     console.log('holder balance', balance.toString());
     if (amount) {

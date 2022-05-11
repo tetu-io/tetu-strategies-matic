@@ -1,14 +1,14 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../deploy/DeployerUtilsLocal";
 import {MaticAddresses} from "../../addresses/MaticAddresses";
-import {ICosmicMasterChef} from "../../../typechain";
+import {ICosmicMasterChef, ICosmicMasterChef__factory} from "../../../typechain";
 import {BigNumber} from "ethers";
 import {McLpDownloader} from "./McLpDownloader";
 
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
-  const chef = await DeployerUtils.connectInterface(signer, 'ICosmicMasterChef', MaticAddresses.COSMIC_MASTERCHEF) as ICosmicMasterChef;
+  const chef = ICosmicMasterChef__factory.connect(MaticAddresses.COSMIC_MASTERCHEF, signer);
 
   await McLpDownloader.download(
       "6",
@@ -20,6 +20,8 @@ async function main() {
       chef.totalAllocPoint,
       async (id) => {
         return chef.poolInfo(id)
+          // tslint:disable-next-line:ban-ts-ignore
+          // @ts-ignore
         .then(info => {
           return {
             "lpAddress": info[0] as string,

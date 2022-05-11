@@ -9,7 +9,7 @@ import {IFeeRewardForwarder, IStrategy, ISmartVault} from "../../../../typechain
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
@@ -110,7 +110,7 @@ describe.skip('Universal Nacho tests', async () => {
             token1,
             idx
           ];
-          return DeployerUtils.deployContract(
+          return DeployerUtilsLocal.deployContract(
             signer,
             strategyContractName,
             ...strategyArgs

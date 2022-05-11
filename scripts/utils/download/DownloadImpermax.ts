@@ -1,9 +1,9 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../deploy/DeployerUtilsLocal";
 import {
   IBorrowable__factory,
   IFactory__factory,
-  IPoolToken__factory,
+  IPoolToken__factory, ISmartVault__factory,
   IVaultToken__factory,
   PriceCalculator__factory,
   SmartVault,
@@ -18,8 +18,8 @@ import {TokenUtils} from "../../../test/TokenUtils";
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
-  const core = await DeployerUtils.getCoreAddresses();
-  const tools = await DeployerUtils.getToolsAddresses();
+  const core = await DeployerUtilsLocal.getCoreAddresses();
+  const tools = await DeployerUtilsLocal.getToolsAddresses();
   const factory = IFactory__factory.connect(MaticAddresses.IMPERMAX_FACTORY, signer);
 
   const tokensLength = (await factory.allLendingPoolsLength()).toNumber();
@@ -37,8 +37,8 @@ async function main() {
     underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
     underlyingToVault.set(vInfo.underlying.toLowerCase(), vInfo.addr);
     if (vInfo.active) {
-      const vctr = await DeployerUtils.connectInterface(signer, 'SmartVault', vInfo.addr) as SmartVault;
-      currentRewards.set(vInfo.underlying.toLowerCase(), await VaultUtils.vaultRewardsAmount(vctr, core.rewardToken));
+      const vctr = ISmartVault__factory.connect(vInfo.addr, signer);
+      // currentRewards.set(vInfo.underlying.toLowerCase(), await VaultUtils.vaultRewardsAmount(vctr, core.rewardToken));
     }
   }
   console.log('loaded vaults', underlyingStatuses.size);
@@ -80,7 +80,7 @@ main()
     });
 
 async function collect(pool: string, signer: SignerWithAddress) {
-  const tools = await DeployerUtils.getToolsAddresses();
+  const tools = await DeployerUtilsLocal.getToolsAddresses();
   const calculator = PriceCalculator__factory.connect(tools.calculator, signer);
 
   const underlying = await poolUnderlying(pool, signer);

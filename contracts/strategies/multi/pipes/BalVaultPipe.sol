@@ -12,15 +12,13 @@
 
 pragma solidity 0.8.4;
 
-import "./../../../openzeppelin/IERC20.sol";
-import "./../../../openzeppelin/SafeERC20.sol";
-import "../../../openzeppelin/Math.sol";
+import "@tetu_io/tetu-contracts/contracts/openzeppelin/IERC20.sol";
+import "@tetu_io/tetu-contracts/contracts/openzeppelin/Math.sol";
+import "@tetu_io/tetu-contracts/contracts/openzeppelin/SafeERC20.sol";
 import "./../../../third_party/balancer/IBVaultLocalOZ.sol";
 import "./../../../third_party/balancer/IMerkleOrchard.sol";
-import "../../../interface/IControllableExtended.sol";
-import "../../../interface/IController.sol";
 import "./Pipe.sol";
-import "../../../lib/SlotsLib.sol";
+import "@tetu_io/tetu-contracts/contracts/base/SlotsLib.sol";
 
 /// @title Balancer Vault Pipe Contract
 /// @author bogdoslav

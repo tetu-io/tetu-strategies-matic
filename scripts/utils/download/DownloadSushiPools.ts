@@ -1,5 +1,5 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../deploy/DeployerUtilsLocal";
 import {MaticAddresses} from "../../addresses/MaticAddresses";
 import {IMiniChefV2, IOracleMatic, IRewarder, IUniswapV2Pair, SmartVault} from "../../../typechain";
 import {TokenUtils} from "../../../test/TokenUtils";
@@ -11,11 +11,11 @@ import {VaultUtils} from "../../../test/VaultUtils";
 
 async function downloadSushi() {
   const signer = (await ethers.getSigners())[0];
-  const core = await DeployerUtils.getCoreAddresses();
+  const core = await DeployerUtilsLocal.getCoreAddresses();
 
-  const chef = await DeployerUtils.connectInterface(signer, 'IMiniChefV2', MaticAddresses.SUSHI_MINISHEFV2) as IMiniChefV2;
+  const chef = await DeployerUtilsLocal.connectInterface(signer, 'IMiniChefV2', MaticAddresses.SUSHI_MINISHEFV2) as IMiniChefV2;
 
-  const oracle = await DeployerUtils.connectInterface(signer, 'IOracleMatic', Addresses.ORACLE) as IOracleMatic;
+  const oracle = await DeployerUtilsLocal.connectInterface(signer, 'IOracleMatic', Addresses.ORACLE) as IOracleMatic;
 
   const poolLength = (await chef.poolLength()).toNumber();
   console.log('length', poolLength);
@@ -31,7 +31,7 @@ async function downloadSushi() {
     underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
     underlyingToVault.set(vInfo.underlying.toLowerCase(), vInfo.addr);
     if (vInfo.active) {
-      const vctr = await DeployerUtils.connectInterface(signer, 'SmartVault', vInfo.addr) as SmartVault;
+      const vctr = await DeployerUtilsLocal.connectInterface(signer, 'SmartVault', vInfo.addr) as SmartVault;
       currentRewards.set(vInfo.underlying.toLowerCase(), await VaultUtils.vaultRewardsAmount(vctr, core.psVault));
     }
   }
@@ -56,7 +56,7 @@ async function downloadSushi() {
     // }
     console.log('id', i);
     const poolInfo = await chef.poolInfo(i);
-    const lpContract = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair
+    const lpContract = await DeployerUtilsLocal.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair
     const token0 = await lpContract.token0();
     const token1 = await lpContract.token1();
 
@@ -70,7 +70,7 @@ async function downloadSushi() {
     console.log('sushiWeekRewardUsd', sushiWeekRewardUsd);
 
     const rewarder = await chef.rewarder(i);
-    const rewarderContract = await DeployerUtils.connectInterface(signer, 'IRewarder', rewarder) as IRewarder;
+    const rewarderContract = await DeployerUtilsLocal.connectInterface(signer, 'IRewarder', rewarder) as IRewarder;
 
     const rewarderPoolInfo = await rewarderContract.poolInfo(i);
     // can be block rewarder

@@ -14,7 +14,7 @@ pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../../third_party/hermes/IIrisMasterChef.sol";
-import "../StrategyBase.sol";
+import "@tetu_io/tetu-contracts/contracts/base/strategies/StrategyBase.sol";
 
 /// @title Abstract contract for Hermes strategy implementation
 /// @author belbix, bogdoslav

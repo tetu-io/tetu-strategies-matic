@@ -1,6 +1,6 @@
 import {ethers} from "hardhat";
 import {ContractTransaction} from "ethers";
-import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../deploy/DeployerUtilsLocal";
 import {Logger} from "tslog";
 import logSettings from "../../../log_settings";
 import {Misc} from "./Misc";
@@ -28,7 +28,7 @@ export class RunHelper {
         break;
       }
       log.info('not yet complete', tr.hash);
-      await DeployerUtils.delay(10000);
+      await DeployerUtilsLocal.delay(10000);
     }
     log.info('transaction result', tr.hash, receipt?.status);
     log.info('gas used', receipt.gasUsed.toString());

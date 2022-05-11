@@ -12,14 +12,14 @@
 
 pragma solidity 0.8.4;
 
-import "../../openzeppelin/SafeERC20.sol";
+import "@tetu_io/tetu-contracts/contracts/openzeppelin/SafeERC20.sol";
 import "../../third_party/IDelegation.sol";
 import "../../third_party/balancer/IFeeDistributor.sol";
 import "./IBalLocker.sol";
 import "../../third_party/curve/IGauge.sol";
 import "../../third_party/curve/IGaugeController.sol";
 import "../../third_party/balancer/IBalancerMinter.sol";
-import "../../proxy/ControllableV2.sol";
+import "@tetu_io/tetu-contracts/contracts/base/governance/ControllableV2.sol";
 
 
 /// @title Dedicated contract for staking and managing veBAL

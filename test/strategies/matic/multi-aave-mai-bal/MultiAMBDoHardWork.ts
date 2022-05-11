@@ -13,7 +13,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {BigNumber} from "ethers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {AMBUtils} from "./AMBUtils";
 import {ethers} from "hardhat";
 
@@ -68,7 +68,7 @@ export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
     const priceSource = (await ethers.getContractAt('PriceSource', priceSourceAddress)) as PriceSource;
     const [, priceSourcePrice, ,] = await priceSource.latestRoundData()
 
-    const mockPriceSource = await DeployerUtils.deployContract(
+    const mockPriceSource = await DeployerUtilsLocal.deployContract(
         this.signer, 'MockPriceSource', 0);
     const mockPricePercents = 75; // % from original price
     const mockPrice = priceSourcePrice.mul(mockPricePercents).div(100)
@@ -78,7 +78,7 @@ export class MultiAaveMaiBalTest extends DoHardWorkLoopBase {
     // set matic price source to our mock contract
     // convert address string to bytes32 string
     const adrBytes32 = '0x' + '0'.repeat(24) + mockPriceSource.address.slice(2)
-    await DeployerUtils.setStorageAt(stablecoin.address, ethPriceSourceSlotIndex, adrBytes32);
+    await DeployerUtilsLocal.setStorageAt(stablecoin.address, ethPriceSourceSlotIndex, adrBytes32);
 
     // rebalance strategy
     const strategyGov = strategyAaveMaiBal.connect(this.signer);

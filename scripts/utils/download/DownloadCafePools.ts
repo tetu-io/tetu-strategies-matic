@@ -1,14 +1,13 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../deploy/DeployerUtilsLocal";
 import {MaticAddresses} from "../../addresses/MaticAddresses";
-import {ICafeMasterChef} from "../../../typechain";
+import {ICafeMasterChef, ICafeMasterChef__factory} from "../../../typechain";
 import {McLpDownloader} from "./McLpDownloader";
 
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
-  const chef = await DeployerUtils.connectInterface(
-      signer, 'ICafeMasterChef', MaticAddresses.CAFE_MASTERCHEF) as ICafeMasterChef;
+  const chef = ICafeMasterChef__factory.connect(MaticAddresses.CAFE_MASTERCHEF, signer);
 
   await McLpDownloader.download(
       '11',
@@ -20,6 +19,8 @@ async function main() {
       chef.totalAllocPoint,
       async (id) => {
         return chef.poolInfo(id)
+          // tslint:disable-next-line:ban-ts-ignore
+          // @ts-ignore
         .then(info => {
           return {
             "lpAddress": info.lpToken,

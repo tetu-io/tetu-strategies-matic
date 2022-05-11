@@ -3,7 +3,7 @@ import chaiAsPromised from "chai-as-promised";
 import {readFileSync} from "fs";
 import {config as dotEnvConfig} from "dotenv";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {IStrategy, ISmartVault, StrategyIronFold} from "../../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -114,7 +114,7 @@ describe.skip('Universal Iron Fold tests', async () => {
             borrowTarget,
             collateralFactor
           ];
-          return DeployerUtils.deployContract(
+          return DeployerUtilsLocal.deployContract(
             signer,
             strategyContractName,
             ...strategyArgs

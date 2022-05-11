@@ -1,12 +1,12 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../deploy/DeployerUtilsLocal";
 import {
-  IDragonLair,
-  IStakingDualRewards,
-  IStakingRewardsFactoryV2,
-  IUniswapV2Pair,
-  PriceCalculator,
-  SmartVault
+  IDragonLair__factory,
+  IPriceCalculator__factory,
+  ISmartVault__factory,
+  IStakingDualRewards, IStakingDualRewards__factory,
+  IStakingRewardsFactoryV2__factory,
+  IUniswapV2Pair, IUniswapV2Pair__factory
 } from "../../../typechain";
 import {mkdir, writeFileSync} from "fs";
 import {MaticAddresses} from "../../addresses/MaticAddresses";
@@ -19,11 +19,11 @@ const exclude = new Set<string>([]);
 
 async function downloadQuick() {
   const signer = (await ethers.getSigners())[0];
-  const core = await DeployerUtils.getCoreAddresses();
-  const tools = await DeployerUtils.getToolsAddresses();
-  const factory = await DeployerUtils.connectInterface(signer, 'IStakingRewardsFactoryV2', MaticAddresses.QUICK_STAKING_FACTORY_V3) as IStakingRewardsFactoryV2;
+  const core = await DeployerUtilsLocal.getCoreAddresses();
+  const tools = await DeployerUtilsLocal.getToolsAddresses();
+  const factory = IStakingRewardsFactoryV2__factory.connect(MaticAddresses.QUICK_STAKING_FACTORY_V3, signer);
 
-  const priceCalculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
+  const priceCalculator = IPriceCalculator__factory.connect(tools.calculator, signer);
 
   const vaultInfos = await VaultUtils.getVaultInfoFromServer();
   const underlyingStatuses = new Map<string, boolean>();
@@ -36,8 +36,8 @@ async function downloadQuick() {
     underlyingStatuses.set(vInfo.underlying.toLowerCase(), vInfo.active);
     underlyingToVault.set(vInfo.underlying.toLowerCase(), vInfo.addr);
     if (vInfo.active) {
-      const vctr = await DeployerUtils.connectInterface(signer, 'SmartVault', vInfo.addr) as SmartVault;
-      currentRewards.set(vInfo.underlying.toLowerCase(), await VaultUtils.vaultRewardsAmount(vctr, core.psVault));
+      const vctr = ISmartVault__factory.connect(vInfo.addr, signer);
+      // currentRewards.set(vInfo.underlying.toLowerCase(), await VaultUtils.vaultRewardsAmount(vctr, core.psVault));
     }
   }
   console.log('loaded vaults', underlyingStatuses.size);
@@ -45,7 +45,7 @@ async function downloadQuick() {
   const quickPrice = await priceCalculator.getPriceWithDefaultOutput(MaticAddresses.QUICK_TOKEN);
   const maticPrice = await priceCalculator.getPriceWithDefaultOutput(MaticAddresses.WMATIC_TOKEN);
 
-  const dQuickCtr = await DeployerUtils.connectInterface(signer, 'IDragonLair', MaticAddresses.dQUICK_TOKEN) as IDragonLair;
+  const dQuickCtr = IDragonLair__factory.connect(MaticAddresses.dQUICK_TOKEN, signer);
   const dQuickRatio = await dQuickCtr.dQUICKForQUICK(utils.parseUnits('1'));
   const dQuickPrice = quickPrice.mul(dQuickRatio).div(utils.parseUnits('1'));
   console.log('dQuickPrice', utils.formatUnits(dQuickPrice));
@@ -77,7 +77,7 @@ async function downloadQuick() {
     }
 
     try {
-      const lpContract = await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', lp) as IUniswapV2Pair;
+      const lpContract = IUniswapV2Pair__factory.connect(lp, signer);
       token0 = await lpContract.token0();
       token1 = await lpContract.token1();
       token0Name = await TokenUtils.tokenSymbol(token0);
@@ -92,7 +92,7 @@ async function downloadQuick() {
     // factory doesn't hold duration, suppose that it is a week
     const durationSec = 60 * 60 * 24 * 7;
 
-    const poolContract = await DeployerUtils.connectInterface(signer, 'IStakingDualRewards', info[0]) as IStakingDualRewards;
+    const poolContract = IStakingDualRewards__factory.connect(info[0], signer);
 
     const rewardRateA = await poolContract.rewardRateA();
     const rewardRateB = await poolContract.rewardRateB();

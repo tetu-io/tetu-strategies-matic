@@ -6,7 +6,7 @@ import {DeployInfo} from "../../DeployInfo";
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {
   BalSender__factory,
   IStrategy,
@@ -82,11 +82,11 @@ describe.skip('BAL bridged staking tests', async () => {
       core,
       vaultName,
       async vaultAddress => {
-        const senderProxy = (await DeployerUtils.deployTetuProxyControlled(signer, 'BalSender'))[0];
+        const senderProxy = (await DeployerUtilsLocal.deployTetuProxyControlled(signer, 'BalSender'))[0];
         const sender = BalSender__factory.connect(senderProxy.address, signer);
         await sender.initialize(core.controller.address);
 
-        const strategy = await DeployerUtils.deployStrategyProxy(
+        const strategy = await DeployerUtilsLocal.deployStrategyProxy(
           signer,
           strategyContractName,
         ) as StrategyBalBridgedStaking;

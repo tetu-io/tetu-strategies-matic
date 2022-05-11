@@ -1,5 +1,5 @@
 import {ethers, web3} from "hardhat";
-import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../deploy/DeployerUtilsLocal";
 import {MaticAddresses} from "../../addresses/MaticAddresses";
 import {
   ERC20,
@@ -16,12 +16,12 @@ import {VaultUtils} from "../../../test/VaultUtils";
 
 async function downloadWault() {
   const signer = (await ethers.getSigners())[0];
-  const core = await DeployerUtils.getCoreAddresses();
-  const tools = await DeployerUtils.getToolsAddresses();
+  const core = await DeployerUtilsLocal.getCoreAddresses();
+  const tools = await DeployerUtilsLocal.getToolsAddresses();
 
-  const chef = await DeployerUtils.connectInterface(signer, 'IWexPolyMaster', MaticAddresses.WAULT_POLYMASTER) as IWexPolyMaster;
+  const chef = await DeployerUtilsLocal.connectInterface(signer, 'IWexPolyMaster', MaticAddresses.WAULT_POLYMASTER) as IWexPolyMaster;
 
-  const priceCalculator = await DeployerUtils.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
+  const priceCalculator = await DeployerUtilsLocal.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
 
   const vaultInfos = await VaultUtils.getVaultInfoFromServer();
   const underlyingStatuses = new Map<string, boolean>();
@@ -35,7 +35,7 @@ async function downloadWault() {
     underlyingToVault.set(vInfo.underlying.toLowerCase(), vInfo.addr);
     if (vInfo.active) {
       console.log(vInfo.addr);
-      const vctr = await DeployerUtils.connectInterface(signer, 'SmartVault', vInfo.addr) as SmartVault;
+      const vctr = await DeployerUtilsLocal.connectInterface(signer, 'SmartVault', vInfo.addr) as SmartVault;
       const rewards = await VaultUtils.vaultRewardsAmount(vctr, core.psVault);
       console.log('rewards', rewards);
       currentRewards.set(vInfo.underlying.toLowerCase(), rewards);
@@ -58,7 +58,7 @@ async function downloadWault() {
     if (!status) {
       continue;
     }
-    const lpContract = await DeployerUtils.connectInterface(signer, 'IWaultSwapPair', lp) as IWaultSwapPair
+    const lpContract = await DeployerUtilsLocal.connectInterface(signer, 'IWaultSwapPair', lp) as IWaultSwapPair
 
     const waultAllocPoint = poolInfo[1];
     const currentBlock = await web3.eth.getBlockNumber();
@@ -79,7 +79,7 @@ async function downloadWault() {
     let token1Name: string = '';
 
     try {
-      const _lpContract = await DeployerUtils.connectInterface(signer, 'IWaultSwapPair', lp) as IWaultSwapPair;
+      const _lpContract = await DeployerUtilsLocal.connectInterface(signer, 'IWaultSwapPair', lp) as IWaultSwapPair;
       token0 = await _lpContract.token0();
       token1 = await _lpContract.token1();
       token0Name = await TokenUtils.tokenSymbol(token0);
@@ -88,7 +88,7 @@ async function downloadWault() {
     }
 
     if (token0 === '') {
-      const token = await DeployerUtils.connectInterface(signer, 'ERC20', lp) as ERC20;
+      const token = await DeployerUtilsLocal.connectInterface(signer, 'ERC20', lp) as ERC20;
       token0Name = await token.symbol();
     }
 

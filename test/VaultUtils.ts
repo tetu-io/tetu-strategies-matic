@@ -1,9 +1,10 @@
 import {
   IController,
-  IStrategy,
+  IController__factory,
+  ISmartVault,
+  ISmartVault__factory,
   IStrategy__factory,
-  IStrategySplitter__factory,
-  ISmartVault
+  IStrategySplitter__factory
 } from "../typechain";
 import {expect} from "chai";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -11,7 +12,6 @@ import {TokenUtils} from "./TokenUtils";
 import {BigNumber, ContractTransaction, utils} from "ethers";
 import axios from "axios";
 import {CoreContractsWrapper} from "./CoreContractsWrapper";
-import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
 import {MaticAddresses} from "../scripts/addresses/MaticAddresses";
 import {MintHelperUtils} from "./MintHelperUtils";
 import {Misc} from "../scripts/utils/tools/Misc";
@@ -135,15 +135,15 @@ export class VaultUtils {
   public static async doHardWorkAndCheck(vault: ISmartVault, positiveCheck = true) {
     const start = Date.now();
     const controller = await vault.controller();
-    const controllerCtr = await DeployerUtils.connectInterface(vault.signer as SignerWithAddress, 'IController', controller) as IController;
+    const controllerCtr = IController__factory.connect(controller, vault.signer);
     const psVault = await controllerCtr.psVault();
-    const psVaultCtr = await DeployerUtils.connectInterface(vault.signer as SignerWithAddress, 'ISmartVault', psVault) as ISmartVault;
+    const psVaultCtr = ISmartVault__factory.connect(psVault, vault.signer);
     const und = await vault.underlying();
     const undDec = await TokenUtils.decimals(und);
     const rt = (await vault.rewardTokens())[0];
     const psRatio = (await controllerCtr.psNumerator()).toNumber() / (await controllerCtr.psDenominator()).toNumber()
     const strategy = await vault.strategy();
-    const strategyCtr = await DeployerUtils.connectInterface(vault.signer as SignerWithAddress, 'IStrategy', strategy) as IStrategy
+    const strategyCtr = IStrategy__factory.connect(strategy, vault.signer);
     const ppfsDecreaseAllowed = await vault.ppfsDecreaseAllowed();
 
     const ppfs = +utils.formatUnits(await vault.getPricePerFullShare(), undDec);

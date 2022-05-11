@@ -1,13 +1,20 @@
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {BigNumber} from "ethers";
 import {TokenUtils} from "../../../TokenUtils";
-import {IStrategy, StrategyMaiBal, MaiStablecoinPipe, IErc20Stablecoin, ISmartVault} from "../../../../typechain";
+import {
+  IStrategy,
+  StrategyMaiBal,
+  MaiStablecoinPipe,
+  IErc20Stablecoin,
+  ISmartVault,
+  MaiStablecoinPipe__factory, IErc20Stablecoin__factory
+} from "../../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {DeployInfo} from "../../DeployInfo";
 import {MBUtils} from "./MBUtils";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {VaultUtils} from "../../../VaultUtils";
 import {TestAsserts} from "../../../TestAsserts";
 
@@ -42,11 +49,11 @@ export class LiquidationPriceTest extends SpecificStrategyTest {
       console.log('liqPrice2     ', liqPrice2.toString());
 
       const maiStbPipe = await strategyMaiBal.pipes(0);
-      const maiStbPipeCtr = await DeployerUtils.connectInterface(signer, 'MaiStablecoinPipe', maiStbPipe) as MaiStablecoinPipe;
+      const maiStbPipeCtr = MaiStablecoinPipe__factory.connect(maiStbPipe, signer);
       const _targetPercentage = await maiStbPipeCtr.targetPercentage()
       const _stablecoin = await maiStbPipeCtr.stablecoin()
-
-      const stablecoin = await DeployerUtils.connectInterface(signer, 'IErc20Stablecoin', _stablecoin) as IErc20Stablecoin;
+      
+      const stablecoin = IErc20Stablecoin__factory.connect(_stablecoin, signer);
       const currPrice = await stablecoin.getEthPriceSource()
       console.log('currPrice     ', currPrice.toString());
 

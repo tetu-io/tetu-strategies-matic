@@ -1,5 +1,5 @@
 import {web3} from "hardhat";
-import {DeployerUtils} from "../../deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../deploy/DeployerUtilsLocal";
 
 export class Web3Utils {
 
@@ -29,7 +29,7 @@ export class Web3Utils {
         }
       } catch (e) {
         console.log('Error fetch logs', e);
-        await DeployerUtils.delay(1000);
+        await DeployerUtilsLocal.delay(1000);
       }
     }
 

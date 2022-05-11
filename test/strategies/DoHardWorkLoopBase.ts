@@ -1,6 +1,6 @@
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
-import {IStrategy, ISmartVault, StrategySplitter__factory} from "../../typechain";
+import {IStrategy, ISmartVault, IStrategySplitter__factory} from "../../typechain";
 import {ToolsContractsWrapper} from "../ToolsContractsWrapper";
 import {TokenUtils} from "../TokenUtils";
 import {BigNumber, utils} from "ethers";
@@ -274,7 +274,7 @@ export class DoHardWorkLoopBase {
       const tetuPriceN = +utils.formatUnits(await this.getPrice(this.core.rewardToken.address));
       let rts;
       if (platform === 24) {
-        rts = await StrategySplitter__factory.connect(this.strategy.address, this.signer).strategyRewardTokens();
+        rts = await IStrategySplitter__factory.connect(this.strategy.address, this.signer).strategyRewardTokens();
       } else {
         rts = await this.strategy.rewardTokens();
       }
@@ -400,7 +400,7 @@ export class DoHardWorkLoopBase {
     let result = BigNumber.from(0);
     const platform = await this.strategy.platform();
     if (platform === 24) {
-      const splitter = StrategySplitter__factory.connect(this.strategy.address, this.signer);
+      const splitter = IStrategySplitter__factory.connect(this.strategy.address, this.signer);
       const strategies = await splitter.allStrategies();
       for (const s of strategies) {
         result = result.add(await this.core.bookkeeper.targetTokenEarned(s));

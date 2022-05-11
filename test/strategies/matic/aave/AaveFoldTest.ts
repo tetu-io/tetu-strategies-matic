@@ -3,7 +3,7 @@ import chaiAsPromised from "chai-as-promised";
 import {readFileSync} from "fs";
 import {config as dotEnvConfig} from "dotenv";
 import {DeployInfo} from "../../DeployInfo";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
@@ -111,7 +111,7 @@ describe.skip('Universal Aave Fold tests', async () => {
             borrowTarget,
             collateralFactor
           ];
-          return DeployerUtils.deployContract(
+          return DeployerUtilsLocal.deployContract(
             signer,
             strategyContractName,
             ...strategyArgs

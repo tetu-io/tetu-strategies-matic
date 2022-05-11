@@ -7,7 +7,7 @@ import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {IStrategy, ISmartVault} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
@@ -119,7 +119,7 @@ describe.skip('Universal Quick Dual tests', async () => {
             platformPoolIdentifier,
             rewards
           ];
-          return DeployerUtils.deployContract(
+          return DeployerUtilsLocal.deployContract(
             signer,
             strategyContractName,
             ...strategyArgs

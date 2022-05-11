@@ -15,7 +15,7 @@ import "../../third_party/curve/IGauge.sol";
 import "../../third_party/curve/ICurveMinter.sol";
 import "../../third_party/curve/ICurveLpToken.sol";
 import "../../interface/strategies/ICurveStrategy.sol";
-import "../StrategyBase.sol";
+import "@tetu_io/tetu-contracts/contracts/base/strategies/StrategyBase.sol";
 
 
 /// @title Contract for Curve strategy implementation

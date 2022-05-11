@@ -12,7 +12,7 @@
 
 pragma solidity 0.8.4;
 
-import "../../openzeppelin/IERC20.sol";
+import "@tetu_io/tetu-contracts/contracts/openzeppelin/IERC20.sol";
 
 interface IRewarder {
   function onSushiReward(uint256 pid, address user, address recipient, uint256 sushiAmount, uint256 newLpAmount) external;

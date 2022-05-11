@@ -16,21 +16,23 @@ import {MaticAddresses} from "../addresses/MaticAddresses";
 import {readFileSync} from "fs";
 import {Libraries} from "hardhat-deploy/dist/types";
 import {
-  IAnnouncer,
-  IBookkeeper,
+  IAnnouncer__factory,
+  IBookkeeper__factory,
   IController,
-  IFeeRewardForwarder,
-  IFundKeeper,
-  IMintHelper,
-  IPriceCalculator,
-  IRewardToken,
-  ISmartVault, ISmartVault__factory,
+  IController__factory,
+  IFeeRewardForwarder__factory,
+  IFundKeeper__factory,
+  IMintHelper__factory,
+  IPriceCalculator__factory,
+  IRewardToken__factory,
+  ISmartVault,
+  ISmartVault__factory,
   IStrategy,
-  IStrategy__factory,
+  IStrategySplitter,
+  IStrategySplitter__factory,
   IVaultController,
-  NoopStrategy,
-  StrategySplitter,
-  TetuProxyControlled
+  IVaultController__factory,
+  TetuProxyControlled, TetuProxyControlled__factory,
 } from "../../typechain";
 
 // tslint:disable-next-line:no-var-requires
@@ -50,6 +52,10 @@ const argv = require('yargs/yargs')()
       type: "string",
       default: "0x9ED23756ECD0B9012E4D7ee807dA0E6Ec94A1a70"
     },
+    splitterLogic: {
+      type: "string",
+      default: "0xC4c776e6D2bbae93Ed5acac6cFF35a5980F81845"
+    },
   }).argv;
 
 const libraries = new Map<string, string>([
@@ -57,7 +63,7 @@ const libraries = new Map<string, string>([
   ['SmartVaultV110', 'VaultLibrary']
 ]);
 
-export class DeployerUtils {
+export class DeployerUtilsLocal {
 
   public static coreCache: CoreContractsWrapper;
   public static toolsCache: ToolsContractsWrapper;
@@ -65,33 +71,19 @@ export class DeployerUtils {
   public static getVaultLogic(signer: SignerWithAddress) {
     console.log('argv.vaultLogic', argv.vaultLogic);
     let logic = '0x9ED23756ECD0B9012E4D7ee807dA0E6Ec94A1a70';
-    if(!!argv.vaultLogic) {
+    if (!!argv.vaultLogic) {
       logic = argv.vaultLogic;
     }
     return ISmartVault__factory.connect(logic, signer);
   }
 
-  // ************ CONTRACT CONNECTION **************************
-
-  public static async connectContract<T extends ContractFactory>(
-    signer: SignerWithAddress,
-    name: string,
-    address: string
-  ) {
-    const _factory = (await ethers.getContractFactory(
-      name,
-      signer
-    )) as T;
-    const instance = _factory.connect(signer);
-    return instance.attach(address);
-  }
-
-  public static async connectInterface<T extends Contract>(
-    signer: SignerWithAddress,
-    name: string,
-    address: string
-  ) {
-    return ethers.getContractAt(name, address, signer);
+  public static getSplitterLogic(signer: SignerWithAddress) {
+    console.log('argv.splitterLogic', argv.splitterLogic);
+    let logic = '0xC4c776e6D2bbae93Ed5acac6cFF35a5980F81845';
+    if (!!argv.splitterLogic) {
+      logic = argv.splitterLogic;
+    }
+    return IStrategySplitter__factory.connect(logic, signer);
   }
 
   // ************ CONTRACT DEPLOY **************************
@@ -112,8 +104,8 @@ export class DeployerUtils {
     let _factory;
     if (lib) {
       console.log('DEPLOY LIBRARY', lib, 'for', name);
-      const libAddress = (await DeployerUtils.deployContract(signer, lib)).address;
-      await DeployerUtils.wait(1);
+      const libAddress = (await DeployerUtilsLocal.deployContract(signer, lib)).address;
+      await DeployerUtilsLocal.wait(1);
       const librariesObj: Libraries = {};
       librariesObj[lib] = libAddress;
       _factory = (await ethers.getContractFactory(
@@ -143,25 +135,25 @@ export class DeployerUtils {
     signer: SignerWithAddress,
     logicContractName: string,
   ) {
-    const logic = await DeployerUtils.deployContract(signer, logicContractName);
-    await DeployerUtils.wait(5);
-    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address);
-    await DeployerUtils.wait(5);
+    const logic = await DeployerUtilsLocal.deployContract(signer, logicContractName);
+    await DeployerUtilsLocal.wait(5);
+    const proxy = await DeployerUtilsLocal.deployContract(signer, "TetuProxyControlled", logic.address);
+    await DeployerUtilsLocal.wait(5);
     return [proxy, logic];
   }
 
 
   public static async deployStrategyProxy(signer: SignerWithAddress, strategyName: string): Promise<IStrategy> {
-    const logic = await DeployerUtils.deployContract(signer, strategyName);
-    await DeployerUtils.wait(1);
-    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address);
+    const logic = await DeployerUtilsLocal.deployContract(signer, strategyName);
+    await DeployerUtilsLocal.wait(1);
+    const proxy = await DeployerUtilsLocal.deployContract(signer, "TetuProxyControlled", logic.address);
     return logic.attach(proxy.address) as IStrategy;
   }
 
-  public static async deployStrategySplitter(signer: SignerWithAddress): Promise<StrategySplitter> {
-    const logic = await DeployerUtils.deployContract(signer, "StrategySplitter");
-    const proxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", logic.address);
-    return logic.attach(proxy.address) as StrategySplitter;
+  public static async deployStrategySplitter(signer: SignerWithAddress): Promise<IStrategySplitter> {
+    const logic = DeployerUtilsLocal.getSplitterLogic(signer);
+    const proxy = await DeployerUtilsLocal.deployContract(signer, "TetuProxyControlled", logic.address);
+    return logic.attach(proxy.address) as IStrategySplitter;
   }
 
 
@@ -178,8 +170,8 @@ export class DeployerUtils {
     wait = false
   ): Promise<[ISmartVault, ISmartVault, IStrategy]> {
     const start = Date.now();
-    const vaultLogic = DeployerUtils.getVaultLogic(signer);
-    const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address) as TetuProxyControlled;
+    const vaultLogic = DeployerUtilsLocal.getVaultLogic(signer);
+    const vaultProxy = await DeployerUtilsLocal.deployContract(signer, "TetuProxyControlled", vaultLogic.address) as TetuProxyControlled;
     const vault = vaultLogic.attach(vaultProxy.address) as ISmartVault;
     await RunHelper.runAndWait(() => vault.initializeSmartVault(
       "TETU_" + vaultName,
@@ -210,12 +202,12 @@ export class DeployerUtils {
     depositFee = 0,
     wait = false
   ): Promise<[ISmartVault, ISmartVault, IStrategy]> {
-    const vaultLogic = DeployerUtils.getVaultLogic(signer);
+    const vaultLogic = DeployerUtilsLocal.getVaultLogic(signer);
     if (wait) {
-      await DeployerUtils.wait(1);
+      await DeployerUtilsLocal.wait(1);
     }
     log.info('vaultLogic ' + vaultLogic.address);
-    const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
+    const vaultProxy = await DeployerUtilsLocal.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
     const vault = vaultLogic.attach(vaultProxy.address) as ISmartVault;
 
     const strategy = await strategyDeployer(vault.address);
@@ -246,12 +238,12 @@ export class DeployerUtils {
     depositFee = 0,
     wait = false
   ): Promise<[ISmartVault, ISmartVault, IStrategy]> {
-    const vaultLogic = DeployerUtils.getVaultLogic(signer);
+    const vaultLogic = DeployerUtilsLocal.getVaultLogic(signer);
     if (wait) {
-      await DeployerUtils.wait(1);
+      await DeployerUtilsLocal.wait(1);
     }
     log.info('vaultLogic ' + vaultLogic.address);
-    const vaultProxy = await DeployerUtils.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
+    const vaultProxy = await DeployerUtilsLocal.deployContract(signer, "TetuProxyControlled", vaultLogic.address);
     const vault = vaultLogic.attach(vaultProxy.address) as ISmartVault;
 
     await RunHelper.runAndWait(() => vault.initializeSmartVault(
@@ -266,39 +258,11 @@ export class DeployerUtils {
     ), true, wait);
 
     if (wait) {
-      await DeployerUtils.wait(1);
+      await DeployerUtilsLocal.wait(1);
     }
 
     const strategy = await strategyDeployer(vault.address);
     return [vaultLogic, vault, strategy];
-  }
-
-  public static async deployVaultWithSplitter(
-    vaultName: string,
-    signer: SignerWithAddress,
-    controller: string,
-    underlying: string,
-    vaultRt: string
-  ) {
-    return DeployerUtils.deployVaultAndStrategy(
-      vaultName,
-      async (vaultAddress: string) => {
-        console.log('Start deploy splitter')
-        const splitter = await DeployerUtils.deployStrategySplitter(signer);
-        console.log('Splitter init')
-        await RunHelper.runAndWait(() => splitter.initialize(
-          controller,
-          underlying,
-          vaultAddress,
-        ));
-        return IStrategy__factory.connect(splitter.address, signer);
-      },
-      controller,
-      vaultRt,
-      signer,
-      60 * 60 * 24 * 28,
-      0
-    );
   }
 
   public static async deployDefaultNoopStrategyAndVault(
@@ -309,14 +273,14 @@ export class DeployerUtils {
     vaultRewardToken: string,
     rewardToken: string = ''
   ) {
-    const netToken = await DeployerUtils.getNetworkTokenAddress();
+    const netToken = await DeployerUtilsLocal.getNetworkTokenAddress();
     if (rewardToken === '') {
       rewardToken = netToken;
     }
-    return DeployerUtils.deployAndInitVaultAndStrategy(
+    return DeployerUtilsLocal.deployAndInitVaultAndStrategy(
       underlying,
       't',
-      vaultAddress => DeployerUtils.deployContract(
+      vaultAddress => DeployerUtilsLocal.deployContract(
         signer,
         'NoopStrategy',
         controller.address, // _controller
@@ -370,7 +334,7 @@ export class DeployerUtils {
         buyBackRatio
       ];
 
-      const deployedStart = await DeployerUtils.deployContract(
+      const deployedStart = await DeployerUtilsLocal.deployContract(
         signer,
         strategyName,
         ...strategyArgs
@@ -394,7 +358,7 @@ export class DeployerUtils {
   }
 
   public static async verifyImpl(signer: SignerWithAddress, proxyAddress: string) {
-    const proxy = await this.connectInterface(signer, 'TetuProxyControlled', proxyAddress) as TetuProxyControlled;
+    const proxy = TetuProxyControlled__factory.connect(proxyAddress, signer);
     const address = await proxy.implementation();
     console.log('impl address', address);
     try {
@@ -432,7 +396,7 @@ export class DeployerUtils {
 
   // tslint:disable-next-line:no-any
   public static async verifyImplWithContractName(signer: SignerWithAddress, proxyAddress: string, contractPath: string, args?: any[]) {
-    const proxy = await this.connectInterface(signer, 'TetuProxyControlled', proxyAddress) as TetuProxyControlled;
+    const proxy = TetuProxyControlled__factory.connect(proxyAddress, signer);
     const address = await proxy.implementation();
     console.log('impl address', address);
     try {
@@ -462,7 +426,7 @@ export class DeployerUtils {
 
       const resp =
         await axios.post(
-          (await DeployerUtils.getNetworkScanUrl()) +
+          (await DeployerUtilsLocal.getNetworkScanUrl()) +
           `?module=contract&action=verifyproxycontract&apikey=${argv.networkScanKey}`,
           `address=${adr}`);
       // log.info("proxy verify resp", resp.data);
@@ -512,26 +476,26 @@ export class DeployerUtils {
       throw Error('No config for ' + net.chainId);
     }
 
-    const ps = await DeployerUtils.connectInterface(signer, "ISmartVault", core.psVault) as ISmartVault;
+    const ps = ISmartVault__factory.connect(core.psVault, signer);
     const str = await ps.strategy();
     return new CoreContractsWrapper(
-      await DeployerUtils.connectInterface(signer, "IController", core.controller) as IController,
+      IController__factory.connect(core.controller, signer),
       '',
-      await DeployerUtils.connectInterface(signer, "IFeeRewardForwarder", core.feeRewardForwarder) as IFeeRewardForwarder,
+      IFeeRewardForwarder__factory.connect(core.feeRewardForwarder, signer),
       '',
-      await DeployerUtils.connectInterface(signer, "IBookkeeper", core.bookkeeper) as IBookkeeper,
+      IBookkeeper__factory.connect(core.bookkeeper, signer),
       '',
-      await DeployerUtils.connectInterface(signer, "IMintHelper", core.mintHelper) as IMintHelper,
+      IMintHelper__factory.connect(core.mintHelper, signer),
       '',
-      await DeployerUtils.connectInterface(signer, "IRewardToken", core.rewardToken) as IRewardToken,
+      IRewardToken__factory.connect(core.rewardToken, signer),
       ps,
       '',
-      await DeployerUtils.connectInterface(signer, "NoopStrategy", str) as NoopStrategy,
-      await DeployerUtils.connectInterface(signer, "IFundKeeper", core.fundKeeper) as IFundKeeper,
+      IStrategySplitter__factory.connect(str, signer),
+      IFundKeeper__factory.connect(core.fundKeeper, signer),
       '',
-      await DeployerUtils.connectInterface(signer, "IAnnouncer", core.announcer) as IAnnouncer,
+      IAnnouncer__factory.connect(core.announcer, signer),
       '',
-      await DeployerUtils.connectInterface(signer, "IVaultController", core.vaultController) as IVaultController,
+      IVaultController__factory.connect(core.vaultController, signer),
       '',
     );
 
@@ -545,7 +509,7 @@ export class DeployerUtils {
       throw Error('No config for ' + net.chainId);
     }
     return new ToolsContractsWrapper(
-      await DeployerUtils.connectInterface(signer, "IPriceCalculator", tools.calculator) as IPriceCalculator,
+      IPriceCalculator__factory.connect(tools.calculator, signer),
     );
 
   }
@@ -572,7 +536,7 @@ export class DeployerUtils {
 
   public static async impersonate(address: string | null = null) {
     if (address === null) {
-      address = await DeployerUtils.getGovernance();
+      address = await DeployerUtilsLocal.getGovernance();
     }
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
@@ -685,7 +649,7 @@ export class DeployerUtils {
     const start = ethers.provider.blockNumber;
     while (true) {
       log.info('wait 10sec');
-      await DeployerUtils.delay(10000);
+      await DeployerUtilsLocal.delay(10000);
       if (ethers.provider.blockNumber >= start + blocks) {
         break;
       }

@@ -1,4 +1,4 @@
-import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../scripts/deploy/DeployerUtilsLocal";
 import {UniswapUtils} from "../UniswapUtils";
 import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
@@ -8,7 +8,7 @@ import {
   IPriceCalculator,
   ISmartVault,
   IStrategy,
-  IUniswapV2Pair
+  IUniswapV2Pair, IUniswapV2Pair__factory
 } from "../../typechain";
 import {TokenUtils} from "../TokenUtils";
 import {BigNumber, utils} from "ethers";
@@ -35,7 +35,7 @@ export class StrategyTestUtils {
   ): Promise<[ISmartVault, IStrategy, string]> {
     const start = Date.now();
     log.info("Starting deploy")
-    const data = await DeployerUtils.deployAndInitVaultAndStrategy(
+    const data = await DeployerUtilsLocal.deployAndInitVaultAndStrategy(
       underlying,
       vaultName,
       strategyDeployer,
@@ -123,7 +123,7 @@ export class StrategyTestUtils {
   public static async initForwarder(forwarder: IFeeRewardForwarder) {
     const start = Date.now();
     await forwarder.setLiquidityNumerator(30);
-    await forwarder.setLiquidityRouter(await DeployerUtils.getRouterByFactory(await DeployerUtils.getDefaultNetworkFactory()));
+    await forwarder.setLiquidityRouter(await DeployerUtilsLocal.getRouterByFactory(await DeployerUtilsLocal.getDefaultNetworkFactory()));
     // please set liquidation path for each test individually
     await StrategyTestUtils.setConversionPaths(forwarder);
     Misc.printDuration('Forwarder initialized', start);
@@ -153,9 +153,9 @@ export class StrategyTestUtils {
   }
 
   public static async deployCoreAndInit(deployInfo: DeployInfo, deploy: boolean) {
-    const signer = await DeployerUtils.impersonate();
-    deployInfo.core = await DeployerUtils.getCoreAddressesWrapper(signer);
-    deployInfo.tools = await DeployerUtils.getToolsAddressesWrapper(signer);
+    const signer = await DeployerUtilsLocal.impersonate();
+    deployInfo.core = await DeployerUtilsLocal.getCoreAddressesWrapper(signer);
+    deployInfo.tools = await DeployerUtilsLocal.getToolsAddressesWrapper(signer);
   }
 
   public static async getUnderlying(
@@ -182,7 +182,7 @@ export class StrategyTestUtils {
 
     let isLp = false;
     try {
-      await (await DeployerUtils.connectInterface(signer, 'IUniswapV2Pair', underlying) as IUniswapV2Pair).getReserves();
+      await IUniswapV2Pair__factory.connect(underlying, signer).getReserves();
       isLp = true;
     } catch (e) {
     }

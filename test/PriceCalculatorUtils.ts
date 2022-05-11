@@ -5,7 +5,7 @@ import {expect} from "chai";
 import {ethers} from "hardhat";
 import {Logger} from "tslog";
 import logSettings from "../log_settings";
-import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../scripts/deploy/DeployerUtilsLocal";
 import axios from "axios";
 import {IPriceCalculator, IPriceCalculator__factory} from "../typechain";
 
@@ -47,7 +47,7 @@ export class PriceCalculatorUtils {
     //   }
     // }
     if (calculator == null) {
-      const tools = await DeployerUtils.getToolsAddresses();
+      const tools = await DeployerUtilsLocal.getToolsAddresses();
       calculator = IPriceCalculator__factory.connect(tools.calculator, ethers.provider);
     }
     if (net.chainId === 137 || net.chainId === 250 || net.chainId === 1) {

@@ -5,7 +5,7 @@ import {
   TetuProxyControlled,
   IController,
   IAnnouncer,
-  IControllableExtended,
+  IControllableExtended, TetuProxyControlled__factory, IControllableExtended__factory,
 } from "../../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
@@ -16,7 +16,7 @@ import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {network} from "hardhat";
 import {TokenUtils} from "../../../TokenUtils";
 import {VaultUtils} from "../../../VaultUtils";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {BigNumber} from "ethers";
 // import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 
@@ -35,21 +35,21 @@ export class UpdatePipeProxyTest extends SpecificStrategyTest {
       const vault = deployInfo?.vault as ISmartVault;
       const core = deployInfo?.core as CoreContractsWrapper;
 
-      const controller = await DeployerUtils.connectInterface(signer, 'IController', core.controller.address) as IController;
-      const announcer = await DeployerUtils.connectInterface(signer, 'IAnnouncer', core.announcer.address) as IAnnouncer;
+      const controller = core.controller;
+      const announcer = core.announcer;
 
       const strategyMaiBal = deployInfo.strategy as StrategyMaiBal;
       const strategyUser = strategyMaiBal.connect(deployInfo.user as SignerWithAddress);
       const strategyGov = strategyMaiBal.connect(deployInfo.signer as SignerWithAddress);
-      const strategyUserProxy = await DeployerUtils.connectInterface(deployInfo.user as SignerWithAddress, 'TetuProxyControlled', strategyMaiBal.address) as TetuProxyControlled;
+      const strategyUserProxy = TetuProxyControlled__factory.connect(strategyMaiBal.address, deployInfo.user as SignerWithAddress);
 
       const info = infos.filter(i => i.underlying === underlying.toLowerCase())[0];
       console.log('info', info);
       expect(info).to.be.an('object', 'Unknown underlying');
 
       // ----- Deploy new Pipes
-      const maiStablecoinPipe = await DeployerUtils.deployContract(signer, 'MaiStablecoinPipe');
-      const balVaultPipe = await DeployerUtils.deployContract(signer, 'BalVaultPipe');
+      const maiStablecoinPipe = await DeployerUtilsLocal.deployContract(signer, 'MaiStablecoinPipe');
+      const balVaultPipe = await DeployerUtilsLocal.deployContract(signer, 'BalVaultPipe');
       const newPipeImpl: string[] = [
         maiStablecoinPipe.address,
         balVaultPipe.address
@@ -70,8 +70,7 @@ export class UpdatePipeProxyTest extends SpecificStrategyTest {
       for (let i = newPipeImpl.length - 1; i >= 0; i--) {
         const totalAmountOutBefore = await strategyGov.totalAmountOut();
         const pipeAddress = await strategyUser.pipes(i);
-        const pipeProxyControlled = await DeployerUtils.connectInterface(
-            user, 'TetuProxyControlled', pipeAddress) as TetuProxyControlled;
+        const pipeProxyControlled = TetuProxyControlled__factory.connect(pipeAddress, user);
         const oldImplAddress = await pipeProxyControlled.implementation();
         console.log('oldImplAddress', oldImplAddress);
         const newPipeImplAddress = newPipeImpl[i];
@@ -82,7 +81,7 @@ export class UpdatePipeProxyTest extends SpecificStrategyTest {
         ).to.be.revertedWith('forbidden');
 
         // const balPipeSigner = await DeployerUtils.connectInterface(signer, 'Pipe', balPipeAddress) as Pipe;
-        const pipeControllableUser = await DeployerUtils.connectInterface(user, 'IControllableExtended', pipeAddress) as IControllableExtended;
+        const pipeControllableUser = IControllableExtended__factory.connect(pipeAddress, user);
         const pipeController = await pipeControllableUser.controller();
         console.log('pipeController', pipeController);
 

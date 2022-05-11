@@ -12,11 +12,11 @@
 
 pragma solidity 0.8.4;
 
-import "../../openzeppelin/SafeERC20.sol";
-import "../../openzeppelin/IERC20.sol";
+import "@tetu_io/tetu-contracts/contracts/openzeppelin/SafeERC20.sol";
+import "@tetu_io/tetu-contracts/contracts/openzeppelin/IERC20.sol";
 import "../../third_party/polygon/IChildERC20.sol";
 import "../../third_party/balancer/IBVault.sol";
-import "../../proxy/ControllableV2.sol";
+import "@tetu_io/tetu-contracts/contracts/base/governance/ControllableV2.sol";
 
 /// @title Dedicated contract for burn tokens on Polygon as a bridging process
 /// @author belbix

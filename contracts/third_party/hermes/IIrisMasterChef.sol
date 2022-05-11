@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.4;
 
-import "../../openzeppelin/IERC20.sol";
+import "@tetu_io/tetu-contracts/contracts/openzeppelin/IERC20.sol";
 
 interface IReferral {
   /**

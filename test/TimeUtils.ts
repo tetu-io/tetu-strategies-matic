@@ -1,5 +1,5 @@
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../scripts/deploy/DeployerUtilsLocal";
 import {Misc} from "../scripts/utils/tools/Misc";
 import {Multicall__factory} from "../typechain";
 
@@ -31,7 +31,7 @@ export class TimeUtils {
         break;
       }
       console.log('waite mine 10sec');
-      await DeployerUtils.delay(10000);
+      await DeployerUtilsLocal.delay(10000);
     }
   }
 
@@ -41,14 +41,14 @@ export class TimeUtils {
 
   // doesn't work, need to investigate
   public static async currentBlock() {
-    const tools = await DeployerUtils.getToolsAddresses();
+    const tools = await DeployerUtilsLocal.getToolsAddresses();
     const multicall = Multicall__factory.connect(tools.multicall, ethers.provider);
     const blockHash = await multicall.getLastBlockHash();
     return (await ethers.provider.getBlock(blockHash)).number;
   }
 
   public static async getBlockTime(block?: number | null): Promise<number> {
-    const tools = await DeployerUtils.getToolsAddresses();
+    const tools = await DeployerUtilsLocal.getToolsAddresses();
     const multicall = Multicall__factory.connect(tools.multicall, ethers.provider);
     if (block) {
       return (await multicall.getCurrentBlockTimestamp({blockTag: block})).toNumber();

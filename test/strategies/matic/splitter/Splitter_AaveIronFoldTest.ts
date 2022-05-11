@@ -3,7 +3,6 @@ import chaiAsPromised from "chai-as-promised";
 import {readFileSync} from "fs";
 import {config as dotEnvConfig} from "dotenv";
 import {DeployInfo} from "../../DeployInfo";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
@@ -20,6 +19,8 @@ import {Misc} from "../../../../scripts/utils/tools/Misc";
 import {SplitterDoHardWork} from "../../SplitterDoHardWork";
 import {SplitterSpecificTests} from "./SplitterSpecificTests";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
+import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
+
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -128,14 +129,14 @@ describe('Splitter with Aave/Iron Fold tests', async () => {
         core,
         tokenName,
         async vaultAddress => {
-          const splitter = await DeployerUtils.deployStrategySplitter(signer);
+          const splitter = await DeployerUtilsLocal.deployStrategySplitter(signer);
           await splitter.initialize(
             core.controller.address,
             underlying,
             vaultAddress,
           );
 
-          const splitter2 = await DeployerUtils.deployStrategySplitter(signer);
+          const splitter2 = await DeployerUtilsLocal.deployStrategySplitter(signer);
           await splitter2.initialize(
             core.controller.address,
             underlying,
@@ -230,7 +231,7 @@ async function deployAave(
     borrowTarget,
     collateralFactor
   ];
-  const strat = await DeployerUtils.deployContract(
+  const strat = await DeployerUtilsLocal.deployContract(
     signer,
     'StrategyAaveFold',
     ...strategyArgs
@@ -257,7 +258,7 @@ async function deployIron(
     borrowTarget,
     collateralFactor
   ];
-  const strategy = await DeployerUtils.deployContract(
+  const strategy = await DeployerUtilsLocal.deployContract(
     signer,
     'StrategyIronFold',
     ...strategyArgs

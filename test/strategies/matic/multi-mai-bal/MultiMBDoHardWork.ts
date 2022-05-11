@@ -13,7 +13,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {BigNumber} from "ethers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {MBUtils} from "./MBUtils";
 import {ethers} from "hardhat";
 
@@ -60,7 +60,7 @@ export class MultiMaiBalTest extends DoHardWorkLoopBase {
     const priceSource = (await ethers.getContractAt('IPriceSourceAll', priceSourceAddress)) as IPriceSourceAll;
     const priceSourcePrice = await priceSource.latestAnswer()
 
-    const mockPriceSource = await DeployerUtils.deployContract(
+    const mockPriceSource = await DeployerUtilsLocal.deployContract(
         this.signer, 'MockPriceSourceAll', 0);
     const mockPricePercents = 75; // % from original price
     const mockPrice = priceSourcePrice.mul(mockPricePercents).div(100)
@@ -72,7 +72,7 @@ export class MultiMaiBalTest extends DoHardWorkLoopBase {
     // convert address string to bytes32 string
     const adrBytes32 = '0x' + '0'.repeat(24) + mockPriceSource.address.slice(2)
     console.log('>>>priceSlotIndex', priceSlotIndex);
-    await DeployerUtils.setStorageAt(stablecoin.address, priceSlotIndex, adrBytes32);
+    await DeployerUtilsLocal.setStorageAt(stablecoin.address, priceSlotIndex, adrBytes32);
 
     // rebalance strategy
     const strategyGov = strategyMaiBal.connect(this.signer);

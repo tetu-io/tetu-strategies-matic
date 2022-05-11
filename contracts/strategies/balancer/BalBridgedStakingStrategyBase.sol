@@ -12,9 +12,9 @@
 
 pragma solidity 0.8.4;
 
-import "../ProxyStrategyBase.sol";
+import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
+import "@tetu_io/tetu-contracts/contracts/base/SlotsLib.sol";
 import "../../third_party/balancer/IBVault.sol";
-import "../../lib/SlotsLib.sol";
 
 /// @title Base contract for sending assets to bridge and receive rewards
 /// @author belbix

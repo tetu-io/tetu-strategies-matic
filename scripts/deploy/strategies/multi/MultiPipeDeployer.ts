@@ -1,4 +1,4 @@
-import {DeployerUtils} from "../../DeployerUtils";
+import {DeployerUtilsLocal} from "../../DeployerUtilsLocal";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
   AaveAmPipe,
@@ -28,7 +28,7 @@ export class MultiPipeDeployer {
     amToken: string,
   ): Promise<AaveAmPipe> {
     console.log('deployAaveAmPipe')
-    const pipe = await DeployerUtils.deployTetuProxyControlled(signer, 'AaveAmPipe');
+    const pipe = await DeployerUtilsLocal.deployTetuProxyControlled(signer, 'AaveAmPipe');
     const p = AaveAmPipe__factory.connect(pipe[0].address, signer);
     await RunHelper.runAndWait(() => p.initialize(
       {
@@ -48,7 +48,7 @@ export class MultiPipeDeployer {
     camToken: string,
   ): Promise<MaiCamPipe> {
     console.log('deployMaiCamPipe')
-    const pipe = await DeployerUtils.deployTetuProxyControlled(signer, 'MaiCamPipe');
+    const pipe = await DeployerUtilsLocal.deployTetuProxyControlled(signer, 'MaiCamPipe');
     const p = MaiCamPipe__factory.connect(pipe[0].address, signer);
     await RunHelper.runAndWait(() => p.initialize(
       {
@@ -73,7 +73,7 @@ export class MultiPipeDeployer {
     collateralNumerator: string,
   ): Promise<MaiStablecoinPipe> {
     console.log('deployMaiStablecoinPipe')
-    const pipe = await DeployerUtils.deployTetuProxyControlled(signer, 'MaiStablecoinPipe');
+    const pipe = await DeployerUtilsLocal.deployTetuProxyControlled(signer, 'MaiStablecoinPipe');
     const p = MaiStablecoinPipe__factory.connect(pipe[0].address, signer);
     await RunHelper.runAndWait(() => p.initialize(
       {
@@ -94,7 +94,7 @@ export class MultiPipeDeployer {
     signer: SignerWithAddress,
   ): Promise<BalVaultPipe> {
     console.log('deployBalVaultPipe')
-    const pipe = await DeployerUtils.deployTetuProxyControlled(signer, 'BalVaultPipe');
+    const pipe = await DeployerUtilsLocal.deployTetuProxyControlled(signer, 'BalVaultPipe');
     const p = BalVaultPipe__factory.connect(pipe[0].address, signer);
     await RunHelper.runAndWait(() => p.initialize(
       {
@@ -150,7 +150,7 @@ export class MultiPipeDeployer {
       pipes.push(balVaultPipeData.address);
       // -----------------
 
-      const strategyData = await DeployerUtils.deployTetuProxyControlled(
+      const strategyData = await DeployerUtilsLocal.deployTetuProxyControlled(
           signer,
           strategyContractName
       );
@@ -191,7 +191,7 @@ export class MultiPipeDeployer {
       pipes.push(balVaultPipeData.address);
       // -----------------
 
-      const strategyData = await DeployerUtils.deployTetuProxyControlled(
+      const strategyData = await DeployerUtilsLocal.deployTetuProxyControlled(
           signer,
           strategyContractName
       );

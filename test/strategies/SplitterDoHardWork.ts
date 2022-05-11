@@ -1,7 +1,7 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {DoHardWorkLoopBase} from "./DoHardWorkLoopBase";
-import {IStrategy__factory, StrategySplitter__factory} from "../../typechain";
+import {IStrategy__factory, IStrategySplitter__factory} from "../../typechain";
 import {Misc} from "../../scripts/utils/tools/Misc";
 
 const {expect} = chai;
@@ -13,7 +13,7 @@ export class SplitterDoHardWork extends DoHardWorkLoopBase {
     await super.loopStartActions(i);
     const start = Date.now();
 
-    const splitter = StrategySplitter__factory.connect(this.strategy.address, this.signer);
+    const splitter = IStrategySplitter__factory.connect(this.strategy.address, this.signer);
 
     const r = await splitter.rebalanceAll();
     const rr = await r.wait();
@@ -24,7 +24,7 @@ export class SplitterDoHardWork extends DoHardWorkLoopBase {
     for (const strat of strats) {
       const platfrom = await IStrategy__factory.connect(strat, this.signer).platform()
       if (platfrom === 24) {
-        const s = StrategySplitter__factory.connect(strat, this.signer);
+        const s = IStrategySplitter__factory.connect(strat, this.signer);
         await s.rebalanceAll();
       }
     }

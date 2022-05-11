@@ -12,7 +12,7 @@
 
 pragma solidity 0.8.4;
 
-import "../StrategyBase.sol";
+import "@tetu_io/tetu-contracts/contracts/base/strategies/StrategyBase.sol";
 import "../../third_party/market/ICErc20.sol";
 
 /// @title Abstract contract for Market strategy implementation

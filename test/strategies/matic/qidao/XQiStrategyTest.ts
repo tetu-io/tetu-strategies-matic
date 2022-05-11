@@ -6,7 +6,7 @@ import {DeployInfo} from "../../DeployInfo";
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {
   IStrategy,
   ISmartVault,
@@ -53,14 +53,14 @@ describe('Qi staking tests', async () => {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, argv.deployCoreContracts);
 
     // **
-    const _signer = await DeployerUtils.impersonate()
+    const _signer = await DeployerUtilsLocal.impersonate()
     const core = deployInfo.core as CoreContractsWrapper;
     const data = await StrategyTestUtils.deploy(
       _signer,
       core,
       'tetuQi',
       async vaultAddress => {
-        const strategy = await DeployerUtils.deployStrategyProxy(
+        const strategy = await DeployerUtilsLocal.deployStrategyProxy(
           _signer,
           'StrategyQiStaking',
         ) as StrategyQiStaking;
@@ -107,7 +107,7 @@ describe('Qi staking tests', async () => {
       core,
       vaultName,
       async vaultAddress => {
-        const strategy = await DeployerUtils.deployStrategyProxy(
+        const strategy = await DeployerUtilsLocal.deployStrategyProxy(
           signer,
           strategyContractName,
         ) as StrategyTetuQiSelfFarm;

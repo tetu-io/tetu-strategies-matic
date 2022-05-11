@@ -1,7 +1,7 @@
 import {ethers} from "hardhat";
 import {ToolsContractsWrapper} from "../ToolsContractsWrapper";
 import {TimeUtils} from "../TimeUtils";
-import {DeployerUtils} from "../../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../scripts/deploy/DeployerUtilsLocal";
 import {StrategyTestUtils} from "./StrategyTestUtils";
 import {
   IFeeRewardForwarder,
@@ -58,7 +58,7 @@ async function universalStrategyTest(
     before(async function () {
       const start = Date.now();
       snapshotBefore = await TimeUtils.snapshot();
-      signer = await DeployerUtils.impersonate();
+      signer = await DeployerUtilsLocal.impersonate();
       user = (await ethers.getSigners())[1];
       const core = deployInfo.core as CoreContractsWrapper;
 
@@ -107,7 +107,7 @@ async function universalStrategyTest(
           [signer.address],
         );
       }
-      await UniswapUtils.wrapNetworkToken(this.signer);
+      await UniswapUtils.wrapNetworkToken(signer);
       Misc.printDuration('Test Preparations completed', start);
     });
 

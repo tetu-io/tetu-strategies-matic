@@ -12,9 +12,7 @@
 
 pragma solidity 0.8.4;
 
-
-import "../FoldingBase.sol";
-import "../../interface/strategies/IAveFoldStrategy.sol";
+import "@tetu_io/tetu-contracts/contracts/base/strategies/FoldingBase.sol";
 import "../../third_party/IWmatic.sol";
 import "../../third_party/aave/IAToken.sol";
 import "../../third_party/aave/ILendingPool.sol";
@@ -26,7 +24,7 @@ import "../../third_party/aave/IPriceOracle.sol";
 /// @title Abstract contract for Aave lending strategy implementation with folding functionality
 /// @author belbix
 /// @author olegn
-abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
+abstract contract AaveFoldStrategyBase is FoldingBase {
   using SafeERC20 for IERC20;
 
   // ************ VARIABLES **********************
@@ -53,8 +51,8 @@ abstract contract AaveFoldStrategyBase is FoldingBase, IAveFoldStrategy {
   IProtocolDataProvider private dataProvider;
   ILendingPoolAddressesProvider private lendingPoolAddressesProvider;
 
-  address public override aToken;
-  address public override dToken;
+  address public aToken;
+  address public dToken;
 
   struct AaveData {
     address networkToken;

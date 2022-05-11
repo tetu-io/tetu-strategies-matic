@@ -2,14 +2,14 @@ import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {
   ISmartVault,
   StrategyAaveMaiBal,
-  BalVaultPipe,
+  BalVaultPipe, BalVaultPipe__factory,
 } from "../../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {DeployInfo} from "../../DeployInfo";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -76,8 +76,8 @@ export class CoverageCallsTest extends SpecificStrategyTest {
       // BalVaultPipe claim
       const balPipeAddress = await strategyUser.pipes(3); // 3 - Bal Pipe
       const stablecoinPipeAddress = await strategyUser.pipes(2); // 3 - Mai Stablecoin Pipe
-      const balPipeUser = await DeployerUtils.connectInterface(user, 'BalVaultPipe', balPipeAddress) as BalVaultPipe;
-      const balPipeSigner = await DeployerUtils.connectInterface(signer, 'BalVaultPipe', balPipeAddress) as BalVaultPipe;
+      const balPipeUser = BalVaultPipe__factory.connect(balPipeAddress, user);
+      const balPipeSigner = BalVaultPipe__factory.connect(balPipeAddress, signer);
 
       expect(await balPipeUser.name()).eq('BalVaultPipe')
       expect(await balPipeUser.nextPipe()).eq(MaticAddresses.ZERO_ADDRESS)

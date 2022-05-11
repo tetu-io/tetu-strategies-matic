@@ -15,7 +15,7 @@ import chaiAsPromised from "chai-as-promised";
 import {DeployInfo} from "../../DeployInfo";
 import {TestAsserts} from "../../../TestAsserts";
 import {ethers} from "hardhat";
-import {DeployerUtils} from "../../../../scripts/deploy/DeployerUtils";
+import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {AMBUtils} from "./AMBUtils";
 
 const {expect} = chai;
@@ -71,7 +71,7 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       const [, priceSourcePrice, ,] = await priceSource.latestRoundData()
       console.log('>>>priceSourcePrice   ', priceSourcePrice.toString())
 
-      const mockPriceSource = await DeployerUtils.deployContract(
+      const mockPriceSource = await DeployerUtilsLocal.deployContract(
         signer, 'MockPriceSource', 0);
       const mockPricePercents = 200;
       const mockPrice = priceSourcePrice.mul(mockPricePercents).div(100)
@@ -80,14 +80,14 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       console.log('>>>mockSourcePrice    ', mockSourcePrice.toString())
 
       const ethPriceSourceSlotIndex = priceSlotIndex;
-      const adrOriginal = await DeployerUtils.getStorageAt(stablecoin.address, ethPriceSourceSlotIndex)
+      const adrOriginal = await DeployerUtilsLocal.getStorageAt(stablecoin.address, ethPriceSourceSlotIndex)
       console.log('>>>adrOriginal        ', adrOriginal)
       // set matic price source to our mock contract
       // convert address string to bytes32 string
       const adrBytes32 = '0x' + '0'.repeat(24) + mockPriceSource.address.slice(2)
 
       console.log('>>>adrBytes32         ', adrBytes32)
-      await DeployerUtils.setStorageAt(stablecoin.address, ethPriceSourceSlotIndex, adrBytes32);
+      await DeployerUtilsLocal.setStorageAt(stablecoin.address, ethPriceSourceSlotIndex, adrBytes32);
 
       const stablecoinEthPrice2 = await stablecoin.getEthPriceSource()
       console.log('>>>stablecoinEthPrice2', stablecoinEthPrice2.toString())
@@ -115,7 +115,7 @@ export class MabRebalanceTest extends SpecificStrategyTest {
       // ***** check balance after matic price changed back ***
 
       // set matic price source back to original value
-      await DeployerUtils.setStorageAt(stablecoin.address, ethPriceSourceSlotIndex, adrOriginal);
+      await DeployerUtilsLocal.setStorageAt(stablecoin.address, ethPriceSourceSlotIndex, adrOriginal);
       const stablecoinEthPrice3 = await stablecoin.getEthPriceSource();
       console.log('>>>stablecoinEthPrice3', stablecoinEthPrice3.toString());
       const needed3 = await strategyAaveMaiBal.isRebalanceNeeded();
