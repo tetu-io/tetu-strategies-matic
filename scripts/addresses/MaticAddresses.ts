@@ -71,6 +71,7 @@ export class MaticAddresses {
   public static SPHEREV2_TOKEN = '0x17e9C5b37283ac5fBE527011CeC257b832f03eb3'.toLowerCase();
   public static SPHEREV3_TOKEN = '0x48d86b885d3e9EDB6673c94179875B0D6484A3EA'.toLowerCase();
   public static CLAM2_TOKEN = '0xc250e9987a032acac293d838726c511e6e1c029d'.toLowerCase();
+  public static MESH_TOKEN = '0x82362Ec182Db3Cf7829014Bc61E9BE8a2E82868a'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 

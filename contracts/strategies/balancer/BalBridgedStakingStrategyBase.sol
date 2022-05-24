@@ -248,4 +248,5 @@ abstract contract BalBridgedStakingStrategyBase is ProxyStrategyBase {
     return Platform.BALANCER;
   }
 
+  // use gap in other implementations
 }

@@ -191,4 +191,5 @@ abstract contract QiStakingStrategyBase is ProxyStrategyBase {
     return strategyUintStorage[key];
   }
 
+  // use gap in next implementations
 }
