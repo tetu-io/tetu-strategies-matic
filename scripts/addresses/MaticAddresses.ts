@@ -9,6 +9,7 @@ export class MaticAddresses {
 
   public static ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
   public static GOV_ADDRESS = "0xcc16d636dD05b52FF1D8B9CE09B09BC62b11412B".toLowerCase();
+  public static CONTROLLER_ADDRESS = "0x6678814c273d5088114B6E40cC49C8DB04F9bC29".toLowerCase();
   // tokens
   public static WETH_TOKEN = "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619".toLowerCase();
   public static ADDY_TOKEN = "0xc3FdbadC7c795EF1D6Ba111e06fF8F16A20Ea539".toLowerCase();
@@ -72,6 +73,7 @@ export class MaticAddresses {
   public static SPHEREV3_TOKEN = '0x48d86b885d3e9EDB6673c94179875B0D6484A3EA'.toLowerCase();
   public static CLAM2_TOKEN = '0xc250e9987a032acac293d838726c511e6e1c029d'.toLowerCase();
   public static MESH_TOKEN = '0x82362Ec182Db3Cf7829014Bc61E9BE8a2E82868a'.toLowerCase();
+  public static tetuMESH_TOKEN = '0xDcB8F34a3ceb48782c9f3F98dF6C12119c8d168a'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -240,6 +242,11 @@ export class MaticAddresses {
   public static MARKET_POOLDIRECTORY = '0xA2a1cb88D86A939A37770FE5E9530E8700DEe56b'.toLowerCase();
   public static MARKET_POOLLENS = '0xe4D84b252308645098846312286E6c6D2846DbB0'.toLowerCase();
 
+  // MESHSWAP
+  public static MESH_FACTORY = '0x9f3044f7f9fc8bc9ed615d54845b4577b833282d'.toLowerCase();
+  public static MESH_ROUTER = '0x10f4a785f458bc144e3706575924889954946639'.toLowerCase();
+  public static TETU_MESH_MESH_LP = '0xcf40352253de7a0155d700a937Dc797D681c9867'.toLowerCase();
+
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,
     MaticAddresses.USDT_TOKEN,
@@ -267,6 +274,8 @@ export class MaticAddresses {
         return MaticAddresses.TETU_SWAP_ROUTER;
       case MaticAddresses.DINO_FACTORY:
         return MaticAddresses.DINO_ROUTER;
+      case MaticAddresses.MESH_FACTORY:
+        return MaticAddresses.MESH_ROUTER;
     }
     throw Error('Unknown factory ' + factory);
   }
@@ -287,6 +296,8 @@ export class MaticAddresses {
         return 'CAFE';
       case MaticAddresses.TETU_SWAP_ROUTER:
         return "TETU";
+      case MaticAddresses.MESH_ROUTER:
+        return "MESH";
     }
     throw Error('Unknown router ' + router);
   }

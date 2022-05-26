@@ -22,7 +22,7 @@ export class DoHardWorkLoopBase {
   public readonly strategy: IStrategy;
   public readonly balanceTolerance: number;
   public readonly finalBalanceTolerance: number;
-  private readonly vaultRt: string;
+  private vaultRt: string;
   vaultForUser: ISmartVault;
   undDec = 0;
   userDeposited = BigNumber.from(0);
@@ -85,6 +85,7 @@ export class DoHardWorkLoopBase {
 
   protected async init() {
     this.undDec = await TokenUtils.decimals(this.underlying);
+    this.vaultRt = (await this.vault.rewardTokens())[0].toLowerCase()
   }
 
   protected async initialCheckVault() {

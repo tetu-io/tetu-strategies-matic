@@ -35,7 +35,7 @@ const argv = require('yargs/yargs')()
     },
     maticForkBlock: {
       type: "number",
-      default: 28058008
+      default: 28757750
     },
   }).argv;
 
@@ -57,14 +57,15 @@ export default {
         path: "m/44'/60'/0'/0",
         accountsBalance: "100000000000000000000000000000"
       },
+      // loggingEnabled: true,
     },
     matic: {
       url: argv.maticRpcUrl,
       timeout: 99999,
       chainId: 137,
-      gas: 12_000_000,
-      gasPrice: 50_000_000_000,
-      gasMultiplier: 1.3,
+      // gas: 12_000_000,
+      // gasPrice: 50_000_000_000,
+      // gasMultiplier: 1.3,
       accounts: [argv.privateKey],
     },
   },

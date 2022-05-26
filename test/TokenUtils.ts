@@ -1,6 +1,13 @@
 import {ethers} from "hardhat";
-import {ERC20__factory, IERC721Enumerable__factory, IWmatic, IWmatic__factory} from "../typechain";
-import {BigNumber, utils} from "ethers";
+import {
+  ERC20__factory,
+  IController__factory,
+  IERC20__factory, IERC20Extended__factory,
+  IERC721Enumerable__factory,
+  ISmartVault__factory,
+  IWmatic__factory
+} from "../typechain";
+import {BigNumber} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {MaticAddresses} from "../scripts/addresses/MaticAddresses";
 import chai from "chai";
@@ -143,6 +150,18 @@ export class TokenUtils {
     if (token.toLowerCase() === await DeployerUtilsLocal.getNetworkTokenAddress()) {
       await IWmatic__factory.connect(token, await DeployerUtilsLocal.impersonate(to)).deposit({value: amount});
       return amount;
+    }
+    const owner = await DeployerUtilsLocal.impersonate(to);
+    if ((await IController__factory.connect(MaticAddresses.CONTROLLER_ADDRESS, owner).isValidVault(token))) {
+      const vault = ISmartVault__factory.connect(token, owner);
+      const underlying = await vault.underlying();
+      const ppfs = await vault.getPricePerFullShare();
+      const dec = await IERC20Extended__factory.connect(token, owner).decimals();
+      const a = amount?.mul(ppfs).div(parseUnits('1', dec)).mul(2) || BigNumber.from(Misc.MAX_UINT);
+      await TokenUtils.getToken(underlying, to, a);
+      await IERC20__factory.connect(underlying, owner).approve(token, Misc.MAX_UINT);
+      await vault.deposit(a);
+      return a;
     }
 
     const holder = TokenUtils.TOKEN_HOLDERS.get(token.toLowerCase()) as string;
