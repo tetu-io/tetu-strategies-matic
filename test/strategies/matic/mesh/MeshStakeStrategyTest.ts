@@ -66,7 +66,7 @@ describe('Mesh staking tests', async () => {
   // only for strategies where we expect PPFS fluctuations
   const balanceTolerance = 1;
   const finalBalanceTolerance = 0;
-  const deposit = 1000;
+  const deposit = 100_000;
   // at least 3
   const loops = 3;
   // number of blocks or timestamp value

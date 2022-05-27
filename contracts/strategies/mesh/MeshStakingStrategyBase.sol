@@ -31,7 +31,7 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "MeshStakingStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.1.1";
   /// @dev 5% buybacks, 95% of vested Mesh should go to the targetRewardVault as rewards (not autocompound)
   uint256 private constant _BUY_BACK_RATIO = 5_00;
   uint256 private constant _MAX_LOCK_PERIOD = 1555200000;
@@ -282,12 +282,12 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
   function _sqrt(uint y) internal pure returns (uint z) {
     z = 0;
     if (y > 3) {
+      z = y;
       uint x = y / 2 + 1;
       while (x < z) {
         z = x;
         x = (y / x + x) / 2;
       }
-      z = y;
     } else if (y != 0) {
       z = 1;
     }
