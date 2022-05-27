@@ -35,7 +35,7 @@ const argv = require('yargs/yargs')()
     },
     maticForkBlock: {
       type: "number",
-      default: 28757750
+      default: 28810153
     },
   }).argv;
 

@@ -22,6 +22,7 @@ const PPFS_NO_INCREASE = new Set<string>([
   'QiStakingStrategyBase',
   'BalBridgedStakingStrategyBase',
   'MeshLpStrategyBase',
+  'BalancerPoolStrategyBase',
 ])
 
 export class VaultUtils {

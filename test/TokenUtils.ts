@@ -70,6 +70,7 @@ export class TokenUtils {
     [MaticAddresses.xTETU, '0x352f9fa490a86f625f53e581f0ec3bd649fd8bc9'.toLowerCase()],
     [MaticAddresses.SPHEREV3_TOKEN, '0x7754d8b057CC1d2D857d897461DAC6C3235B4aAe'.toLowerCase()], // sphere owner
     [MaticAddresses.MESH_TOKEN, '0x9f23c6ddce30a79eb5e25f6ab9de987e53308212'.toLowerCase()],
+    [MaticAddresses.BALANCER_POOL_MATIC_USDC_WETH_BAL, '0x068Ff98072d3eB848D012e3390703BB507729ed6'.toLowerCase()], // gauge
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {

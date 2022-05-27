@@ -27,7 +27,7 @@ abstract contract BalBridgedStakingStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "BalBridgedStakingStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.1.0";
   /// @dev 20% buybacks
   uint256 private constant _BUY_BACK_RATIO = 20_00;
   address internal constant _WETH = 0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
@@ -38,6 +38,7 @@ abstract contract BalBridgedStakingStrategyBase is ProxyStrategyBase {
   address private constant _BALANCER_VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
   bytes32 internal constant _SENDER_KEY = bytes32(uint256(keccak256("s.sender")) - 1);
   bytes32 internal constant _INVESTED_KEY = bytes32(uint256(keccak256("s.invested")) - 1);
+  bytes32 internal constant _TARGET_VAULT = bytes32(uint256(keccak256("s.target.vault")) - 1);
 
 
   /// @notice Initialize contract after setup it as proxy implementation
@@ -63,6 +64,16 @@ abstract contract BalBridgedStakingStrategyBase is ProxyStrategyBase {
 
   function balSender() external view returns (address) {
     return _SENDER_KEY.getAddress();
+  }
+
+  /// @dev This vault will receive all rewards
+  function targetVault() public view returns (address) {
+    return _TARGET_VAULT.getAddress();
+  }
+
+  /// @dev Set target vault
+  function setTargetVault(address value) external restricted {
+    _TARGET_VAULT.set(value);
   }
 
   /// @dev Transfer BPT tokens to sender
@@ -114,7 +125,6 @@ abstract contract BalBridgedStakingStrategyBase is ProxyStrategyBase {
     uint balForSwap = balForWethPart + balForPS;
 
     // -------------- SWAP BAL TO WETH PARTIALLY ------------
-
 
     IERC20(_BAL).safeApprove(_BALANCER_VAULT, 0);
     IERC20(_BAL).safeApprove(_BALANCER_VAULT, balForSwap);
@@ -189,10 +199,15 @@ abstract contract BalBridgedStakingStrategyBase is ProxyStrategyBase {
       // make sure that we not call doHardWork again in the vault during investment process
       sv.depositAndInvest(toVault);
       uint shareBalance = IERC20(address(sv)).balanceOf(address(this));
+
+      address vaultForRewards = targetVault();
+      if (vaultForRewards == address(0)) {
+        vaultForRewards = address(sv);
+      }
       // add deposited amount to vault rewards
-      IERC20(address(sv)).safeApprove(_vault(), 0);
-      IERC20(address(sv)).safeApprove(_vault(), shareBalance);
-      sv.notifyTargetRewardAmount(address(sv), shareBalance);
+      IERC20(address(sv)).safeApprove(vaultForRewards, 0);
+      IERC20(address(sv)).safeApprove(vaultForRewards, shareBalance);
+      ISmartVault(vaultForRewards).notifyTargetRewardAmount(address(sv), shareBalance);
     }
 
     // -------------- LIQUIDATE PLATFORM PART ------------
