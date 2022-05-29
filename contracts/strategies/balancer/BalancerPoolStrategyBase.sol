@@ -16,7 +16,7 @@ import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol"
 import "../../third_party/balancer/IBalancerGauge.sol";
 import "../../third_party/balancer/IBVault.sol";
 
-/// @title Base contract for Mesh LP farming
+/// @title Base contract for BPT farming
 /// @author belbix
 abstract contract BalancerPoolStrategyBase is ProxyStrategyBase {
   using SafeERC20 for IERC20;
@@ -94,9 +94,7 @@ abstract contract BalancerPoolStrategyBase is ProxyStrategyBase {
   }
 
   function setGauge(address value) external restricted {
-    if (address(gauge) != address(0)) {
-      IERC20(_underlying()).safeApprove(value, type(uint).max);
-    }
+    require(address(gauge) == address(0), "Gauge already defined");
     gauge = IBalancerGauge(value);
     if (value != address(0)) {
       IERC20(_underlying()).safeApprove(value, type(uint).max);
