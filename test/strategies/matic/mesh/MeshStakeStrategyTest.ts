@@ -100,6 +100,7 @@ describe('Mesh staking tests', async () => {
     await core.controller.setRewardDistribution([data[1].address], true);
     return data;
   };
+
   const hwInitiator = (
     _signer: SignerWithAddress,
     _user: SignerWithAddress,
