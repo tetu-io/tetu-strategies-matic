@@ -66,7 +66,7 @@
 //
 //
 //   const txt = `vault: ${vault.address}\nstrategy: ${strategy.address}`;
-//   writeFileSync(`/Users/anatseuski/work/tetu-contracts/tmp/deployed/${vaultName}.txt`, txt, 'utf8');
+//   writeFileSync(`./tmp/deployed/${strategyName}.txt`, txt, 'utf8');
 //
 //   await DeployerUtils.wait(5);
 //

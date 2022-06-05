@@ -16,8 +16,6 @@ import "@tetu_io/tetu-contracts/contracts/base/SlotsLib.sol";
 import "../../third_party/mesh/ISinglePool.sol";
 import "../../third_party/IERC20Extended.sol";
 
-import "hardhat/console.sol";
-
 /// @title Abstract contract for MeshVault strategy implementation
 /// @author olegn
 abstract contract MeshSinglePoolBase is ProxyStrategyBase{
@@ -30,10 +28,13 @@ abstract contract MeshSinglePoolBase is ProxyStrategyBase{
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.0.0";
+  /// @dev precision for the folding profitability calculation
+  uint256 private constant _PRECISION = 10 ** 18;
   /// @dev 10% buyback
   uint private constant _BUY_BACK_RATIO = 10_00;
-
-  bytes32 internal constant _MESH_POOL_SLOT = bytes32(uint(keccak256("mesh.mesh.single.pool")) - 1);
+  IUniswapV2Router02 public constant MESH_ROUTER = IUniswapV2Router02(0x10f4A785F458Bc144e3706575924889954946639);
+  bytes32 internal constant _MESH_POOL_SLOT = bytes32(uint(keccak256("mesh.single.pool")) - 1);
+  bytes32 internal constant _PROXY_REWARD_TOKEN_SLOT = bytes32(uint(keccak256("mesh.single.proxyRewardToken")) - 1);
 
   /// @notice Contract constructor using on strategy implementation
   /// @dev The implementation should check each parameter
@@ -47,6 +48,7 @@ abstract contract MeshSinglePoolBase is ProxyStrategyBase{
     address _vault,
     address _underlying,
     address[] memory __rewardTokens,
+    address proxyRewardToken,
     address _meshSinglePool
   ) public initializer{
     ProxyStrategyBase.initializeStrategyBase(
@@ -58,6 +60,7 @@ abstract contract MeshSinglePoolBase is ProxyStrategyBase{
     );
     require(ISinglePool(_meshSinglePool).token() == _underlying, "Wrong underlying");
     _MESH_POOL_SLOT.set(_meshSinglePool);
+    _PROXY_REWARD_TOKEN_SLOT.set(proxyRewardToken);
   }
 
 
@@ -66,9 +69,10 @@ abstract contract MeshSinglePoolBase is ProxyStrategyBase{
   /// @notice Strategy balance in the meshSinglePool pool
   /// @return bal Balance amount in underlying tokens
   function _rewardPoolBalance() internal override view returns (uint) {
-    uint iTokenBalance = meshSinglePool().balanceOf(address(this));
-    uint exchangeRateStored = meshSinglePool().exchangeRateStored();
-    return iTokenBalance * exchangeRateStored / 10 ** IERC20Extended(_underlying()).decimals();
+    uint256 iTokenBalance = meshSinglePool().balanceOf(address(this));
+    uint256 exchangeRateStored = meshSinglePool().exchangeRateStored();
+    uint256 underlyingInPool = iTokenBalance * exchangeRateStored / _PRECISION + 1;
+    return underlyingInPool > 1 ? underlyingInPool: 0;
   }
 
   /// @notice Return approximately amount of reward tokens ready to claim in meshSinglePool pool
@@ -95,11 +99,7 @@ abstract contract MeshSinglePoolBase is ProxyStrategyBase{
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
   function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     _investAllUnderlying();
-    uint balB = IERC20(_rewardTokens[0]).balanceOf(address(this));
-    console.log(" >>>> balB %s", balB);
     meshSinglePool().claimReward();
-    uint balA = IERC20(_rewardTokens[0]).balanceOf(address(this));
-    console.log(" >>>> balA %s", balA);
     liquidateReward();
   }
 
@@ -108,7 +108,6 @@ abstract contract MeshSinglePoolBase is ProxyStrategyBase{
   /// @dev Deposit underlying to mesh pool
   /// @param amount Deposit amount
   function depositToPool(uint amount) internal override {
-    console.log(" >>>> depositToPool %s", amount);
     if(amount > 0){
       IERC20(_underlying()).safeApprove(address(meshSinglePool()), 0);
       IERC20(_underlying()).safeApprove(address(meshSinglePool()), amount);
@@ -116,27 +115,102 @@ abstract contract MeshSinglePoolBase is ProxyStrategyBase{
     }
   }
 
-  /// @dev Withdraw underlying from TShareRewardPool pool
+  /// @dev Withdraw underlying from meshSinglePool. Conversion of underlying to iToken is needed.
   /// @param amount Deposit amount
   function withdrawAndClaimFromPool(uint amount) internal override {
-    meshSinglePool().withdrawToken(amount);
+    uint256 exchangeRateStored = meshSinglePool().exchangeRateStored();
+    uint256 iTokenBalance = meshSinglePool().balanceOf(address(this));
+    uint iTokenToWithdraw = amount * _PRECISION / exchangeRateStored;
+    meshSinglePool().withdrawTokenByAmount(Math.min(iTokenBalance, iTokenToWithdraw));
   }
 
   /// @dev the same as withdrawAndClaimFromPool because mesh pools have no such functionality
   function emergencyWithdrawFromPool() internal override {
     uint strategyBalance = meshSinglePool().balanceOf(address(this));
-    console.log(" >>>> strategyBalance %s", strategyBalance);
     meshSinglePool().withdrawToken(strategyBalance);
   }
 
   /// @dev Do something useful with farmed rewards
   function liquidateReward() internal override {
-    autocompound();
-    liquidateRewardDefault();
+    _swapRTtoProxyRT();
+    _autocompound();
+    _liquidateRewardMesh(true);
+  }
+
+  /// @dev Liquidate rewards and buy underlying asset
+  function _autocompound() internal {
+    address forwarder = IController(_controller()).feeRewardForwarder();
+    uint amount = IERC20(_proxyRewardToken()).balanceOf(address(this));
+    if (amount != 0) {
+      uint toCompound = amount * (_BUY_BACK_DENOMINATOR - _buyBackRatio()) / _BUY_BACK_DENOMINATOR;
+      IERC20(_proxyRewardToken()).safeApprove(forwarder, 0);
+      IERC20(_proxyRewardToken()).safeApprove(forwarder, toCompound);
+      uint underlyingBalance = IFeeRewardForwarder(forwarder).liquidate(_proxyRewardToken(), _underlying(), toCompound);
+      depositToPool(underlyingBalance);
+    }
+  }
+
+  /// @dev Custom implementation because of mesh is not satisfies IUniswapV2Pair
+  ///      and IFeeRewardForwarder can't liquidate mesh. Mesh rewards are swapped to proxyReward (e.g USDC)
+  ///      and liquidated
+  function _liquidateRewardMesh(bool revertOnErrors) internal {
+    address forwarder = IController(_controller()).feeRewardForwarder();
+    uint targetTokenEarnedTotal = 0;
+
+    uint amount = IERC20(_proxyRewardToken()).balanceOf(address(this));
+    if (amount != 0) {
+      IERC20(_proxyRewardToken()).safeApprove(forwarder, 0);
+      IERC20(_proxyRewardToken()).safeApprove(forwarder, amount);
+      // it will sell reward token to Target Token and distribute it to SmartVault and PS
+      uint targetTokenEarned = 0;
+      if (revertOnErrors) {
+        targetTokenEarned = IFeeRewardForwarder(forwarder).distribute(amount, _proxyRewardToken(), _vault());
+      } else {
+        //slither-disable-next-line unused-return,variable-scope,uninitialized-local
+        try IFeeRewardForwarder(forwarder).distribute(amount, _proxyRewardToken(), _vault()) returns (uint r) {
+          targetTokenEarned = r;
+        } catch {}
+      }
+      targetTokenEarnedTotal += targetTokenEarned;
+    }
+
+    if (targetTokenEarnedTotal > 0) {
+      IBookkeeper(IController(_controller()).bookkeeper()).registerStrategyEarned(targetTokenEarnedTotal);
+    }
+  }
+
+  /// @dev swaps rewards to proxy rewards
+  function _swapRTtoProxyRT() internal{
+    for (uint i = 0; i < _rewardTokens.length; i++) {
+      address rt = _rewardTokens[i];
+      uint256 rtBalance = IERC20(rt).balanceOf(address(this));
+      address[] memory route = new address[](2);
+      route[0] = rt;
+      route[1] = _proxyRewardToken();
+      _meshSwap(rtBalance, route);
+    }
+  }
+
+  /// @dev helper function for meshswap router
+  function _meshSwap(uint256 amount, address[] memory _route) internal {
+    require(IERC20(_route[0]).balanceOf(address(this)) >= amount, "Not enough balance");
+    IERC20(_route[0]).safeApprove(address(MESH_ROUTER), 0);
+    IERC20(_route[0]).safeApprove(address(MESH_ROUTER), amount);
+    MESH_ROUTER.swapExactTokensForTokens(
+      amount,
+      0,
+      _route,
+      address(this),
+      block.timestamp
+    );
   }
 
   function meshSinglePool() public view returns (ISinglePool) {
     return ISinglePool(_MESH_POOL_SLOT.getAddress());
+  }
+
+  function _proxyRewardToken() internal view returns(address){
+    return _PROXY_REWARD_TOKEN_SLOT.getAddress();
   }
 
   /// @dev Platform name for statistical purposes

@@ -25,12 +25,13 @@ contract StrategyMeshSinglePool is MeshSinglePoolBase {
     address _controller,
     address _vault,
     address _underlying,
+    address _proxyRewardToken,
     address _meshSinglePool
   ) external initializer {
     require(_meshSinglePool != address(0), "zero mesh pool address");
     _assets.push(_underlying);
     _poolRewards.push(_MESH);
-    MeshSinglePoolBase.initializeStrategy(_controller, _vault, _underlying, _poolRewards, _meshSinglePool);
+    MeshSinglePoolBase.initializeStrategy(_controller, _vault, _underlying, _poolRewards, _proxyRewardToken, _meshSinglePool);
   }
 
   // assets should reflect underlying tokens need to investing

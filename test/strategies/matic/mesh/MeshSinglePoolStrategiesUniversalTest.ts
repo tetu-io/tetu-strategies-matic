@@ -14,11 +14,11 @@ import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {
   IFeeRewardForwarder,
   ISmartVault,
-  ISmartVault__factory,
   IStrategy,
   StrategyMeshSinglePool__factory
 } from "../../../../typechain";
 import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
+import {MeshSinglePoolDoHardWork} from "./MeshSinglePoolDoHardWork";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -62,6 +62,7 @@ describe('Universal Mesh tests', async () => {
     const meshSinglePoolAddress = strat[2];
     const underlyingName = strat[3];
     const underlyingAddress = strat[4];
+    const proxyRewardAddress = strat[5];
 
     if (idx === 'idx') {
       console.log('skip', idx);
@@ -83,12 +84,7 @@ describe('Universal Mesh tests', async () => {
     const loopValue = 60 * 60 * 24;
     const advanceBlocks = true;
 
-    const forwarderConfigurator = async (forwarder: IFeeRewardForwarder) => {
-      await forwarder.addLargestLps(
-          [MaticAddresses.MESH_TOKEN],
-          ["0x07A7Ab21b582058B71d2AEe1b1719926E3451ADF"]
-      );
-    };
+    const forwarderConfigurator = null;
     // only for strategies where we expect PPFS fluctuations
     const ppfsDecreaseAllowed = false;
     const balanceTolerance = 0;
@@ -114,17 +110,13 @@ describe('Universal Mesh tests', async () => {
           core.controller.address,
           vaultAddress,
           underlying,
+          proxyRewardAddress,
           meshSinglePoolAddress
         );
         return strategy;
       },
       underlying
     );
-    // await ISmartVault__factory.connect(data[0].address, signer).changeDoHardWorkOnInvest(true);
-    // await ISmartVault__factory.connect(data[0].address, signer).changeAlwaysInvest(true);
-    // await core.vaultController.addRewardTokens([data[0].address], data[0].address);
-    // await core.vaultController.addRewardTokens([data[0].address], tetuMeshAddress);
-    // await core.controller.setRewardDistribution([data[1].address], true);
     return data;
   };
 
@@ -138,7 +130,7 @@ describe('Universal Mesh tests', async () => {
         _strategy: IStrategy,
         _balanceTolerance: number
     ) => {
-      return new DoHardWorkLoopBase(
+      return new MeshSinglePoolDoHardWork(
           _signer,
           _user,
           _core,
