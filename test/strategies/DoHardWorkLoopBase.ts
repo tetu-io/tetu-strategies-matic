@@ -412,7 +412,7 @@ export class DoHardWorkLoopBase {
     return result;
   }
 
-  private static toPercent(actual: number, expected: number): string {
+  protected static toPercent(actual: number, expected: number): string {
     const percent = (actual / expected * 100) - 100;
     return percent.toFixed(6) + '%';
   }
