@@ -8,40 +8,33 @@ import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
-import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
-import {
-  IFeeRewardForwarder,
-  ISmartVault,
-  IStrategy,
-  StrategyMeshSinglePool__factory
-} from "../../../../typechain";
+import {ISmartVault, IStrategy, StrategyMeshSinglePool__factory} from "../../../../typechain";
 import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {MeshSinglePoolDoHardWork} from "./MeshSinglePoolDoHardWork";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
 const argv = require('yargs/yargs')()
-    .env('TETU')
-    .options({
-      disableStrategyTests: {
-        type: "boolean",
-        default: false,
-      },
-      onlyOneMeshStrategyTest: {
-        type: "number",
-        default: 1,
-      },
-      deployCoreContracts: {
-        type: "boolean",
-        default: true,
-      },
-      hardhatChainId: {
-        type: "number",
-        default: 137
-      },
-    }).argv;
+  .env('TETU')
+  .options({
+    disableStrategyTests: {
+      type: "boolean",
+      default: false,
+    },
+    onlyOneMeshStrategyTest: {
+      type: "number",
+      default: 1,
+    },
+    deployCoreContracts: {
+      type: "boolean",
+      default: true,
+    },
+    hardhatChainId: {
+      type: "number",
+      default: 137
+    },
+  }).argv;
 
 chai.use(chaiAsPromised);
 
@@ -96,66 +89,66 @@ describe('Universal Mesh tests', async () => {
 
 
     const deployer = async (signer: SignerWithAddress) => {
-    const core = deployInfo.core as CoreContractsWrapper;
-    const data = await StrategyTestUtils.deploy(
-      signer,
-      core,
-      vaultName,
-      async vaultAddress => {
-        const strategy = await DeployerUtilsLocal.deployStrategyProxy(
-          signer,
-          strategyContractName,
-        );
-        await StrategyMeshSinglePool__factory.connect(strategy.address, signer).initialize(
-          core.controller.address,
-          vaultAddress,
-          underlying,
-          proxyRewardAddress,
-          meshSinglePoolAddress
-        );
-        return strategy;
-      },
-      underlying
-    );
-    return data;
-  };
+      const core = deployInfo.core as CoreContractsWrapper;
+      const data = await StrategyTestUtils.deploy(
+        signer,
+        core,
+        vaultName,
+        async vaultAddress => {
+          const strategy = await DeployerUtilsLocal.deployStrategyProxy(
+            signer,
+            strategyContractName,
+          );
+          await StrategyMeshSinglePool__factory.connect(strategy.address, signer).initialize(
+            core.controller.address,
+            vaultAddress,
+            underlying,
+            proxyRewardAddress,
+            meshSinglePoolAddress
+          );
+          return strategy;
+        },
+        underlying
+      );
+      return data;
+    };
 
     const hwInitiator = (
-        _signer: SignerWithAddress,
-        _user: SignerWithAddress,
-        _core: CoreContractsWrapper,
-        _tools: ToolsContractsWrapper,
-        _underlying: string,
-        _vault: ISmartVault,
-        _strategy: IStrategy,
-        _balanceTolerance: number
+      _signer: SignerWithAddress,
+      _user: SignerWithAddress,
+      _core: CoreContractsWrapper,
+      _tools: ToolsContractsWrapper,
+      _underlying: string,
+      _vault: ISmartVault,
+      _strategy: IStrategy,
+      _balanceTolerance: number
     ) => {
       return new MeshSinglePoolDoHardWork(
-          _signer,
-          _user,
-          _core,
-          _tools,
-          _underlying,
-          _vault,
-          _strategy,
-          _balanceTolerance,
-          finalBalanceTolerance,
+        _signer,
+        _user,
+        _core,
+        _tools,
+        _underlying,
+        _vault,
+        _strategy,
+        _balanceTolerance,
+        finalBalanceTolerance,
       );
     };
 
     universalStrategyTest(
-        strategyContractName + '_' + vaultName,
-        deployInfo,
-        deployer,
-        hwInitiator,
-        forwarderConfigurator,
-        ppfsDecreaseAllowed,
-        balanceTolerance,
-        deposit,
-        loops,
-        loopValue,
-        advanceBlocks,
-        specificTests,
+      strategyContractName + '_' + vaultName,
+      deployInfo,
+      deployer,
+      hwInitiator,
+      forwarderConfigurator,
+      ppfsDecreaseAllowed,
+      balanceTolerance,
+      deposit,
+      loops,
+      loopValue,
+      advanceBlocks,
+      specificTests,
     );
   });
 });
