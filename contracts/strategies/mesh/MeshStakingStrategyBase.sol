@@ -31,7 +31,7 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "MeshStakingStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.1";
+  string public constant VERSION = "1.1.2";
   /// @dev 5% buybacks, 95% of vested Mesh should go to the targetRewardVault as rewards (not autocompound)
   uint256 private constant _BUY_BACK_RATIO = 5_00;
   uint256 private constant _MAX_LOCK_PERIOD = 1555200000;
@@ -194,6 +194,7 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
 
   function _liquidateReward(uint256 amount) internal {
     uint toBuybacks = (amount * _buyBackRatio() / _BUY_BACK_DENOMINATOR);
+    address targetVault = targetRewardVault();
     uint toVault = amount - toBuybacks;
     if (toBuybacks != 0) {
       address[] memory route = new address[](2);
@@ -205,7 +206,7 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
       IERC20(_USDC_ADDRESS).safeApprove(forwarder, 0);
       IERC20(_USDC_ADDRESS).safeApprove(forwarder, toBuybacks);
       // it will sell USDC tokens to Target Token and distribute it to SmartVault and PS
-      uint targetTokenEarned = IFeeRewardForwarder(forwarder).distribute(usdcAmount, _USDC_ADDRESS, _vault());
+      uint targetTokenEarned = IFeeRewardForwarder(forwarder).distribute(usdcAmount, _USDC_ADDRESS, targetVault);
       if (targetTokenEarned > 0) {
         IBookkeeper(IController(_controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
       }
@@ -214,8 +215,6 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
     if (toVault != 0) {
       _distributeMeshRewards(toVault);
       toVault = IERC20(_TETU_MESH).balanceOf(address(this));
-      // add tetuMesh to vault rewards
-      address targetVault = targetRewardVault();
       IERC20(_TETU_MESH).safeApprove(targetVault, 0);
       IERC20(_TETU_MESH).safeApprove(targetVault, toVault);
       ISmartVault(targetVault).notifyTargetRewardAmount(_TETU_MESH, toVault);
