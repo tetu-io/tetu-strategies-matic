@@ -67,9 +67,7 @@ abstract contract BalancerPoolStrategyBase is ProxyStrategyBase {
     depositToken = depositToken_;
 
     gauge = IBalancerGauge(gauge_);
-    if (gauge_ != address(0)) {
-      IERC20(underlying_).safeApprove(gauge_, type(uint).max);
-    }
+    IERC20(underlying_).safeApprove(gauge_, type(uint).max);
 
     ProxyStrategyBase.initializeStrategyBase(
       controller_,
@@ -93,23 +91,12 @@ abstract contract BalancerPoolStrategyBase is ProxyStrategyBase {
     }
   }
 
-  function setGauge(address value) external restricted {
-    require(address(gauge) == address(0), "Gauge already defined");
-    gauge = IBalancerGauge(value);
-    if (value != address(0)) {
-      IERC20(_underlying()).safeApprove(value, type(uint).max);
-    }
-  }
-
   // *******************************************************
   //                      STRATEGY LOGIC
   // *******************************************************
 
   /// @dev Balance of staked LPs in the gauge
   function _rewardPoolBalance() internal override view returns (uint256) {
-    if (address(gauge) == address(0)) {
-      return 0;
-    }
     return gauge.balanceOf(address(this));
   }
 
@@ -117,11 +104,9 @@ abstract contract BalancerPoolStrategyBase is ProxyStrategyBase {
   function readyToClaim() external view override returns (uint256[] memory toClaim) {
     IBalancerGauge _gauge = gauge;
     toClaim = new uint256[](_rewardTokens.length);
-    if (address(_gauge) != address(0)) {
-      for (uint i; i < toClaim.length; i++) {
-        address rt = _rewardTokens[i];
-        toClaim[i] = _gauge.claimable_reward(address(this), rt);
-      }
+    for (uint i; i < toClaim.length; i++) {
+      address rt = _rewardTokens[i];
+      toClaim[i] = _gauge.claimable_reward(address(this), rt);
     }
   }
 
@@ -147,36 +132,28 @@ abstract contract BalancerPoolStrategyBase is ProxyStrategyBase {
 
   /// @dev Deposit LP tokens to gauge
   function depositToPool(uint256 amount) internal override {
-    IBalancerGauge _gauge = gauge;
-    if (amount != 0 && address(_gauge) != address(0)) {
-      _gauge.deposit(amount);
+    if (amount != 0) {
+      gauge.deposit(amount);
     }
   }
 
   /// @dev Withdraw LP tokens from gauge
   function withdrawAndClaimFromPool(uint256 amount) internal override {
-    IBalancerGauge _gauge = gauge;
-    if (amount != 0 && address(_gauge) != address(0)) {
-      _gauge.withdraw(amount, false);
+    if (amount != 0) {
+      gauge.withdraw(amount, false);
     }
   }
 
   /// @dev Emergency withdraw all from a gauge
   function emergencyWithdrawFromPool() internal override {
-    IBalancerGauge _gauge = gauge;
-    if (address(_gauge) != address(0)) {
-      _gauge.withdraw(gauge.balanceOf(address(this)), false);
-    }
+    gauge.withdraw(gauge.balanceOf(address(this)), false);
   }
 
   /// @dev In this version rewards are accumulated in this strategy
   function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     _investAllUnderlying();
-    IBalancerGauge _gauge = gauge;
-    if (address(_gauge) != address(0)) {
-      _gauge.claim_rewards();
-      liquidateReward();
-    }
+    gauge.claim_rewards();
+    liquidateReward();
   }
 
   /// @dev Make something useful with rewards
@@ -267,8 +244,6 @@ abstract contract BalancerPoolStrategyBase is ProxyStrategyBase {
     IERC20(_tokenIn).safeApprove(address(_BALANCER_VAULT), _amountIn);
     _BALANCER_VAULT.joinPool(_poolId, address(this), address(this), request);
   }
-
-
 
   //slither-disable-next-line unused-state
   uint256[50] private ______gap;

@@ -74,6 +74,7 @@ export class MaticAddresses {
   public static MESH_TOKEN = '0x82362Ec182Db3Cf7829014Bc61E9BE8a2E82868a'.toLowerCase();
   public static tetuMESH_TOKEN = '0xDcB8F34a3ceb48782c9f3F98dF6C12119c8d168a'.toLowerCase();
   public static SPHEREV3_TOKEN = '0x62F594339830b90AE4C084aE7D223fFAFd9658A7'.toLowerCase();
+  public static tetuBAL = '0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -216,6 +217,10 @@ export class MaticAddresses {
   public static BALANCER_POOL_MATIC_USDC_WETH_BAL_ID = '0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002'.toLowerCase();
   public static BALANCER_POOL_MATIC_USDC_WETH_BAL = '0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875'.toLowerCase();
   public static BALANCER_GAUGE_MATIC_USDC_WETH_BAL = '0x068Ff98072d3eB848D012e3390703BB507729ed6'.toLowerCase();
+
+  public static BALANCER_POOL_tetuBAL_BPT_ID = '0xb797adfb7b268faeaa90cadbfed464c76ee599cd0002000000000000000005ba'.toLowerCase();
+  public static BALANCER_POOL_tetuBAL_BPT = '0xb797adfb7b268faeaa90cadbfed464c76ee599cd'.toLowerCase();
+  public static BALANCER_GAUGE_tetuBAL_BPT= '0xAA59736b80cf77d1E7D56B7bbA5A8050805F5064'.toLowerCase();
 
 
 
