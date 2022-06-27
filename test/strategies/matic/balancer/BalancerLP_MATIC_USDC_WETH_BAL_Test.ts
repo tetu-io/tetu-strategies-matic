@@ -31,7 +31,7 @@ describe('Balancer LP tests', async () => {
   const vaultName = "MATIC_USDC_WETH_BAL_BPT";
   const underlying = MaticAddresses.BALANCER_POOL_MATIC_USDC_WETH_BAL;
   const poolId = MaticAddresses.BALANCER_POOL_MATIC_USDC_WETH_BAL_ID;
-  const gauge = Misc.ZERO_ADDRESS;
+  const gauge = MaticAddresses.BALANCER_GAUGE_MATIC_USDC_WETH_BAL;
   const depositToken = MaticAddresses.BAL_TOKEN;
   const buybackRatio = 500;
   const rewardTokens = [MaticAddresses.BAL_TOKEN];
@@ -73,7 +73,7 @@ describe('Balancer LP tests', async () => {
           buybackRatio,
           rewardTokens,
         );
-        await StrategyBalancerPool__factory.connect(strategy.address, signer).setGauge(MaticAddresses.BALANCER_GAUGE_MATIC_USDC_WETH_BAL);
+        // await StrategyBalancerPool__factory.connect(strategy.address, signer).setGauge(MaticAddresses.BALANCER_GAUGE_MATIC_USDC_WETH_BAL);
         return strategy;
       },
       underlying,
