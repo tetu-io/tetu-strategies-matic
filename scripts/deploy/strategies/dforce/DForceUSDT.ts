@@ -6,7 +6,7 @@ import {MaticAddresses} from "../../../addresses/MaticAddresses";
 
 const strategyContractName = 'StrategyDForceFold';
 const VAULT = '0x676418e9a927c58291808ff87fdFb5Dd04975aB2';
-const UNDERLYING = MaticAddresses.USDC_TOKEN;
+const UNDERLYING = MaticAddresses.USDT_TOKEN;
 const I_TOKEN = "0xb3ab7148cCCAf66686AD6C1bE24D83e58E6a504e";
 const BORROW_FACTOR = 8000;
 const COLLATERAL_FACTOR = 8499;
