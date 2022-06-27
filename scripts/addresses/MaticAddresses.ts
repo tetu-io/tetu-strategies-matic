@@ -75,6 +75,7 @@ export class MaticAddresses {
   public static tetuMESH_TOKEN = '0xDcB8F34a3ceb48782c9f3F98dF6C12119c8d168a'.toLowerCase();
   public static SPHEREV3_TOKEN = '0x62F594339830b90AE4C084aE7D223fFAFd9658A7'.toLowerCase();
   public static tetuBAL = '0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33'.toLowerCase();
+  public static DF_TOKEN = '0x08C15FA26E519A78a666D19CE5C646D55047e0a3'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -220,8 +221,7 @@ export class MaticAddresses {
 
   public static BALANCER_POOL_tetuBAL_BPT_ID = '0xb797adfb7b268faeaa90cadbfed464c76ee599cd0002000000000000000005ba'.toLowerCase();
   public static BALANCER_POOL_tetuBAL_BPT = '0xb797adfb7b268faeaa90cadbfed464c76ee599cd'.toLowerCase();
-  public static BALANCER_GAUGE_tetuBAL_BPT= '0xAA59736b80cf77d1E7D56B7bbA5A8050805F5064'.toLowerCase();
-
+  public static BALANCER_GAUGE_tetuBAL_BPT = '0xAA59736b80cf77d1E7D56B7bbA5A8050805F5064'.toLowerCase();
 
 
   // KLIMA
@@ -258,6 +258,9 @@ export class MaticAddresses {
   public static MESH_FACTORY = '0x9f3044f7f9fc8bc9ed615d54845b4577b833282d'.toLowerCase();
   public static MESH_ROUTER = '0x10f4a785f458bc144e3706575924889954946639'.toLowerCase();
   public static TETU_MESH_MESH_LP = '0xcf40352253de7a0155d700a937Dc797D681c9867'.toLowerCase();
+
+  // DFORCE
+  public static DFORCE_CONTROLLER = '0x52eaCd19E38D501D006D2023C813d7E37F025f37'.toLowerCase();
 
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,

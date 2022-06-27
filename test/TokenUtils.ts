@@ -72,6 +72,7 @@ export class TokenUtils {
     [MaticAddresses.MESH_TOKEN, '0x9f23c6ddce30a79eb5e25f6ab9de987e53308212'.toLowerCase()],
     [MaticAddresses.BALANCER_POOL_MATIC_USDC_WETH_BAL, '0x068Ff98072d3eB848D012e3390703BB507729ed6'.toLowerCase()], // gauge
     [MaticAddresses.BALANCER_POOL_tetuBAL_BPT, '0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94'.toLowerCase()], // todo change to vault
+    [MaticAddresses.DF_TOKEN, '0x80ab3817c0026d31e5ecac7675450f510f016efb'.toLowerCase()], // gov
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {
