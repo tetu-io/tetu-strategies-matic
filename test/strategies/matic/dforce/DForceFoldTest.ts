@@ -43,9 +43,9 @@ describe('Universal DForce Fold tests', async () => {
       return;
     }
 
-    if (idx !== '0') {
-      return;
-    }
+    // if (idx !== '0') {
+    //   return;
+    // }
 
     console.log('Start test strategy', idx, rTokenName);
     // **********************************************
