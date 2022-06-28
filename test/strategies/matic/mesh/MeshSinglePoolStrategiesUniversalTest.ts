@@ -123,7 +123,7 @@ describe('Universal Mesh tests', async () => {
       _strategy: IStrategy,
       _balanceTolerance: number
     ) => {
-      return new MeshSinglePoolDoHardWork(
+      const hw = new MeshSinglePoolDoHardWork(
         _signer,
         _user,
         _core,
@@ -134,6 +134,8 @@ describe('Universal Mesh tests', async () => {
         _balanceTolerance,
         finalBalanceTolerance,
       );
+      hw.toClaimCheckTolerance = 0.1; // toClaim returns too aprox value
+      return hw;
     };
 
     universalStrategyTest(
