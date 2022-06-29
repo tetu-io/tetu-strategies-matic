@@ -17,7 +17,7 @@ import {BalancerLpSpecificHardWork} from "./BalancerLpSpecificHardWork";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('Balancer LP tests', async () => {
+describe.skip('Balancer LP tests', async () => {
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, true);
