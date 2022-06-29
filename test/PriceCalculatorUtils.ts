@@ -1,4 +1,3 @@
-
 import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "./TokenUtils";
 import {expect} from "chai";
@@ -6,8 +5,8 @@ import {ethers} from "hardhat";
 import {Logger} from "tslog";
 import logSettings from "../log_settings";
 import {DeployerUtilsLocal} from "../scripts/deploy/DeployerUtilsLocal";
-import axios from "axios";
 import {IPriceCalculator, IPriceCalculator__factory} from "../typechain";
+import {parseUnits} from "ethers/lib/utils";
 
 const log: Logger = new Logger(logSettings);
 
@@ -28,6 +27,15 @@ export class PriceCalculatorUtils {
 
   // keep this method for possible implement caches
   public static async getPriceCached(token: string, calculator: IPriceCalculator | null = null): Promise<BigNumber> {
+    console.log('get price for', token);
+    // todo remove
+    if (token.toLowerCase() === '0xdcb8f34a3ceb48782c9f3f98df6c12119c8d168a'.toLowerCase()) {
+      return parseUnits('1');
+    }
+    // todo remove
+    if (token.toLowerCase() === '0xcf40352253de7a0155d700a937Dc797D681c9867'.toLowerCase()) {
+      return parseUnits('1');
+    }
     const net = await ethers.provider.getNetwork();
     let network = ''
     if (net.chainId === 137) {

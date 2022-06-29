@@ -5,10 +5,10 @@ import {DeployerUtilsLocal} from "../../scripts/deploy/DeployerUtilsLocal";
 import {StrategyTestUtils} from "./StrategyTestUtils";
 import {
   IFeeRewardForwarder,
-  IStrategy,
   IPriceCalculator,
   ISmartVault,
-  ISmartVault__factory
+  ISmartVault__factory,
+  IStrategy
 } from "../../typechain";
 import {VaultUtils} from "../VaultUtils";
 import {Misc} from "../../scripts/utils/tools/Misc";
@@ -73,7 +73,10 @@ async function universalStrategyTest(
       if (ppfsDecreaseAllowed) {
         await core.vaultController.changePpfsDecreasePermissions([vault.address], true);
       }
-      await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
+      const firstRt = (await vault.rewardTokens())[0];
+      if (firstRt.toLowerCase() === core.psVault.address.toLowerCase()) {
+        await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
+      }
 
       // set class variables for keep objects links
       deployInfo.signer = signer;

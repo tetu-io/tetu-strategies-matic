@@ -22,7 +22,7 @@ export class DoHardWorkLoopBase {
   public readonly strategy: IStrategy;
   public readonly balanceTolerance: number;
   public readonly finalBalanceTolerance: number;
-  private readonly vaultRt: string;
+  private vaultRt: string;
   vaultForUser: ISmartVault;
   undDec = 0;
   userDeposited = BigNumber.from(0);
@@ -85,6 +85,7 @@ export class DoHardWorkLoopBase {
 
   protected async init() {
     this.undDec = await TokenUtils.decimals(this.underlying);
+    this.vaultRt = (await this.vault.rewardTokens())[0].toLowerCase()
   }
 
   protected async initialCheckVault() {
@@ -337,7 +338,7 @@ export class DoHardWorkLoopBase {
         continue;
       }
       const rtBal = await TokenUtils.balanceOf(rt, this.strategy.address);
-      console.log('rt balance in strategy', rt, rtBal);
+      console.log('rt balance in strategy', rt, rtBal.toString());
       expect(rtBal).is.eq(0, 'Strategy contains not liquidated rewards');
     }
 
@@ -411,7 +412,7 @@ export class DoHardWorkLoopBase {
     return result;
   }
 
-  private static toPercent(actual: number, expected: number): string {
+  protected static toPercent(actual: number, expected: number): string {
     const percent = (actual / expected * 100) - 100;
     return percent.toFixed(6) + '%';
   }

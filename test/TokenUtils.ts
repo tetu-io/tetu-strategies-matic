@@ -1,6 +1,13 @@
 import {ethers} from "hardhat";
-import {ERC20__factory, IERC721Enumerable__factory, IWmatic, IWmatic__factory} from "../typechain";
-import {BigNumber, utils} from "ethers";
+import {
+  ERC20__factory,
+  IController__factory,
+  IERC20__factory, IERC20Extended__factory,
+  IERC721Enumerable__factory,
+  ISmartVault__factory,
+  IWmatic__factory
+} from "../typechain";
+import {BigNumber} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {MaticAddresses} from "../scripts/addresses/MaticAddresses";
 import chai from "chai";
@@ -62,6 +69,10 @@ export class TokenUtils {
     [MaticAddresses.CLAM2_TOKEN, '0x820f92c1b3ad8e962e6c6d9d7caf2a550aec46fb'.toLowerCase()],
     [MaticAddresses.xTETU, '0x352f9fa490a86f625f53e581f0ec3bd649fd8bc9'.toLowerCase()],
     [MaticAddresses.SPHEREV3_TOKEN, '0x7754d8b057CC1d2D857d897461DAC6C3235B4aAe'.toLowerCase()], // sphere owner
+    [MaticAddresses.MESH_TOKEN, '0x176b29289f66236c65c7ac5db2400abb5955df13'.toLowerCase()], // vMESH
+    [MaticAddresses.BALANCER_POOL_MATIC_USDC_WETH_BAL, '0x068Ff98072d3eB848D012e3390703BB507729ed6'.toLowerCase()], // gauge
+    [MaticAddresses.BALANCER_POOL_tetuBAL_BPT, '0xaa59736b80cf77d1e7d56b7bba5a8050805f5064'.toLowerCase()], // gauge
+    [MaticAddresses.DF_TOKEN, '0x80ab3817c0026d31e5ecac7675450f510f016efb'.toLowerCase()], // gov
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {
@@ -142,6 +153,18 @@ export class TokenUtils {
     if (token.toLowerCase() === await DeployerUtilsLocal.getNetworkTokenAddress()) {
       await IWmatic__factory.connect(token, await DeployerUtilsLocal.impersonate(to)).deposit({value: amount});
       return amount;
+    }
+    const owner = await DeployerUtilsLocal.impersonate(to);
+    if ((await IController__factory.connect(MaticAddresses.CONTROLLER_ADDRESS, owner).isValidVault(token))) {
+      const vault = ISmartVault__factory.connect(token, owner);
+      const underlying = await vault.underlying();
+      const ppfs = await vault.getPricePerFullShare();
+      const dec = await IERC20Extended__factory.connect(token, owner).decimals();
+      const a = amount?.mul(ppfs).div(parseUnits('1', dec)).mul(2) || BigNumber.from(Misc.MAX_UINT);
+      await TokenUtils.getToken(underlying, to, a);
+      await IERC20__factory.connect(underlying, owner).approve(token, Misc.MAX_UINT);
+      await vault.deposit(a);
+      return a;
     }
 
     const holder = TokenUtils.TOKEN_HOLDERS.get(token.toLowerCase()) as string;

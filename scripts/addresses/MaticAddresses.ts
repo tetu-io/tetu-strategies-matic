@@ -9,6 +9,7 @@ export class MaticAddresses {
 
   public static ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
   public static GOV_ADDRESS = "0xcc16d636dD05b52FF1D8B9CE09B09BC62b11412B".toLowerCase();
+  public static CONTROLLER_ADDRESS = "0x6678814c273d5088114B6E40cC49C8DB04F9bC29".toLowerCase();
   // tokens
   public static WETH_TOKEN = "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619".toLowerCase();
   public static ADDY_TOKEN = "0xc3FdbadC7c795EF1D6Ba111e06fF8F16A20Ea539".toLowerCase();
@@ -69,8 +70,12 @@ export class MaticAddresses {
   public static UMA_TOKEN = '0x3066818837c5e6eD6601bd5a91B0762877A6B731'.toLowerCase();
   public static SPHERE_TOKEN = '0x8D546026012bF75073d8A586f24A5d5ff75b9716'.toLowerCase();
   public static SPHEREV2_TOKEN = '0x17e9C5b37283ac5fBE527011CeC257b832f03eb3'.toLowerCase();
-  public static SPHEREV3_TOKEN = '0x48d86b885d3e9EDB6673c94179875B0D6484A3EA'.toLowerCase();
   public static CLAM2_TOKEN = '0xc250e9987a032acac293d838726c511e6e1c029d'.toLowerCase();
+  public static MESH_TOKEN = '0x82362Ec182Db3Cf7829014Bc61E9BE8a2E82868a'.toLowerCase();
+  public static tetuMESH_TOKEN = '0xDcB8F34a3ceb48782c9f3F98dF6C12119c8d168a'.toLowerCase();
+  public static SPHEREV3_TOKEN = '0x62F594339830b90AE4C084aE7D223fFAFd9658A7'.toLowerCase();
+  public static tetuBAL = '0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33'.toLowerCase();
+  public static DF_TOKEN = '0x08C15FA26E519A78a666D19CE5C646D55047e0a3'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -209,6 +214,16 @@ export class MaticAddresses {
   public static BALANCER_BAL_ETH_POOL = '0x3d468AB2329F296e1b9d8476Bb54Dd77D8c2320f'.toLowerCase();
   public static BALANCER_STABLE_POOL = '0x06Df3b2bbB68adc8B0e302443692037ED9f91b42'.toLowerCase();
 
+
+  public static BALANCER_POOL_MATIC_USDC_WETH_BAL_ID = '0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002'.toLowerCase();
+  public static BALANCER_POOL_MATIC_USDC_WETH_BAL = '0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875'.toLowerCase();
+  public static BALANCER_GAUGE_MATIC_USDC_WETH_BAL = '0x068Ff98072d3eB848D012e3390703BB507729ed6'.toLowerCase();
+
+  public static BALANCER_POOL_tetuBAL_BPT_ID = '0xb797adfb7b268faeaa90cadbfed464c76ee599cd0002000000000000000005ba'.toLowerCase();
+  public static BALANCER_POOL_tetuBAL_BPT = '0xb797adfb7b268faeaa90cadbfed464c76ee599cd'.toLowerCase();
+  public static BALANCER_GAUGE_tetuBAL_BPT = '0xAA59736b80cf77d1E7D56B7bbA5A8050805F5064'.toLowerCase();
+
+
   // KLIMA
   public static KLIMA_STAKING = '0x25d28a24Ceb6F81015bB0b2007D795ACAc411b4d'.toLowerCase();
   public static sKLIMA = '0xb0C22d8D350C67420f06F48936654f567C73E8C8'.toLowerCase();
@@ -239,6 +254,14 @@ export class MaticAddresses {
   public static MARKET_POOLDIRECTORY = '0xA2a1cb88D86A939A37770FE5E9530E8700DEe56b'.toLowerCase();
   public static MARKET_POOLLENS = '0xe4D84b252308645098846312286E6c6D2846DbB0'.toLowerCase();
 
+  // MESHSWAP
+  public static MESH_FACTORY = '0x9f3044f7f9fc8bc9ed615d54845b4577b833282d'.toLowerCase();
+  public static MESH_ROUTER = '0x10f4a785f458bc144e3706575924889954946639'.toLowerCase();
+  public static TETU_MESH_MESH_LP = '0xcf40352253de7a0155d700a937Dc797D681c9867'.toLowerCase();
+
+  // DFORCE
+  public static DFORCE_CONTROLLER = '0x52eaCd19E38D501D006D2023C813d7E37F025f37'.toLowerCase();
+
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,
     MaticAddresses.USDT_TOKEN,
@@ -266,6 +289,8 @@ export class MaticAddresses {
         return MaticAddresses.TETU_SWAP_ROUTER;
       case MaticAddresses.DINO_FACTORY:
         return MaticAddresses.DINO_ROUTER;
+      case MaticAddresses.MESH_FACTORY:
+        return MaticAddresses.MESH_ROUTER;
     }
     throw Error('Unknown factory ' + factory);
   }
@@ -286,6 +311,8 @@ export class MaticAddresses {
         return 'CAFE';
       case MaticAddresses.TETU_SWAP_ROUTER:
         return "TETU";
+      case MaticAddresses.MESH_ROUTER:
+        return "MESH";
     }
     throw Error('Unknown router ' + router);
   }
