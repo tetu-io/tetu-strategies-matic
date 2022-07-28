@@ -17,7 +17,7 @@ import {BalancerLpSpecificHardWork} from "./BalancerLpSpecificHardWork";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe.skip('Balancer LP tests', async () => {
+describe('Balancer LP tests', async () => {
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, true);
@@ -44,7 +44,7 @@ describe.skip('Balancer LP tests', async () => {
   // only for strategies where we expect PPFS fluctuations
   const balanceTolerance = 0;
   const finalBalanceTolerance = 0;
-  const deposit = 100;
+  const deposit = 1_000;
   // at least 3
   const loops = 3;
   const loopValue = 300;
