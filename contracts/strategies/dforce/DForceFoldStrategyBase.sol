@@ -290,8 +290,7 @@ abstract contract DForceFoldStrategyBase is FoldingBase {
   }
 
   function platform() external override pure returns (IStrategy.Platform) {
-    // todo change in the main repo
-    return IStrategy.Platform.SLOT_39;
+    return IStrategy.Platform.D_FORCE;
   }
 
 }

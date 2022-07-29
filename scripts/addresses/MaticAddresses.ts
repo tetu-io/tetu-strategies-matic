@@ -262,6 +262,9 @@ export class MaticAddresses {
   // DFORCE
   public static DFORCE_CONTROLLER = '0x52eaCd19E38D501D006D2023C813d7E37F025f37'.toLowerCase();
 
+  // DYSTOPIA
+  public static DYSTOPIA_tetuQI_QI = '0x42c0cc5f1827c5d908392654389e5d93da426378'.toLowerCase();
+
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,
     MaticAddresses.USDT_TOKEN,
