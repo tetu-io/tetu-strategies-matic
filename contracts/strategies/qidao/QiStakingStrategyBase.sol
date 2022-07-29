@@ -14,6 +14,7 @@ pragma solidity 0.8.4;
 
 import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
 import "../../third_party/qidao/IeQi.sol";
+import "../../third_party/dystopia/IDystopiaRouter.sol";
 import "../../third_party/IERC20Extended.sol";
 import "../../third_party/IDelegation.sol";
 
@@ -27,13 +28,13 @@ abstract contract QiStakingStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "QiStakingStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.2.0";
+  string public constant VERSION = "1.3.0";
   /// @dev 10% buybacks, 90% of vested Qi should go to the vault rewards (not autocompound)
   uint256 private constant _BUY_BACK_RATIO = 10_00;
 
   IeQi public constant eQi = IeQi(0x880DeCADe22aD9c58A8A4202EF143c4F305100B3);
-  address public constant tetuQI_QI_PAIR = 0xBCDd0E38F759F8C07D8416dF15D0B3e0F9146d08;
   address private constant _tetuQI = 0x4Cd44ced63d9a6FEF595f6AD3F7CED13fCEAc768;
+  IDystopiaRouter private constant DYSTOPIA_ROUTER = IDystopiaRouter(0xbE75Dd16D029c6B32B7aD57A0FD9C1c20Dd2862e);
   uint256 private constant _MAX_LOCK = 60108430; // 4 years
   bytes32 internal constant _POOL_BALANCE_SNAPSHOT_KEY = bytes32(uint256(keccak256("s.pool_balance")) - 1);
   bytes32 internal constant _UNDERLYING_BALANCE_SNAPSHOT_KEY = bytes32(uint256(keccak256("s.underlying_balance")) - 1);
@@ -135,14 +136,16 @@ abstract contract QiStakingStrategyBase is ProxyStrategyBase {
   /// @dev Send part of airdrop to vault as claimable rewards + use another part for buybacks
   function liquidateReward() internal override {
     uint underlyingAmount = IERC20(_underlying()).balanceOf(address(this));
-    uint toBuybacks = (underlyingAmount * _buyBackRatio() / _BUY_BACK_DENOMINATOR);
-    uint toVault = underlyingAmount - toBuybacks;
+    uint fee = (underlyingAmount * _buyBackRatio() / _BUY_BACK_DENOMINATOR);
+    uint toBuybacks = fee / 2;
+    uint toPol = fee - toBuybacks;
+    uint toVault = underlyingAmount - fee;
     address qi = _underlying();
     address tetuQi = _tetuQI;
+
     if (toBuybacks != 0) {
       address forwarder = IController(_controller()).feeRewardForwarder();
-      IERC20(qi).safeApprove(forwarder, 0);
-      IERC20(qi).safeApprove(forwarder, toBuybacks);
+      _approveIfNeeds(qi, toBuybacks, forwarder);
       // it will sell reward token to Target Token and distribute it to SmartVault and PS
       uint targetTokenEarned = IFeeRewardForwarder(forwarder).distribute(toBuybacks, qi, tetuQi);
       if (targetTokenEarned > 0) {
@@ -150,36 +153,73 @@ abstract contract QiStakingStrategyBase is ProxyStrategyBase {
       }
     }
 
-    if (toVault != 0) {
-      toVault = _qiToTetuQi(qi, toVault);
+    if (toPol != 0) {
+      _generatePol(toPol, qi, tetuQi);
+    }
 
-      IERC20(tetuQi).safeApprove(tetuQi, 0);
-      IERC20(tetuQi).safeApprove(tetuQi, toVault);
+    if (toVault != 0) {
+      toVault = _qiToTetuQi(qi, tetuQi, toVault);
+
+      _approveIfNeeds(tetuQi, toVault, tetuQi);
       ISmartVault(tetuQi).notifyTargetRewardAmount(tetuQi, toVault);
     }
   }
 
-  function _qiToTetuQi(address qi, uint amount) internal returns (uint) {
-    uint balance = IERC20(_tetuQI).balanceOf(address(this));
-    (uint reserve0, uint reserve1,) = IUniswapV2Pair(tetuQI_QI_PAIR).getReserves();
-    address token0 = IUniswapV2Pair(tetuQI_QI_PAIR).token0();
-    uint tetuQiReserve = token0 == _tetuQI ? reserve0 : reserve1;
-    uint qiReserve = token0 != _tetuQI ? reserve0 : reserve1;
+  function _generatePol(uint toPol, address qi, address tetuQi) internal {
+    (uint reserveQi, uint reserveTetuQi) = DYSTOPIA_ROUTER.getReserves(qi, tetuQi, true);
+    uint forTetuQiAmount = toPol * reserveTetuQi / (reserveQi + reserveTetuQi);
+
+    uint qiAmount = toPol - forTetuQiAmount;
+    uint tetuQiAmount = _qiToTetuQi(qi, tetuQi, forTetuQiAmount);
+
+    (reserveQi, reserveTetuQi) = DYSTOPIA_ROUTER.getReserves(qi, tetuQi, true);
+    // need to keep some tetuQi dust instead of add more qi liquidity than expected
+    tetuQiAmount = qiAmount * reserveTetuQi / reserveQi;
+
+    _approveIfNeeds(qi, qiAmount, address(DYSTOPIA_ROUTER));
+    _approveIfNeeds(tetuQi, tetuQiAmount, address(DYSTOPIA_ROUTER));
+    DYSTOPIA_ROUTER.addLiquidity(
+      qi,
+      tetuQi,
+      true,
+      qiAmount,
+      tetuQiAmount,
+      0,
+      0,
+      IController(_controller()).fund(),
+      block.timestamp
+    );
+  }
+
+  function _qiToTetuQi(address qi, address tetuQi, uint amount) internal returns (uint) {
+
+    (uint qiReserve, uint tetuQiReserve) = DYSTOPIA_ROUTER.getReserves(qi, tetuQi, true);
+
     if (tetuQiReserve > qiReserve) {
+      // assume that volatile formula is fit to us with stable pool
       uint toSell = Math.min(_computeSellAmount(qiReserve, tetuQiReserve), amount);
-      uint amountOut = _getAmountOut(toSell, qiReserve, tetuQiReserve);
-      IERC20(qi).safeTransfer(tetuQI_QI_PAIR, amount);
-      _swapCall(IUniswapV2Pair(tetuQI_QI_PAIR), qi, _tetuQI, amountOut);
+
+      _approveIfNeeds(qi, amount, address(DYSTOPIA_ROUTER));
+      DYSTOPIA_ROUTER.swapExactTokensForTokensSimple(
+        toSell,
+        0,
+        qi,
+        tetuQi,
+        true,
+        address(this),
+        block.timestamp
+      );
+
       amount = amount - toSell;
     }
     if (amount != 0) {
-      IERC20(qi).safeApprove(_tetuQI, 0);
-      IERC20(qi).safeApprove(_tetuQI, amount);
+      _approveIfNeeds(qi, amount, _tetuQI);
       // make sure that we not call doHardWork again in the vault during investment process
       ISmartVault(_tetuQI).depositAndInvest(amount);
     }
 
-    return IERC20(_tetuQI).balanceOf(address(this)) - balance;
+    // use all available balance
+    return IERC20(_tetuQI).balanceOf(address(this));
   }
 
   /// @dev Call swap function on pair with necessary preparations
@@ -256,6 +296,13 @@ abstract contract QiStakingStrategyBase is ProxyStrategyBase {
 
   function _getStrategyUint(bytes32 key) private view returns (uint256) {
     return strategyUintStorage[key];
+  }
+
+  function _approveIfNeeds(address token, uint amount, address spender) internal {
+    if (IERC20(token).allowance(address(this), spender) < amount) {
+      IERC20(token).safeApprove(spender, 0);
+      IERC20(token).safeApprove(spender, type(uint).max);
+    }
   }
 
   // use gap in next implementations
