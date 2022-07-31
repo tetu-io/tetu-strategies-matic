@@ -1,7 +1,7 @@
 import {
   IControllable__factory, IControllableExtended__factory,
   IController,
-  IController__factory,
+  IController__factory, IERC20__factory,
   ISmartVault,
   ISmartVault__factory,
   IStrategy__factory,
@@ -52,8 +52,14 @@ export class VaultUtils {
     expect(+utils.formatUnits(bal, dec))
       .is.greaterThanOrEqual(+utils.formatUnits(amount, dec), 'not enough balance')
 
+    const undBal = await vaultForUser.underlyingBalanceWithInvestment();
+    const totalSupply = await IERC20__factory.connect(vault.address, user).totalSupply();
+    if (!totalSupply.isZero() && undBal.isZero()) {
+      throw new Error("Wrong underlying balance! Check strategy implementation for _rewardPoolBalance()");
+    }
+
     await TokenUtils.approve(underlying, user, vault.address, amount.toString());
-    console.log('deposit', BigNumber.from(amount).toString());
+    console.log('Vault utils: deposit', BigNumber.from(amount).toString());
     if (invest) {
       return vaultForUser.depositAndInvest(BigNumber.from(amount));
     } else {
@@ -132,6 +138,7 @@ export class VaultUtils {
     } else {
       await vault.doHardWork();
     }
+    console.log('hard work called');
 
     const ppfsAfter = +utils.formatUnits(await vault.getPricePerFullShare(), undDec);
     const undBalAfter = +utils.formatUnits(await vault.underlyingBalanceWithInvestment(), undDec);

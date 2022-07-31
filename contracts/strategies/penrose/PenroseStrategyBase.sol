@@ -12,11 +12,16 @@
 pragma solidity 0.8.4;
 
 import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
+import "../../interface/ITetuLiquidator.sol";
 import "../../third_party/penrose/IUserProxy.sol";
 import "../../third_party/penrose/IPenPoolFactory.sol";
 import "../../third_party/penrose/IPenPool.sol";
 import "../../third_party/penrose/IUserProxyFactory.sol";
 import "../../third_party/penrose/IMultiRewards.sol";
+import "../../third_party/penrose/IUserProxyInterface.sol";
+import "../../third_party/dystopia/IDystopiaPair.sol";
+import "../../third_party/dystopia/IDystopiaRouter.sol";
+import "../../third_party/IERC20Extended.sol";
 
 /// @title Strategy for autocompound Penrose rewards
 /// @author belbix
@@ -30,9 +35,13 @@ abstract contract PenroseStrategyBase is ProxyStrategyBase {
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.0.0";
 
+  uint private constant PRICE_IMPACT_TOLERANCE = 10_000;
+
+  IUserProxyInterface public constant PENROSE_USER_PROXY_INTERFACE = IUserProxyInterface(0xc9Ae7Dac956f82074437C6D40f67D6a5ABf3E34b);
   IUserProxyFactory public constant PENROSE_USER_PROXY_FACTORY = IUserProxyFactory(0x22Eb3955Ac17AA32374dA5932BbB2C46163E39E3);
-  //  address public constant PEN_LENS = 0x1432c3553FDf7FBD593a84B3A4d380c643cbf7a2;
   IPenPoolFactory public constant PEN_POOL_FACTORY = IPenPoolFactory(0xdf37c9c17dCdbB8B52ca9651d5C53406894a4abF);
+  IDystopiaRouter private constant DYSTOPIA_ROUTER = IDystopiaRouter(0xbE75Dd16D029c6B32B7aD57A0FD9C1c20Dd2862e);
+  ITetuLiquidator private constant TETU_LIQUIDATOR = ITetuLiquidator(0xC737eaB847Ae6A92028862fE38b828db41314772);
 
 
   // ------------------- VARIABLES ---------------------------------
@@ -47,6 +56,8 @@ abstract contract PenroseStrategyBase is ProxyStrategyBase {
   ) public initializer {
     address underlying = ISmartVault(_vault).underlying();
 
+    // create user proxy with stub action
+    PENROSE_USER_PROXY_INTERFACE.claimStakingRewards();
     userProxy = IUserProxy(PENROSE_USER_PROXY_FACTORY.createAndGetUserProxy(address(this)));
 
     IERC20(underlying).safeApprove(address(userProxy), type(uint).max);
@@ -78,7 +89,7 @@ abstract contract PenroseStrategyBase is ProxyStrategyBase {
 
   /// @dev Returns underlying amount under control
   function _rewardPoolBalance() internal override view returns (uint) {
-    return IERC20(stakingAddress).balanceOf(address(this));
+    return IERC20(stakingAddress).balanceOf(address(userProxy));
   }
 
   /// @dev Rewards ready to claim
@@ -128,7 +139,7 @@ abstract contract PenroseStrategyBase is ProxyStrategyBase {
 
   /// @dev Withdraw without care about rewards
   function emergencyWithdrawFromPool() internal override {
-    userProxy.unstakeLpAndWithdraw(_underlying(), IERC20(stakingAddress).balanceOf(address(this)), false);
+    userProxy.unstakeLpAndWithdraw(_underlying(), _rewardPoolBalance(), false);
   }
 
   function liquidateReward() internal override {
@@ -145,7 +156,6 @@ abstract contract PenroseStrategyBase is ProxyStrategyBase {
     for (uint i = 0; i < rts.length; i++) {
       address rt = rts[i];
       uint amount = IERC20(rt).balanceOf(address(this));
-
       if (amount != 0) {
 
         // unwrap shares if needs
@@ -165,7 +175,7 @@ abstract contract PenroseStrategyBase is ProxyStrategyBase {
         }
 
         if (toCompound != 0) {
-          IFeeRewardForwarder(forwarder).liquidate(rt, und, toCompound);
+          _compound(toCompound, und, rt);
         }
       }
     }
@@ -173,6 +183,45 @@ abstract contract PenroseStrategyBase is ProxyStrategyBase {
     if (targetTokenEarnedTotal > 0) {
       IBookkeeper(ctrl.bookkeeper()).registerStrategyEarned(targetTokenEarnedTotal);
     }
+  }
+
+  function _compound(uint toCompound, address und, address rt) internal {
+    (address token0, address token1) = IDystopiaPair(und).tokens();
+    (uint reserve0, uint reserve1) = _normalizedReserves(und, token0, token1);
+
+    uint amountFor0 = toCompound * reserve0 / (reserve0 + reserve1);
+    uint amountFor1 = toCompound - amountFor0;
+
+    _approveIfNeeds(rt, toCompound, address(TETU_LIQUIDATOR));
+    TETU_LIQUIDATOR.liquidate(rt, token0, amountFor0, PRICE_IMPACT_TOLERANCE);
+    uint amount0 = IERC20(token0).balanceOf(address(this));
+
+    TETU_LIQUIDATOR.liquidate(rt, token1, amountFor1, PRICE_IMPACT_TOLERANCE);
+    uint amount1 = IERC20(token1).balanceOf(address(this));
+
+    _approveIfNeeds(token0, amount0, address(DYSTOPIA_ROUTER));
+    _approveIfNeeds(token1, amount1, address(DYSTOPIA_ROUTER));
+    DYSTOPIA_ROUTER.addLiquidity(
+      token0,
+      token1,
+      IDystopiaPair(und).stable(),
+      amount0,
+      amount1,
+      0,
+      0,
+      address(this),
+      block.timestamp
+    );
+
+    // invest received amount of underlying
+    _investAllUnderlying();
+  }
+
+  function _normalizedReserves(address pair, address token0, address token1) internal view returns (uint, uint){
+    (uint reserve0, uint reserve1,) = IDystopiaPair(pair).getReserves();
+    uint decimals0 = IERC20Extended(token0).decimals();
+    uint decimals1 = IERC20Extended(token1).decimals();
+    return (reserve0 * 1e18 / 10 ** decimals0, reserve1 * 1e18 / 10 ** decimals1);
   }
 
   /// @dev Platform name for statistical purposes

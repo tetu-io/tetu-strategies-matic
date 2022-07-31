@@ -9,7 +9,7 @@ import {
   IFireBirdRouter__factory,
   IFireBirdFactory__factory,
   IUniswapV2Pair__factory,
-  IUniswapV2Router02__factory, IUniswapV2Factory__factory
+  IUniswapV2Router02__factory, IUniswapV2Factory__factory, IDystopiaRouter, IDystopiaRouter__factory
 } from "../typechain";
 import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "./TokenUtils";
@@ -375,14 +375,13 @@ export class UniswapUtils {
     const lpCtr = IUniswapV2Pair__factory.connect(lp, signer);
     const token0 = await lpCtr.token0();
     const token1 = await lpCtr.token1();
-    const factory = await lpCtr.factory();
-    const router = await DeployerUtilsLocal.getRouterByFactory(factory);
+
     const token0Und = await TokenUtils.decimals(token0);
     const token1Und = await TokenUtils.decimals(token1);
 
-    const token0Price = await PriceCalculatorUtils.getPriceCached(token0);
+    const token0Price = await PriceCalculatorUtils.getPriceCached(token0, calculator);
     const token0PriceN = +utils.formatUnits(token0Price);
-    const token1Price = await PriceCalculatorUtils.getPriceCached(token1);
+    const token1Price = await PriceCalculatorUtils.getPriceCached(token1, calculator);
     const token1PriceN = +utils.formatUnits(token1Price);
 
     const token0AmountN = ((usdAmountN / 2) / token0PriceN);
@@ -390,19 +389,21 @@ export class UniswapUtils {
     const token1AmountN = ((usdAmountN / 2) / token1PriceN);
     const token1Amount = utils.parseUnits(token1AmountN.toFixed(token1Und), token1Und);
 
-    await TokenUtils.getToken(token0, signer.address, token0Amount);
-    await TokenUtils.getToken(token1, signer.address, token1Amount);
+    await TokenUtils.getToken(token0, lp, token0Amount);
+    await TokenUtils.getToken(token1, lp, token1Amount);
 
-    await UniswapUtils.addLiquidity(
-      signer,
-      token0,
-      token1,
-      token0Amount.toString(),
-      token1Amount.toString(),
-      factory,
-      router,
-      false
-    );
+    await IUniswapV2Pair__factory.connect(lp, signer).mint(signer.address);
+    //
+    // await UniswapUtils.addLiquidity(
+    //   signer,
+    //   token0,
+    //   token1,
+    //   token0Amount.toString(),
+    //   token1Amount.toString(),
+    //   factory,
+    //   router,
+    //   false
+    // );
     Misc.printDuration('UniswapUtils: buyTokensAndAddLiq finished', start);
   }
 

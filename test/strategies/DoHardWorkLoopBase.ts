@@ -93,12 +93,14 @@ export class DoHardWorkLoopBase {
   }
 
   protected async initialSnapshot() {
+    console.log('>>>initialSnapshot start')
     this.userRTBal = await TokenUtils.balanceOf(this.vaultRt, this.user.address);
     this.vaultRTBal = await TokenUtils.balanceOf(this.vaultRt, this.vault.address);
     this.psBal = await TokenUtils.balanceOf(this.vaultRt, this.core.psVault.address);
     this.psPPFS = await this.core.psVault.getPricePerFullShare();
     this.startTs = await Misc.getBlockTsFromChain();
     this.bbRatio = (await this.strategy.buyBackRatio()).toNumber();
+    console.log('initialSnapshot end')
   }
 
   // signer and user enter to the vault
@@ -107,8 +109,10 @@ export class DoHardWorkLoopBase {
     console.log('--- Enter to vault')
     // initial deposit from signer
     await VaultUtils.deposit(this.signer, this.vault, this.userDeposited.div(2));
+    console.log('enterToVault: deposited for signer');
     this.signerDeposited = this.userDeposited.div(2);
     await VaultUtils.deposit(this.user, this.vault, this.userDeposited);
+    console.log('enterToVault: deposited for user');
     await this.userCheckBalanceInVault();
 
     // remove excess tokens
