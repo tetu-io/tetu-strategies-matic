@@ -38,12 +38,7 @@ describe('penrose tetuQi tests', async () => {
   const strategyContractName = strategyName;
   const vaultName = 'penQi/tetuQi';
 
-  const forwarderConfigurator = async (f: IFeeRewardForwarder) => {
-    await f.addLargestLps(
-      [MaticAddresses.PEN_TOKEN, MaticAddresses.DYST_TOKEN, MaticAddresses.tetuQI_TOKEN],
-      ['0x2c5ba816da67ce34029fc4a9cc7545d207abf945', '0x1e08a5b6a1694bc1a65395db6f4c506498daa349', MaticAddresses.DYSTOPIA_tetuQI_QI]
-    )
-  };
+  const forwarderConfigurator = null;
   // only for strategies where we expect PPFS fluctuations
   const ppfsDecreaseAllowed = false;
   // only for strategies where we expect PPFS fluctuations

@@ -40,9 +40,13 @@ contract StrategyPenroseTetuQi is PenroseStrategyBase {
 
   function _forwardPoolRewards() internal {
     ISmartVault(_TETU_QI).getAllRewardsAndRedirect(_underlying());
-    uint balance = IERC20(_TETU_QI).balanceOf(address(this));
-    _approveIfNeeds(_TETU_QI, balance, _TETU_QI);
-    ISmartVault(_TETU_QI).notifyTargetRewardAmount(_TETU_QI, balance);
+    address[] memory rts = ISmartVault(_TETU_QI).rewardTokens();
+    for (uint i; i < rts.length; i++) {
+      address rt = rts[i];
+      uint balance = IERC20(rt).balanceOf(address(this));
+      _approveIfNeeds(rt, balance, _TETU_QI);
+      ISmartVault(_TETU_QI).notifyTargetRewardAmount(rt, balance);
+    }
   }
 
   function assets() external pure override returns (address[] memory) {
