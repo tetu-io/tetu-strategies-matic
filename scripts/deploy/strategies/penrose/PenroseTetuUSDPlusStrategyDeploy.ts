@@ -8,7 +8,7 @@ import {
 import {writeFileSync} from "fs";
 
 const strategyContractName = 'StrategyPenroseTetuUsdPlus';
-const VAULT = '0x6eBf59b6Afe1Ae3216D9ed17D4DACf3993107073';
+const VAULT = '0x984ED0DAe53947A209A877841Cbe6138cA7A7a5f';
 
 async function main() {
   const signer = (await ethers.getSigners())[0];
