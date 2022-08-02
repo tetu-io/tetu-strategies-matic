@@ -23,7 +23,7 @@ contract StrategyPenroseTetuQi is PenroseStrategyBase {
     address _controller,
     address _vault
   ) external initializer {
-    (ISmartVault(_vault).underlying() == _DYSTOPIA_tetuQI_QI_PAIR, "!underlying");
+    require(ISmartVault(_vault).underlying() == _DYSTOPIA_tetuQI_QI_PAIR, "!underlying");
     PenroseStrategyBase.initializeStrategy(_controller, _vault);
   }
 

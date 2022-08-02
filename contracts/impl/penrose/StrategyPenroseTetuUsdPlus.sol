@@ -24,7 +24,7 @@ contract StrategyPenroseTetuUsdPlus is PenroseStrategyBase {
     address _controller,
     address _vault
   ) external initializer {
-    (ISmartVault(_vault).underlying() == _UNDERLYING, "!underlying");
+    require(ISmartVault(_vault).underlying() == _UNDERLYING, "!underlying");
     PenroseStrategyBase.initializeStrategy(_controller, _vault);
   }
 
