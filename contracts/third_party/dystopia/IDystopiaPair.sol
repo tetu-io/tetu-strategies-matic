@@ -32,4 +32,6 @@ interface IDystopiaPair {
   function token1() external view returns (address);
 
   function stable() external view returns (bool);
+
+  function sync() external;
 }

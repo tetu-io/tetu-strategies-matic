@@ -17,12 +17,13 @@ contract StrategyPenroseTetuQi is PenroseStrategyBase {
 
   address private constant _QI = 0x580A84C73811E1839F75d86d75d88cCa0c241fF4;
   address private constant _TETU_QI = 0x4Cd44ced63d9a6FEF595f6AD3F7CED13fCEAc768;
-
+  address private constant _DYSTOPIA_tetuQI_QI_PAIR = 0x42c0cc5f1827C5d908392654389E5D93da426378;
 
   function initialize(
     address _controller,
     address _vault
   ) external initializer {
+    (ISmartVault(_vault).underlying() == _DYSTOPIA_tetuQI_QI_PAIR, "!underlying");
     PenroseStrategyBase.initializeStrategy(_controller, _vault);
   }
 
@@ -40,12 +41,13 @@ contract StrategyPenroseTetuQi is PenroseStrategyBase {
 
   function _forwardPoolRewards() internal {
     ISmartVault(_TETU_QI).getAllRewardsAndRedirect(_underlying());
+    address v = _vault();
     address[] memory rts = ISmartVault(_TETU_QI).rewardTokens();
     for (uint i; i < rts.length; i++) {
       address rt = rts[i];
       uint balance = IERC20(rt).balanceOf(address(this));
-      _approveIfNeeds(rt, balance, _TETU_QI);
-      ISmartVault(_TETU_QI).notifyTargetRewardAmount(rt, balance);
+      _approveIfNeeds(rt, balance, v);
+      ISmartVault(v).notifyTargetRewardAmount(rt, balance);
     }
   }
 

@@ -73,6 +73,8 @@ export class TokenUtils {
     [MaticAddresses.BALANCER_POOL_MATIC_USDC_WETH_BAL, '0x068Ff98072d3eB848D012e3390703BB507729ed6'.toLowerCase()], // gauge
     [MaticAddresses.BALANCER_POOL_tetuBAL_BPT, '0xaa59736b80cf77d1e7d56b7bba5a8050805f5064'.toLowerCase()], // gauge
     [MaticAddresses.DF_TOKEN, '0x80ab3817c0026d31e5ecac7675450f510f016efb'.toLowerCase()], // gov
+    [MaticAddresses.DYSTOPIA_TETU_USDPlus, '0x17274fa0e56421f620b993596fc34e77c1706885'.toLowerCase()], // dyst gauge
+    [MaticAddresses.USDPlus_TOKEN, '0x421a018cc5839c4c0300afb21c725776dc389b1a'.toLowerCase()], // dyst gauge
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {
