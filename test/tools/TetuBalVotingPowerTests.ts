@@ -3,10 +3,16 @@ import chaiAsPromised from "chai-as-promised";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {ethers} from "hardhat";
 import {TimeUtils} from "../TimeUtils";
-import {TetuBalVotingPower, TetuBalVotingPower__factory} from "../../typechain";
+import {
+  IBVault, IBVault__factory,
+  IERC20,
+  IERC20__factory,
+  TetuBalVotingPower,
+  TetuBalVotingPower__factory
+} from "../../typechain";
 import {DeployerUtilsLocal} from "../../scripts/deploy/DeployerUtilsLocal";
 import {TokenUtils} from "../TokenUtils";
-import {parseUnits} from "ethers/lib/utils";
+import {formatUnits, parseUnits} from "ethers/lib/utils";
 import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 
 
@@ -25,6 +31,9 @@ describe("Base Vaults tests", function () {
   let signer: SignerWithAddress;
 
   let power: TetuBalVotingPower;
+  let dxTetu: IERC20;
+  let bpt: IERC20;
+  let tetuBal: IERC20;
 
   before(async function () {
     [signer] = await ethers.getSigners()
@@ -32,7 +41,9 @@ describe("Base Vaults tests", function () {
 
     const p = await DeployerUtilsLocal.deployTetuProxyControlled(signer, 'TetuBalVotingPower');
     power = TetuBalVotingPower__factory.connect(p[0].address, signer);
-
+    dxTetu = IERC20__factory.connect(DX_TETU, signer)
+    bpt = IERC20__factory.connect(TETU_BAL_BPT, signer)
+    tetuBal = IERC20__factory.connect(TETU_BAL, signer)
   });
 
   after(async function () {
@@ -47,12 +58,28 @@ describe("Base Vaults tests", function () {
     await TimeUtils.rollback(snapshot);
   });
 
-  it("decimals test", async () => {
-    await TokenUtils.getToken(DX_TETU, signer.address, parseUnits('1'))
-    await TokenUtils.getToken(TETU_BAL, signer.address, parseUnits('1'))
-    await TokenUtils.getToken(TETU_BAL_BPT, signer.address, parseUnits('1'))
+  it("test power", async () => {
+    expect(await dxTetu.balanceOf(signer.address)).eq(0);
+    expect(await tetuBal.balanceOf(signer.address)).eq(0);
+    expect(await bpt.balanceOf(signer.address)).eq(0);
 
-    expect(await power.balanceOf(signer.address)).eq(0);
+    await TokenUtils.getToken(DX_TETU, signer.address, parseUnits('1'))
+    await TokenUtils.getToken(TETU_BAL, signer.address, parseUnits('0.5'))
+
+
+    const dxTetuTotalSupply = await dxTetu.totalSupply();
+    const tetuBalBalance = await tetuBal.balanceOf(signer.address);
+    const bptTokens = await IBVault__factory.connect(BALANCER_VAULT, signer).getPoolTokens(TETU_BAL_BPT_ID);
+    const bptBal = bptTokens.balances[1];
+
+    console.log('dxTetuTotalSupply', formatUnits(dxTetuTotalSupply));
+    console.log('bptBal', formatUnits(bptBal));
+    console.log('tetuBalBalance', formatUnits(tetuBalBalance));
+
+    expect(+formatUnits(await power.dxTetuPower(signer.address))).above(0.00001);
+    expect(+formatUnits(await power.dxTetuPower(signer.address))).below(0.0001);
+    expect(await power.tetuBalPower(signer.address)).eq(tetuBalBalance);
+    expect(+formatUnits(await power.balanceOf(signer.address))).above(1.00001);
   });
 
 
