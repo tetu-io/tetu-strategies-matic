@@ -80,6 +80,7 @@ export class MaticAddresses {
   public static PEN_TOKEN = '0x9008D70A5282a936552593f410AbcBcE2F891A97'.toLowerCase();
   public static DYST_TOKEN = '0x39aB6574c289c3Ae4d88500eEc792AB5B947A5Eb'.toLowerCase();
   public static USDPlus_TOKEN = '0x236eeC6359fb44CCe8f97E99387aa7F8cd5cdE1f'.toLowerCase();
+  public static oZEMIT_TOKEN = '0xA34E0eaCB7fbB0b0d45da89b083E0f87fcdf6157'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 

@@ -12,7 +12,7 @@ import {
   ISmartVault,
   ISmartVault__factory,
   StrategyMeshStaking,
-  StrategyMeshStaking__factory
+  StrategyMeshStaking__factory, IFeeRewardForwarder
 } from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
@@ -57,6 +57,14 @@ describe('Mesh staking tests', async () => {
   // **********************************************
   // ************** CONFIG*************************
   // **********************************************
+
+  // const forwarderConfigurator = async (f: IFeeRewardForwarder) => {
+  //   await f.addLargestLps(
+  //     [MaticAddresses.oZEMIT_TOKEN],
+  //     ['0x0fBE132a5eB95f287740a7b0AfFBFc8d14354548']
+  //   )
+  // };
+
   const strategyContractName = strategyName;
   const vaultName = 'tetuMesh';
   // needed for custom tests.
