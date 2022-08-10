@@ -1,7 +1,6 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
-import {config as dotEnvConfig} from "dotenv";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {DeployInfo} from "../../DeployInfo";
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
@@ -9,11 +8,10 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {
-  IStrategy,
   ISmartVault,
   ISmartVault__factory,
-  StrategyQiStaking,
-  IFeeRewardForwarder, IPriceCalculator__factory
+  IStrategy,
+  StrategyPenroseTetuQi
 } from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
@@ -64,7 +62,7 @@ describe('penrose tetuQi tests', async () => {
         const strategy = await DeployerUtilsLocal.deployStrategyProxy(
           signer,
           strategyContractName,
-        ) as StrategyQiStaking;
+        ) as StrategyPenroseTetuQi;
         await strategy.initialize(core.controller.address, vaultAddress);
         return strategy;
       },

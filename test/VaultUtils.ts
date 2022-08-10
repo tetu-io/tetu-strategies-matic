@@ -18,11 +18,12 @@ import {MintHelperUtils} from "./MintHelperUtils";
 import {Misc} from "../scripts/utils/tools/Misc";
 import {ethers} from "hardhat";
 
-const PPFS_NO_INCREASE = new Set<string>([
+export const PPFS_NO_INCREASE = new Set<string>([
   'QiStakingStrategyBase',
   'BalBridgedStakingStrategyBase',
   'MeshLpStrategyBase',
   'BalancerPoolStrategyBase',
+  'PenroseStrategyBase',
 ])
 
 export class VaultUtils {

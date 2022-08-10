@@ -29,13 +29,7 @@ contract StrategyPenroseTetuQi is PenroseStrategyBase {
 
   /// @dev Collect profit and do something useful with them
   function doHardWork() external override hardWorkers onlyNotPausedInvesting {
-    // we should handle all possible rewards
-    _updateRewardTokens();
-    // invest all for avoid users funds liquidation
-    _investAllUnderlying();
-    // claim all rewards
-    userProxy.claimStakingRewards(stakingAddress);
-    liquidateReward();
+    _doHardWork();
     _forwardPoolRewards();
   }
 

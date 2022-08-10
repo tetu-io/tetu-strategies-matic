@@ -7,7 +7,7 @@ import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
-import {ISmartVault, IStrategy, StrategyQiStaking} from "../../../../typechain";
+import {ISmartVault, IStrategy, StrategyPenroseTetuUsdPlus} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
@@ -57,13 +57,16 @@ describe('penrose tetu-usd+ tests', async () => {
         const strategy = await DeployerUtilsLocal.deployStrategyProxy(
           signer,
           strategyContractName,
-        ) as StrategyQiStaking;
+        ) as StrategyPenroseTetuUsdPlus;
         await strategy.initialize(core.controller.address, vaultAddress);
+        await strategy.setAccumulatePOLRatio(50);
+        await strategy;
         return strategy;
       },
       underlying
     );
   };
+
   const hwInitiator = (
     _signer: SignerWithAddress,
     _user: SignerWithAddress,
@@ -74,7 +77,7 @@ describe('penrose tetu-usd+ tests', async () => {
     _strategy: IStrategy,
     _balanceTolerance: number
   ) => {
-    return new DoHardWorkLoopBase(
+    const doHardWork = new DoHardWorkLoopBase(
       _signer,
       _user,
       _core,
@@ -85,6 +88,8 @@ describe('penrose tetu-usd+ tests', async () => {
       _balanceTolerance,
       finalBalanceTolerance,
     );
+    doHardWork.toClaimCheckTolerance = 0;
+    return doHardWork;
   };
 
   await universalStrategyTest(
