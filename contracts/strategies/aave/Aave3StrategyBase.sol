@@ -20,6 +20,7 @@ import "../../third_party/aave3/IAave3ProtocolDataProvider.sol";
 import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
 
 /// @title Contract for AAVEv3 strategy implementation
+/// @dev AAVE3 doesn't support rewards on polygon, so this strategy doesn't support rewards
 /// @author dvpublic
 abstract contract Aave3StrategyBase is ProxyStrategyBase {
   using SafeERC20 for IERC20;
@@ -44,9 +45,6 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
   address internal _pool;
   IAave3ProtocolDataProvider internal _dataProvider;
 
-  /// @notice The main contract where the user interacts to claim the rewards of their positions.
-  /// @dev https://docs.aave.com/developers/whats-new/multiple-rewards-and-claim
-  IAave3RewardsController internal _rewardsController;
   address internal _aToken;
 
   /// @notice Initialize contract after setup it as proxy implementation
@@ -56,6 +54,14 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
     address vault_,
     address pool_
   ) public initializer {
+    ProxyStrategyBase.initializeStrategyBase(
+      controller_,
+      underlying_,
+      vault_,
+      new address[](0), // there are no rewards
+      _BUY_BACK_RATIO
+    );
+
     _pool = pool_;
 
     _dataProvider = IAave3ProtocolDataProvider(
@@ -65,21 +71,7 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
     );
 
     DataTypes.ReserveData memory rd = IAave3Pool(pool_).getReserveData(underlying_);
-    _aToken = rd.aTokenAddress;
-
-    IAave3Token aToken = IAave3Token(_aToken);
-    _rewardsController = IAave3RewardsController(aToken.getIncentivesController());
-
-    ProxyStrategyBase.initializeStrategyBase(
-      controller_,
-      underlying_,
-      vault_,
-      _rewardsController.getRewardsByAsset(underlying_),
-      _BUY_BACK_RATIO
-    );
-
-    require(aToken.UNDERLYING_ASSET_ADDRESS() == underlying_, "wrong underlying");
-
+    require(IAave3Token(rd.aTokenAddress).UNDERLYING_ASSET_ADDRESS() == underlying_, "wrong underlying");
   }
 
   /// ******************************************************
@@ -87,27 +79,17 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
   /// ******************************************************
 
   /// @notice Strategy balance in the aave3-pool
+  /// @dev AAVE3 doesn't have rewards on Polygon
   /// @return balance Balance amount in underlying tokens
-  function _rewardPoolBalance() internal override view returns (uint256 balance) {
-    // AAVE3 supports multiple reward tokens
-    // https://docs.aave.com/developers/whats-new/multiple-rewards-and-claim
-    if (_rewardTokens.length > 0) {
-      (, uint[] memory unclaimedAmounts) = _rewardsController.getAllUserRewards(_rewardTokens, address(this));
-      uint lengthUnclaimedAmounts = unclaimedAmounts.length;
-      for (uint i = 0; i < lengthUnclaimedAmounts; ++i) {
-        balance += unclaimedAmounts[i];
-      }
-    }
-
-    return balance;
+  function _rewardPoolBalance() internal override pure returns (uint256 balance) {
+    return 0;
   }
 
   /// @notice Return approximately amount of reward tokens ready to claim in AAVE-pool
   /// @dev Don't use it in any internal logic, only for statistical purposes.
   /// @return Array with amounts ready to claim
-  function readyToClaim() external view override returns (uint256[] memory) {
-    (, uint[] memory unclaimedAmounts) = _rewardsController.getAllUserRewards(_rewardTokens, address(this));
-    return unclaimedAmounts;
+  function readyToClaim() external pure override returns (uint256[] memory) {
+    return new uint[](0); // there are no rewards in AAVE3 on polygon
   }
 
   /// @notice TVL of the underlying in the pool
@@ -122,13 +104,7 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
   /// ******************************************************
 
   function doHardWork() external onlyNotPausedInvesting override hardWorkers {
-    if (_rewardTokens.length > 0) {
-      // claim rewards
-      address[] memory listAssets = new address[](1);
-      listAssets[0] = _underlying();
-      _rewardsController.claimAllRewards(listAssets, address(this));
-    }
-    liquidateReward();
+    //noop
   }
 
   /// ******************************************************

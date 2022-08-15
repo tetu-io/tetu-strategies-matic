@@ -16,7 +16,7 @@ import "../../strategies/aave/Aave3StrategyBase.sol";
 contract Aave3Strategy is Aave3StrategyBase {
   using SafeERC20 for IERC20;
 
-  address public AAVE_V3_POOL_MATIC = 0x794a61358D6845594F94dc1DB02A252b5b4814aD;\
+  address constant public AAVE_V3_POOL_MATIC = 0x794a61358D6845594F94dc1DB02A252b5b4814aD;
 
   function initialize(
     address controller_,
