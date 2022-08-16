@@ -5,7 +5,6 @@ import {MaticAddresses} from "../../addresses/MaticAddresses";
 import {
     IAave3AddressesProvider__factory,
     IAave3Pool__factory,
-    IAave3ProtocolDataProvider,
     IAave3ProtocolDataProvider__factory,
     IAave3RewardsController__factory,
     IAave3Token__factory
