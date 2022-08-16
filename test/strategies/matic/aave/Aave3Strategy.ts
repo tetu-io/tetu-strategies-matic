@@ -19,9 +19,6 @@ dotEnvConfig();
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-console.log(process.env.TETU_HARDHAT_CHAIN_ID)
-console.log(process.env.TETU_MATIC_RPC_URL)
-
 describe('Aave3 Strategy tests', async () => {
     const deployInfo: DeployInfo = new DeployInfo();
     before(async function () {

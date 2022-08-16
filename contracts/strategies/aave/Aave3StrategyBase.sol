@@ -17,7 +17,9 @@ import "../../third_party/aave3/IAave3Token.sol";
 import "../../third_party/aave3/IAave3RewardsController.sol";
 import "../../third_party/aave3/IAave3AddressesProvider.sol";
 import "../../third_party/aave3/IAave3ProtocolDataProvider.sol";
+import "../../third_party/IERC20Extended.sol";
 import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
+import "hardhat/console.sol";
 
 /// @title Contract for AAVEv3 strategy implementation
 /// @dev AAVE3 doesn't support rewards on polygon, so this strategy doesn't support rewards
@@ -36,8 +38,8 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
   /// @notice Strategy type for statistical purposes
   string public constant override STRATEGY_NAME = "Aave3StrategyBase";
 
-  /// @dev 10% buyback
-  uint256 private constant _BUY_BACK_RATIO = 10_00;
+  /// @dev There are no rewards in AAVEv3 on Polygon
+  uint256 private constant _BUY_BACK_RATIO = 0;
 
   /// ******************************************************
   ///                    Variables
@@ -71,7 +73,8 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
     );
 
     DataTypes.ReserveData memory rd = IAave3Pool(pool_).getReserveData(underlying_);
-    require(IAave3Token(rd.aTokenAddress).UNDERLYING_ASSET_ADDRESS() == underlying_, "wrong underlying");
+    _aToken = rd.aTokenAddress;
+    require(IAave3Token(_aToken).UNDERLYING_ASSET_ADDRESS() == underlying_, "wrong underlying");
   }
 
   /// ******************************************************
@@ -80,22 +83,33 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
 
   /// @notice Strategy balance in the aave3-pool
   /// @dev AAVE3 doesn't have rewards on Polygon
-  /// @return balance Balance amount in underlying tokens
-  function _rewardPoolBalance() internal override pure returns (uint256 balance) {
+  /// @return Balance amount in underlying tokens
+  function _rewardPoolBalance() internal override view returns (uint256) {
+    console.log("_rewardPoolBalance.1");
+    address reserve = _underlying();
+    console.log("_rewardPoolBalance.2", reserve, _aToken);
+    uint normalizedIncome = IAave3Pool(_pool).getReserveNormalizedIncome(reserve);
+    console.log("_rewardPoolBalance.3", normalizedIncome);
+    uint b = IAave3Token(_aToken).scaledBalanceOf(address(this));
+    console.log("_rewardPoolBalance.4", b);
+    uint256 balance = ((b * normalizedIncome) + 0.5e27) / 1e27;
+    console.log("_rewardPoolBalance.5", normalizedIncome, b, balance);
+    return balance;
     return 0;
   }
 
   /// @notice Return approximately amount of reward tokens ready to claim in AAVE-pool
-  /// @dev Don't use it in any internal logic, only for statistical purposes.
-  /// @return Array with amounts ready to claim
-  function readyToClaim() external pure override returns (uint256[] memory) {
-    return new uint[](0); // there are no rewards in AAVE3 on polygon
+  function readyToClaim() external view override returns (uint256[] memory) {
+    // there are no rewards in AAVE3 on polygon
+    console.log("readyToClaim");
+    return new uint[](_rewardTokens.length);
   }
 
   /// @notice TVL of the underlying in the pool
   /// @dev Only for statistic
   /// @return Pool TVL
   function poolTotalAmount() external view override returns (uint256) {
+    console.log("poolTotalAmount");
     return IAave3Token(_aToken).totalSupply();
   }
 
@@ -114,14 +128,23 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
   /// @dev Deposit underlying to AAVE3 pool
   /// @param amount Deposit amount
   function depositToPool(uint256 amount) internal override {
-    IERC20(_underlying()).safeApprove(_pool, 0);
-    IERC20(_underlying()).safeApprove(_pool, amount);
-    IAave3Pool(_pool).deposit(_underlying(), amount, address(this), 0);
+    console.log("Deposit to pool", amount);
+    amount = Math.min(IERC20(_underlying()).balanceOf(address(this)), amount);
+    if (amount > 0) {
+      IERC20(_underlying()).safeApprove(_pool, 0);
+      IERC20(_underlying()).safeApprove(_pool, amount);
+      console.log("AToken balance before deposit", IAave3Token(_aToken).balanceOf(address(this)));
+      console.log("Underlying balance before deposit", IERC20(_underlying()).balanceOf(address(this)));
+      IAave3Pool(_pool).deposit(_underlying(), amount, address(this), 0);
+      console.log("AToken balance after deposit", IAave3Token(_aToken).balanceOf(address(this)));
+      console.log("Underlying balance after deposit", IERC20(_underlying()).balanceOf(address(this)));
+    }
   }
 
   /// @dev Withdraw underlying and reward from AAVE3
   /// @param amount_ Deposit amount
   function withdrawAndClaimFromPool(uint256 amount_) internal override {
+    console.log("withdrawAndClaimFromPool");
     //TODO: claim rewards
     IAave3Pool(_pool).withdraw(_underlying(), amount_, address(this));
   }
@@ -129,6 +152,7 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
   /// @dev Exit from external project without caring about rewards
   ///      For emergency cases only!
   function emergencyWithdrawFromPool() internal override {
+    console.log("emergencyWithdrawFromPool");
     IAave3Pool(_pool).withdraw(_underlying()
       , type(uint256).max
       , address(this)
@@ -137,8 +161,7 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
 
   /// @dev Do something useful with farmed rewards
   function liquidateReward() internal override {
-    autocompound(); //TODO
-    liquidateRewardSilently();
+    liquidateRewardDefault();
   }
 
   function platform() external override pure returns (IStrategy.Platform) {
@@ -147,6 +170,7 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
 
   /// @dev assets should reflect underlying tokens need to investing
   function assets() external override view returns (address[] memory) {
+    console.log("assets");
     address[] memory arr = new address[](1);
     arr[0] = _underlying();
     return arr;
