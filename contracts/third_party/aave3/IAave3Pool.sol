@@ -74,6 +74,8 @@ interface IAave3Pool {
   ) external;
 
   /**
+   * @notice Deprecated: maintained for compatibility purposes
+
    * @dev Deposits an `amount` of underlying asset into the reserve, receiving in return overlying aTokens.
    * - E.g. User deposits 100 USDC and gets in return 100 aUSDC
    * @param asset The address of the underlying asset to deposit

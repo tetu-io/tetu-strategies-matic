@@ -26,7 +26,7 @@ const argv = require('yargs/yargs')()
         },
         onlyOneAave3StrategyTest: {
             type: "number",
-            default: 4, // -1 for all
+            default: 1, // -1 for all, 1 for LINK
         },
         deployCoreContracts: {
             type: "boolean",
@@ -84,7 +84,6 @@ describe('Aave3 Strategy tests', async () => {
         const strategyContractName = 'Aave3Strategy';
         const vaultName = "Aave3Strategy_vault";
         const underlying = token;
-        // const underlying = token;
         // add custom liquidation path if necessary
         const forwarderConfigurator = null;
         // only for strategies where we expect PPFS fluctuations
