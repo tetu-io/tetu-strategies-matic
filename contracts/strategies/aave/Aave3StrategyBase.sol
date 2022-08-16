@@ -45,8 +45,6 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
   ///                    Variables
   /// ******************************************************
   address internal _pool;
-  IAave3ProtocolDataProvider internal _dataProvider;
-
   address internal _aToken;
 
   /// @notice Initialize contract after setup it as proxy implementation
@@ -66,12 +64,6 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
 
     _pool = pool_;
 
-    _dataProvider = IAave3ProtocolDataProvider(
-      IAave3AddressesProvider(
-        IAave3Pool(pool_).ADDRESSES_PROVIDER()
-      ).getPoolDataProvider()
-    );
-
     DataTypes.ReserveData memory rd = IAave3Pool(pool_).getReserveData(underlying_);
     _aToken = rd.aTokenAddress;
     require(IAave3Token(_aToken).UNDERLYING_ASSET_ADDRESS() == underlying_, "wrong underlying");
@@ -87,11 +79,8 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
   function _rewardPoolBalance() internal override view returns (uint256) {
     console.log("_rewardPoolBalance.1");
     address reserve = _underlying();
-    console.log("_rewardPoolBalance.2", reserve, _aToken);
     uint normalizedIncome = IAave3Pool(_pool).getReserveNormalizedIncome(reserve);
-    console.log("_rewardPoolBalance.3", normalizedIncome);
     uint b = IAave3Token(_aToken).scaledBalanceOf(address(this));
-    console.log("_rewardPoolBalance.4", b);
     uint256 balance = ((b * normalizedIncome) + 0.5e27) / 1e27;
     console.log("_rewardPoolBalance.5", normalizedIncome, b, balance);
     return balance;
@@ -154,7 +143,7 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
   function emergencyWithdrawFromPool() internal override {
     console.log("emergencyWithdrawFromPool");
     IAave3Pool(_pool).withdraw(_underlying()
-      , type(uint256).max
+      , type(uint256).max // withdraw all
       , address(this)
     );
   }

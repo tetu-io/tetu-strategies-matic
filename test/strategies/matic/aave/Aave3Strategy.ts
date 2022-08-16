@@ -13,104 +13,154 @@ import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {ethers, network} from "hardhat";
 import {config as dotEnvConfig} from "dotenv";
+import {readFileSync} from "fs";
 
 dotEnvConfig();
+// tslint:disable-next-line:no-var-requires
+const argv = require('yargs/yargs')()
+    .env('TETU')
+    .options({
+        disableStrategyTests: {
+            type: "boolean",
+            default: false,
+        },
+        onlyOneAave3StrategyTest: {
+            type: "number",
+            default: 4, // -1 for all
+        },
+        deployCoreContracts: {
+            type: "boolean",
+            default: false,
+        },
+        hardhatChainId: {
+            type: "number",
+            default: 137
+        },
+    }).argv;
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
 describe('Aave3 Strategy tests', async () => {
+
+    if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
+        return;
+    }
+    const infos = readFileSync('scripts/utils/download/data/aave3_markets.csv', 'utf8').split(/\r?\n/);
+
     const deployInfo: DeployInfo = new DeployInfo();
     before(async function () {
         console.log(await ethers.provider.getNetwork(), network.name);
         await StrategyTestUtils.deployCoreAndInit(deployInfo, true);
     });
 
+    infos.forEach(info => {
+        const start = info.split(',');
 
-    // **********************************************
-    // ************** CONFIG*************************
-    // **********************************************
-    const strategyContractName = 'Aave3Strategy';
-    const vaultName = "Aave3Strategy_vault";
-    const underlying = MaticAddresses.DAI_TOKEN;
-    // const underlying = token;
-    // add custom liquidation path if necessary
-    const forwarderConfigurator = null;
-    // only for strategies where we expect PPFS fluctuations
-    const ppfsDecreaseAllowed = false;
-    // only for strategies where we expect PPFS fluctuations
-    const balanceTolerance = 0;
-    const finalBalanceTolerance = 0;
-    const deposit = 10_000;
-    // at least 3
-    const loops = 3;
-    const loopValue = 300;
-    const advanceBlocks = false;
-    const specificTests: SpecificStrategyTest[] = [];
-    // **********************************************
+        const idx = start[0];
+        const tokenName = start[1];
+        const token = start[2];
+        const aTokenName = start[3];
+        console.log(token);
 
-    const deployer = (signer: SignerWithAddress) => {
-        const core = deployInfo.core as CoreContractsWrapper;
-        return StrategyTestUtils.deploy(
-            signer,
-            core,
-            vaultName,
-            async vaultAddress => {
-                const strategy = await DeployerUtilsLocal.deployStrategyProxy(
-                    signer,
-                    strategyContractName,
-                );
-                await Aave3Strategy__factory.connect(strategy.address, signer).initialize(
-                    core.controller.address,
-                    underlying,
-                    vaultAddress
-                );
+        if (!idx || idx === "idx") { // skip header
+            console.log('skip ', tokenName);
+            return;
+        }
 
-                // await core.vaultController.addRewardTokens([vaultAddress], MaticAddresses.tetuMESH_TOKEN);
-                return strategy;
-            },
-            underlying,
-            0,
-            true
+        if (token === "AAVE") {
+            console.log('skip ', tokenName);
+            return;
+        }
+
+        if (argv.onlyOneAave3StrategyTest !== -1 && parseFloat(idx) !== argv.onlyOneAave3StrategyTest) {
+            return;
+        }
+        console.log('Start test strategy', idx, tokenName, token, aTokenName);
+
+        // **********************************************
+        //                  CONFIG
+        // **********************************************
+        const strategyContractName = 'Aave3Strategy';
+        const vaultName = "Aave3Strategy_vault";
+        const underlying = token;
+        // const underlying = token;
+        // add custom liquidation path if necessary
+        const forwarderConfigurator = null;
+        // only for strategies where we expect PPFS fluctuations
+        const ppfsDecreaseAllowed = false;
+        // only for strategies where we expect PPFS fluctuations
+        const balanceTolerance = 0;
+        const finalBalanceTolerance = 0;
+        const deposit = 10_000;
+        // at least 3
+        const loops = 3;
+        const loopValue = 300;
+        const advanceBlocks = false;
+        const specificTests: SpecificStrategyTest[] = [];
+        // **********************************************
+
+        const deployer = (signer: SignerWithAddress) => {
+            const core = deployInfo.core as CoreContractsWrapper;
+            return StrategyTestUtils.deploy(
+                signer,
+                core,
+                vaultName,
+                async vaultAddress => {
+                    const strategy = await DeployerUtilsLocal.deployStrategyProxy(
+                        signer,
+                        strategyContractName,
+                    );
+                    await Aave3Strategy__factory.connect(strategy.address, signer).initialize(
+                        core.controller.address,
+                        underlying,
+                        vaultAddress
+                    );
+
+                    // await core.vaultController.addRewardTokens([vaultAddress], MaticAddresses.tetuMESH_TOKEN);
+                    return strategy;
+                },
+                underlying,
+                0,
+                true
+            );
+        };
+        const hwInitiator = (
+            _signer: SignerWithAddress,
+            _user: SignerWithAddress,
+            _core: CoreContractsWrapper,
+            _tools: ToolsContractsWrapper,
+            _underlying: string,
+            _vault: ISmartVault,
+            _strategy: IStrategy,
+            _balanceTolerance: number
+        ) => {
+            return new DoHardWorkLoopBase(
+                _signer,
+                _user,
+                _core,
+                _tools,
+                _underlying,
+                _vault,
+                _strategy,
+                _balanceTolerance,
+                finalBalanceTolerance,
+            );
+        };
+
+        universalStrategyTest(
+            `${strategyContractName} ${tokenName}`,
+            deployInfo,
+            deployer,
+            hwInitiator,
+            forwarderConfigurator,
+            ppfsDecreaseAllowed,
+            balanceTolerance,
+            deposit,
+            loops,
+            loopValue,
+            advanceBlocks,
+            specificTests,
         );
-    };
-    const hwInitiator = (
-        _signer: SignerWithAddress,
-        _user: SignerWithAddress,
-        _core: CoreContractsWrapper,
-        _tools: ToolsContractsWrapper,
-        _underlying: string,
-        _vault: ISmartVault,
-        _strategy: IStrategy,
-        _balanceTolerance: number
-    ) => {
-        return new DoHardWorkLoopBase(
-            _signer,
-            _user,
-            _core,
-            _tools,
-            _underlying,
-            _vault,
-            _strategy,
-            _balanceTolerance,
-            finalBalanceTolerance,
-        );
-    };
-
-    await universalStrategyTest(
-        strategyContractName + vaultName,
-        deployInfo,
-        deployer,
-        hwInitiator,
-        forwarderConfigurator,
-        ppfsDecreaseAllowed,
-        balanceTolerance,
-        deposit,
-        loops,
-        loopValue,
-        advanceBlocks,
-        specificTests,
-    );
-
-
+    });
 });
