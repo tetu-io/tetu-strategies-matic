@@ -17,13 +17,16 @@ contract Aave3Strategy is Aave3StrategyBase {
   using SafeERC20 for IERC20;
 
   address constant public AAVE_V3_POOL_MATIC = 0x794a61358D6845594F94dc1DB02A252b5b4814aD;
+  /// @dev back back ratio 10%
+  uint256 private constant _BUY_BACK_RATIO = 10;
+
 
   function initialize(
     address controller_,
     address underlying_,
     address vault_
   ) external initializer {
-    Aave3StrategyBase.initializeStrategy(controller_, underlying_, vault_, AAVE_V3_POOL_MATIC);
+    Aave3StrategyBase.initializeStrategy(controller_, underlying_, vault_, AAVE_V3_POOL_MATIC, _BUY_BACK_RATIO);
   }
 
 

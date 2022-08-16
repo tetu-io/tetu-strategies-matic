@@ -34,9 +34,6 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
   /// @notice Strategy type for statistical purposes
   string public constant override STRATEGY_NAME = "Aave3StrategyBase";
 
-  /// @dev There are no rewards in AAVEv3 on Polygon
-  uint256 private constant _BUY_BACK_RATIO = 0;
-
   /// @notice AAVE3 pool, see https://docs.aave.com/developers/core-contracts/pool
   IAave3Pool internal _pool;
 
@@ -50,14 +47,15 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
     address controller_,
     address underlying_,
     address vault_,
-    address pool_
+    address pool_,
+    uint buybackRatio_
   ) public initializer {
     ProxyStrategyBase.initializeStrategyBase(
       controller_,
       underlying_,
       vault_,
       new address[](0), // there are no rewards
-      _BUY_BACK_RATIO
+      buybackRatio_
     );
 
     require(pool_ != address(0), "zero pool");
@@ -131,7 +129,7 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
   }
 
   function liquidateReward() internal override {
-    liquidateRewardDefault();
+    // noop
   }
 
   function platform() external override pure returns (IStrategy.Platform) {
