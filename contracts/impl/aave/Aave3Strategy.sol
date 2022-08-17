@@ -26,6 +26,7 @@ contract Aave3Strategy is Aave3StrategyBase {
     address underlying_,
     address vault_
   ) external initializer {
+    require(ISmartVault(vault_).underlying() == underlying_, "!underlying");
     Aave3StrategyBase.initializeStrategy(controller_, underlying_, vault_, AAVE_V3_POOL_MATIC, _BUY_BACK_RATIO);
   }
 

@@ -193,29 +193,14 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
         : 0;
       if (toBuybacks != 0) {
         _pool.withdraw(_underlying(), toBuybacks, address(this));
-        uint amountToForward = toBuybacks;
 
         address forwarder = IController(_controller()).feeRewardForwarder();
         IERC20(_underlying()).safeApprove(forwarder, 0);
         IERC20(_underlying()).safeApprove(forwarder, toBuybacks);
 
-        uint targetTokenEarned;
-        // small amounts produce 'F2: Zero swap amount' error in distribute, so we need try/catch
-        try IFeeRewardForwarder(forwarder).distribute(toBuybacks, _underlying(), _vault()) returns (uint r) {
-          // buybacks were successfully forwarded
-          targetTokenEarned = r;
-          amountToForward = 0;
-
-          // remember total amount from which we have already taken buybacks
-          _totalIncomeProcessed = totalIncome;
-        } catch {}
-
-        if (amountToForward != 0) {
-          // buybacks were not forwarded, so let's return taken amount back to the pool
-          IERC20(_underlying()).safeApprove(address(_pool), 0);
-          IERC20(_underlying()).safeApprove(address(_pool), amountToForward);
-          _pool.supply(_underlying(), amountToForward, address(this), 0);
-        }
+        uint targetTokenEarned = IFeeRewardForwarder(forwarder).distribute(toBuybacks, _underlying(), _vault());
+        // remember total amount from which we have already taken buybacks
+        _totalIncomeProcessed = totalIncome;
 
         if (targetTokenEarned > 0) {
           IBookkeeper(IController(_controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
