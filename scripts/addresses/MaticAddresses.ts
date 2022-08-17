@@ -184,7 +184,7 @@ export class MaticAddresses {
   public static TETU_SWAP_FACTORY = "0x684d8c187be836171a1Af8D533e4724893031828".toLowerCase();
   public static TETU_SWAP_ROUTER = "0x736FD9EabB15776A3adfea1B975c868F72A29d14".toLowerCase();
 
-  // AAVE
+  // AAVE v2
   public static AAVE_PROTOCOL_DATA_PROVIDER = "0x7551b5D2763519d4e37e8B81929D336De671d46d".toLowerCase();
   public static AAVE_LENDING_POOL = '0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf'.toLowerCase();
   public static amAAVE_TOKEN = "0x1d2a0E5EC8E5bBDCA5CB219e649B565d8e5c3360".toLowerCase();
@@ -192,6 +192,18 @@ export class MaticAddresses {
   public static amDAI_TOKEN = "0x27F8D03b3a2196956ED754baDc28D73be8830A6e".toLowerCase();
   public static amETH_TOKEN = "0x28424507fefb6f7f8E9D3860F56504E4e5f5f390".toLowerCase();
   public static amBTC_TOKEN = "0x5c2ed810328349100A66B82b78a1791B101C9D61".toLowerCase();
+
+  // AAVE v3
+  public static AAVE3_POOL = '0x794a61358D6845594F94dc1DB02A252b5b4814aD'.toLowerCase();
+  public static aPolAAVE_TOKEN = "0xf329e36C7bF6E5E86ce2150875a84Ce77f477375".toLowerCase();
+  public static sPolAAVE_TOKEN = "0xfAeF6A702D15428E588d4C0614AEFb4348D83D48".toLowerCase();
+  public static vPolAAVE_TOKEN = "0xE80761Ea617F66F96274eA5e8c37f03960ecC679".toLowerCase();
+  public static aPolWMATIC_TOKEN = "0x6d80113e533a2C0fe82EaBD35f1875DcEA89Ea97".toLowerCase();
+  public static sPolWMATIC_TOKEN = "0xF15F26710c827DDe8ACBA678682F3Ce24f2Fb56E".toLowerCase();
+  public static vPolWMATIC_TOKEN = "0xfb00AC187a8Eb5AFAE4eACE434F493Eb62672df7".toLowerCase();
+  public static aPolDAI_TOKEN = "0x82E64f49Ed5EC1bC6e43DAD4FC8Af9bb3A2312EE".toLowerCase();
+  public static sPolDAI_TOKEN = "0xd94112B5B62d53C9402e7A60289c6810dEF1dC9B".toLowerCase();
+  public static vPolDAI_TOKEN = "0x8619d80FB0141ba7F184CbF22fd724116D9f7ffC".toLowerCase();
 
   // qidao
   public static camWMATICVault = '0x88d84a85A87ED12B8f098e8953B322fF789fCD1a'.toLowerCase();
