@@ -5,7 +5,7 @@ import {ToolsContractsWrapper} from "../ToolsContractsWrapper";
 import {TokenUtils} from "../TokenUtils";
 import {BigNumber, utils} from "ethers";
 import {Misc} from "../../scripts/utils/tools/Misc";
-import {VaultUtils} from "../VaultUtils";
+import {PPFS_NO_INCREASE, VaultUtils} from "../VaultUtils";
 import {TimeUtils} from "../TimeUtils";
 import {expect} from "chai";
 import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
@@ -93,12 +93,14 @@ export class DoHardWorkLoopBase {
   }
 
   protected async initialSnapshot() {
+    console.log('>>>initialSnapshot start')
     this.userRTBal = await TokenUtils.balanceOf(this.vaultRt, this.user.address);
     this.vaultRTBal = await TokenUtils.balanceOf(this.vaultRt, this.vault.address);
     this.psBal = await TokenUtils.balanceOf(this.vaultRt, this.core.psVault.address);
     this.psPPFS = await this.core.psVault.getPricePerFullShare();
     this.startTs = await Misc.getBlockTsFromChain();
     this.bbRatio = (await this.strategy.buyBackRatio()).toNumber();
+    console.log('initialSnapshot end')
   }
 
   // signer and user enter to the vault
@@ -107,8 +109,10 @@ export class DoHardWorkLoopBase {
     console.log('--- Enter to vault')
     // initial deposit from signer
     await VaultUtils.deposit(this.signer, this.vault, this.userDeposited.div(2));
+    console.log('enterToVault: deposited for signer');
     this.signerDeposited = this.userDeposited.div(2);
     await VaultUtils.deposit(this.user, this.vault, this.userDeposited);
+    console.log('enterToVault: deposited for user');
     await this.userCheckBalanceInVault();
 
     // remove excess tokens
@@ -346,7 +350,7 @@ export class DoHardWorkLoopBase {
     const vaultBalanceAfter = await TokenUtils.balanceOf(this.core.psVault.address, this.vault.address);
     expect(vaultBalanceAfter.sub(this.vaultRTBal)).is.not.eq("0", "vault reward should increase");
 
-    if (this.bbRatio !== 0) {
+    if (this.bbRatio !== 0 && !PPFS_NO_INCREASE.has(await this.strategy.STRATEGY_NAME())) {
       // check ps balance
       const psBalanceAfter = await TokenUtils.balanceOf(this.core.rewardToken.address, this.core.psVault.address);
       expect(psBalanceAfter.sub(this.psBal)).is.not.eq("0", "ps balance should increase");

@@ -18,6 +18,7 @@ import "../../third_party/IERC20Extended.sol";
 import "../../third_party/IDelegation.sol";
 import "../../third_party/mesh/IVotingMesh.sol";
 import "../../third_party/mesh/IPoolVoting.sol";
+import "../../third_party/mesh/IClaimable.sol";
 
 /// @title Base contract for Mesh stake into vMesh pool
 /// @author olegn
@@ -31,7 +32,7 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "MeshStakingStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.2";
+  string public constant VERSION = "1.1.3";
   /// @dev 5% buybacks, 95% of vested Mesh should go to the targetRewardVault as rewards (not autocompound)
   uint256 private constant _BUY_BACK_RATIO = 5_00;
   uint256 private constant _MAX_LOCK_PERIOD = 1555200000;
@@ -75,6 +76,34 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
   event TargetRewardVaultUpdated(address newTargetRewardVault);
 
   // ------------------ GOV actions --------------------------
+
+  function claimAirdrop(
+    address claimable,
+    address distributor,
+    address reward,
+    address liquidityToken
+  ) external hardWorkers {
+    IClaimable(claimable).claim(distributor);
+    address forwarder = IController(_controller()).feeRewardForwarder();
+
+    uint balance = IERC20(reward).balanceOf(address(this));
+    require(balance != 0, "zero claim");
+    IERC20(reward).safeApprove(forwarder, 0);
+    IERC20(reward).safeApprove(forwarder, balance);
+
+    address[] memory route = new address[](2);
+    route[0] = reward;
+    route[1] = liquidityToken;
+
+    _meshSwap(balance, route);
+
+    balance = IERC20(liquidityToken).balanceOf(address(this));
+    require(balance != 0, "zero claim");
+    IERC20(liquidityToken).safeApprove(forwarder, 0);
+    IERC20(liquidityToken).safeApprove(forwarder, balance);
+
+    IFeeRewardForwarder(forwarder).distribute(balance, liquidityToken, targetRewardVault());
+  }
 
   /// @dev Manual withdraw for any emergency purposes
   function manualWithdraw() external restricted {

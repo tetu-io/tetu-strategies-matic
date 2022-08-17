@@ -29,18 +29,24 @@ abstract contract BalancerPoolStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "BalancerPoolStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.1.0";
 
   IBVault private constant _BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
+  address private constant _BAL = 0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3;
+  address private constant _ETH = 0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
+  address private constant _BAL_ETH_POOL = 0x3d468AB2329F296e1b9d8476Bb54Dd77D8c2320f;
+  bytes32 private constant _BAL_ETH_POOL_ID = 0x3d468ab2329f296e1b9d8476bb54dd77d8c2320f000200000000000000000426;
 
   // *******************************************************
   //                      VARIABLES
   // *******************************************************
 
   IAsset[] public poolTokens;
+  /// @dev Deprecated
   address public pool;
   bytes32 public poolId;
   IBalancerGauge public gauge;
+  /// @dev Deprecated
   address public depositToken;
 
 
@@ -161,7 +167,7 @@ abstract contract BalancerPoolStrategyBase is ProxyStrategyBase {
     // for the first liquidate autocompound part and join the pool
     _autoCompoundBalancer();
     // exist balance is amount for buybacks
-    liquidateRewardSilently();
+    liquidateRewardDefault();
   }
 
   /// @dev Liquidate rewards, buy assets and add to beethoven pool
@@ -181,14 +187,21 @@ abstract contract BalancerPoolStrategyBase is ProxyStrategyBase {
 
   /// @dev Swap reward token to underlying using Beethoven pool
   function _rewardToUnderlying(address rewardToken, uint toCompound) internal {
-    uint tokensToDeposit = toCompound;
-    address _depositToken = depositToken;
-    if (rewardToken != _depositToken) {
-      forwarderSwap(rewardToken, depositToken, toCompound);
-      tokensToDeposit = IERC20(_depositToken).balanceOf(address(this));
+    uint balToDeposit = toCompound;
+    if (rewardToken != _BAL) {
+      forwarderSwap(rewardToken, _BAL, toCompound);
+      balToDeposit = IERC20(_BAL).balanceOf(address(this));
     }
-    if (tokensToDeposit != 0) {
-      balancerJoin(poolId, _depositToken, tokensToDeposit);
+    uint bptToDeposit;
+    if (balToDeposit != 0) {
+      IAsset[] memory _poolAssets = new IAsset[](2);
+      _poolAssets[0] = IAsset(_ETH);
+      _poolAssets[1] = IAsset(_BAL);
+      balancerJoin(_poolAssets, _BAL_ETH_POOL_ID, _BAL, balToDeposit);
+      bptToDeposit = IERC20(_BAL_ETH_POOL).balanceOf(address(this));
+    }
+    if (bptToDeposit != 0) {
+      balancerJoin(poolTokens, poolId, _BAL_ETH_POOL, bptToDeposit);
     }
   }
 
@@ -226,8 +239,7 @@ abstract contract BalancerPoolStrategyBase is ProxyStrategyBase {
   }
 
   /// @dev Join to the given pool (exchange tokenIn to underlying BPT)
-  function balancerJoin(bytes32 _poolId, address _tokenIn, uint _amountIn) internal {
-    IAsset[] memory _poolTokens = poolTokens;
+  function balancerJoin(IAsset[] memory _poolTokens, bytes32 _poolId, address _tokenIn, uint _amountIn) internal {
     uint[] memory amounts = new uint[](_poolTokens.length);
     for (uint i = 0; i < amounts.length; i++) {
       amounts[i] = address(_poolTokens[i]) == _tokenIn ? _amountIn : 0;
@@ -239,7 +251,6 @@ abstract contract BalancerPoolStrategyBase is ProxyStrategyBase {
     userData : userData,
     fromInternalBalance : false
     });
-
     IERC20(_tokenIn).safeApprove(address(_BALANCER_VAULT), 0);
     IERC20(_tokenIn).safeApprove(address(_BALANCER_VAULT), _amountIn);
     _BALANCER_VAULT.joinPool(_poolId, address(this), address(this), request);

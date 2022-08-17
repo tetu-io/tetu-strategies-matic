@@ -76,6 +76,11 @@ export class MaticAddresses {
   public static SPHEREV3_TOKEN = '0x62F594339830b90AE4C084aE7D223fFAFd9658A7'.toLowerCase();
   public static tetuBAL = '0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33'.toLowerCase();
   public static DF_TOKEN = '0x08C15FA26E519A78a666D19CE5C646D55047e0a3'.toLowerCase();
+  public static tetuQI_TOKEN = '0x4Cd44ced63d9a6FEF595f6AD3F7CED13fCEAc768'.toLowerCase();
+  public static PEN_TOKEN = '0x9008D70A5282a936552593f410AbcBcE2F891A97'.toLowerCase();
+  public static DYST_TOKEN = '0x39aB6574c289c3Ae4d88500eEc792AB5B947A5Eb'.toLowerCase();
+  public static USDPlus_TOKEN = '0x236eeC6359fb44CCe8f97E99387aa7F8cd5cdE1f'.toLowerCase();
+  public static oZEMIT_TOKEN = '0xA34E0eaCB7fbB0b0d45da89b083E0f87fcdf6157'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -274,6 +279,12 @@ export class MaticAddresses {
   // DFORCE
   public static DFORCE_CONTROLLER = '0x52eaCd19E38D501D006D2023C813d7E37F025f37'.toLowerCase();
 
+  // DYSTOPIA
+  public static DYSTOPIA_FACTORY = '0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9'.toLowerCase();
+  public static DYSTOPIA_ROUTER = '0xbE75Dd16D029c6B32B7aD57A0FD9C1c20Dd2862e'.toLowerCase();
+  public static DYSTOPIA_tetuQI_QI = '0x42c0cc5f1827c5d908392654389e5d93da426378'.toLowerCase();
+  public static DYSTOPIA_TETU_USDPlus = '0x5A272ad79cBd3C874879E3FEc5753C2127f77583'.toLowerCase();
+
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,
     MaticAddresses.USDT_TOKEN,
@@ -303,6 +314,8 @@ export class MaticAddresses {
         return MaticAddresses.DINO_ROUTER;
       case MaticAddresses.MESH_FACTORY:
         return MaticAddresses.MESH_ROUTER;
+      case MaticAddresses.DYSTOPIA_FACTORY:
+        return MaticAddresses.DYSTOPIA_ROUTER;
     }
     throw Error('Unknown factory ' + factory);
   }

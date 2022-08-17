@@ -4,8 +4,10 @@ import chaiAsPromised from "chai-as-promised";
 import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "../../../TokenUtils";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
-import {Misc} from "../../../../scripts/utils/tools/Misc";
 import {VaultUtils} from "../../../VaultUtils";
+import {StrategyMeshStaking__factory} from "../../../../typechain";
+import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
+import {parseUnits} from "ethers/lib/utils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -18,6 +20,15 @@ export class MeshStakingDoHardWork extends DoHardWorkLoopBase {
     const strategyBalance = await this.strategy.investedUnderlyingBalance();
     console.log(`>>>> >>>> strategyBalance ${strategyBalance.toString()}`)
     console.log('loopEndActions - no withdraw actions')
+
+    // await TokenUtils.getToken(MaticAddresses.oZEMIT_TOKEN, this.strategy.address, parseUnits('10000'))
+    // await StrategyMeshStaking__factory.connect(this.strategy.address, this.signer)
+    //   .claimAirdrop(
+    //     '0xe93Ff692120e3AD375489373ba3a74Cf106a33fc',
+    //     '0xec6f78D5c27F890aF587E90DA1BA37C6B32720b4',
+    //     MaticAddresses.oZEMIT_TOKEN,
+    //     MaticAddresses.WMATIC_TOKEN
+    //   );
   }
 
   protected async doHardWork() {

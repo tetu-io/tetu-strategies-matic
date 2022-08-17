@@ -1,58 +1,53 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
-import {DeployInfo} from "../../DeployInfo";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
+import {DeployInfo} from "../../DeployInfo";
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
-import {ISmartVault, IStrategy, StrategyBalancerPool__factory} from "../../../../typechain";
+import {ISmartVault, IStrategy, StrategyPenroseTetuUsdPlus} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {Misc} from "../../../../scripts/utils/tools/Misc";
-import {BalancerLpSpecificHardWork} from "./BalancerLpSpecificHardWork";
+import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
 
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('Balancer LP tests', async () => {
+describe('penrose tetu-usd+ tests', async () => {
+  const strategyName = 'StrategyPenroseTetuUsdPlus';
+  const underlying = MaticAddresses.DYSTOPIA_TETU_USDPlus;
+
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
-    await StrategyTestUtils.deployCoreAndInit(deployInfo, true);
+    await StrategyTestUtils.deployCoreAndInit(deployInfo, false);
   });
-
 
   // **********************************************
   // ************** CONFIG*************************
   // **********************************************
-  const strategyContractName = 'StrategyBalancerPool';
-  const vaultName = "tetuBAL_BPT";
-  const underlying = MaticAddresses.BALANCER_POOL_tetuBAL_BPT;
-  const poolId = MaticAddresses.BALANCER_POOL_tetuBAL_BPT_ID;
-  const gauge = MaticAddresses.BALANCER_GAUGE_tetuBAL_BPT;
-  const depositToken = MaticAddresses.tetuBAL;
-  const buybackRatio = 20_00;
-  const rewardTokens = [MaticAddresses.BAL_TOKEN];
+  const strategyContractName = strategyName;
+  const vaultName = 'dystTETU-USDPlus';
 
-  // const underlying = token;
-  // add custom liquidation path if necessary
   const forwarderConfigurator = null;
   // only for strategies where we expect PPFS fluctuations
   const ppfsDecreaseAllowed = false;
   // only for strategies where we expect PPFS fluctuations
   const balanceTolerance = 0;
   const finalBalanceTolerance = 0;
-  const deposit = 1_000;
+  const deposit = 100_000;
   // at least 3
   const loops = 3;
+  // number of blocks or timestamp value
   const loopValue = 300;
-  const advanceBlocks = false;
+  // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
+  const advanceBlocks = true;
   const specificTests: SpecificStrategyTest[] = [];
   // **********************************************
 
-  const deployer = (signer: SignerWithAddress) => {
+  const deployer = async (signer: SignerWithAddress) => {
     const core = deployInfo.core as CoreContractsWrapper;
     return StrategyTestUtils.deploy(
       signer,
@@ -62,24 +57,16 @@ describe('Balancer LP tests', async () => {
         const strategy = await DeployerUtilsLocal.deployStrategyProxy(
           signer,
           strategyContractName,
-        );
-        await StrategyBalancerPool__factory.connect(strategy.address, signer).initialize(
-          core.controller.address,
-          vaultAddress,
-          underlying,
-          poolId,
-          gauge,
-          depositToken,
-          buybackRatio,
-          rewardTokens,
-        );
+        ) as StrategyPenroseTetuUsdPlus;
+        await strategy.initialize(core.controller.address, vaultAddress);
+        await strategy.setAccumulatePOLRatio(50);
+        await strategy;
         return strategy;
       },
-      underlying,
-      0,
-      true
+      underlying
     );
   };
+
   const hwInitiator = (
     _signer: SignerWithAddress,
     _user: SignerWithAddress,
@@ -90,7 +77,7 @@ describe('Balancer LP tests', async () => {
     _strategy: IStrategy,
     _balanceTolerance: number
   ) => {
-    return new BalancerLpSpecificHardWork(
+    const doHardWork = new DoHardWorkLoopBase(
       _signer,
       _user,
       _core,
@@ -101,10 +88,12 @@ describe('Balancer LP tests', async () => {
       _balanceTolerance,
       finalBalanceTolerance,
     );
+    doHardWork.toClaimCheckTolerance = 0;
+    return doHardWork;
   };
 
   await universalStrategyTest(
-    strategyContractName + vaultName,
+    strategyName + vaultName,
     deployInfo,
     deployer,
     hwInitiator,
@@ -117,5 +106,4 @@ describe('Balancer LP tests', async () => {
     advanceBlocks,
     specificTests,
   );
-
 });
