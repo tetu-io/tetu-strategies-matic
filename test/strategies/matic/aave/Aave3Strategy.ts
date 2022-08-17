@@ -87,14 +87,14 @@ describe('Aave3 Strategy tests', async () => {
         // add custom liquidation path if necessary
         const forwarderConfigurator = null;
         // only for strategies where we expect PPFS fluctuations
-        const ppfsDecreaseAllowed = false;
+        const ppfsDecreaseAllowed = true;
         // only for strategies where we expect PPFS fluctuations
         const balanceTolerance = 0;
         const finalBalanceTolerance = 0;
-        const deposit = 10_000;
+        const deposit = 100_000;
         // at least 3
-        const loops = 3;
-        const loopValue = 300;
+        const loops = 6; // TODO: return back to 3
+        const loopValue = 3000; // TODO: return back to 300
         const advanceBlocks = false;
         const specificTests: SpecificStrategyTest[] = [];
         // **********************************************
