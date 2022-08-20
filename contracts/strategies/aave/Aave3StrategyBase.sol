@@ -27,7 +27,7 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
 
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.AAVE_LEND; // same as for AAVEv2
 
@@ -189,18 +189,33 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
 
       // _lastTotalIncome can increase totalIncome a bit after withdrawing toBuybacks-amount from the pool
       uint toBuybacks = totalIncome > _totalIncomeProcessed
-        ? (totalIncome - _totalIncomeProcessed) * _buyBackRatio() / _BUY_BACK_DENOMINATOR
-        : 0;
+      ? (totalIncome - _totalIncomeProcessed) * _buyBackRatio() / _BUY_BACK_DENOMINATOR
+      : 0;
       if (toBuybacks != 0) {
         _pool.withdraw(_underlying(), toBuybacks, address(this));
+        uint amountToForward = toBuybacks;
 
         address forwarder = IController(_controller()).feeRewardForwarder();
         IERC20(_underlying()).safeApprove(forwarder, 0);
         IERC20(_underlying()).safeApprove(forwarder, toBuybacks);
 
-        uint targetTokenEarned = IFeeRewardForwarder(forwarder).distribute(toBuybacks, _underlying(), _vault());
-        // remember total amount from which we have already taken buybacks
-        _totalIncomeProcessed = totalIncome;
+        uint targetTokenEarned;
+        // small amounts produce 'F2: Zero swap amount' error in distribute, so we need try/catch
+        try IFeeRewardForwarder(forwarder).distribute(toBuybacks, _underlying(), _vault()) returns (uint r) {
+          // buybacks were successfully forwarded
+          targetTokenEarned = r;
+          amountToForward = 0;
+
+          // remember total amount from which we have already taken buybacks
+          _totalIncomeProcessed = totalIncome;
+        } catch {}
+
+        if (amountToForward != 0) {
+          // buybacks were not forwarded, so let's return taken amount back to the pool
+          IERC20(_underlying()).safeApprove(address(_pool), 0);
+          IERC20(_underlying()).safeApprove(address(_pool), amountToForward);
+          _pool.supply(_underlying(), amountToForward, address(this), 0);
+        }
 
         if (targetTokenEarned > 0) {
           IBookkeeper(IController(_controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
