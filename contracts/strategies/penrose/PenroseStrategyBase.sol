@@ -34,7 +34,7 @@ abstract contract PenroseStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "PenroseStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.1";
+  string public constant VERSION = "1.1.2";
 
   uint private constant PRICE_IMPACT_TOLERANCE = 10_000;
 
@@ -267,7 +267,7 @@ abstract contract PenroseStrategyBase is ProxyStrategyBase {
       amount0 = amountFor0;
     }
 
-    if (rt != token0) {
+    if (rt != token1) {
       TETU_LIQUIDATOR.liquidate(rt, token1, amountFor1, PRICE_IMPACT_TOLERANCE);
       amount1 = IERC20(token1).balanceOf(address(this));
     } else {
