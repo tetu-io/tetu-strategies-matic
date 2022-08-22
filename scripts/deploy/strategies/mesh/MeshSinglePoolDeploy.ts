@@ -4,9 +4,8 @@ import {
   IBookkeeper__factory, IStrategy__factory,
   StrategyMeshSinglePool,
   StrategyMeshSinglePool__factory,
-  StrategyTetuMeshLp__factory
 } from "../../../../typechain";
-import {appendFileSync, readFileSync, writeFileSync} from "fs";
+import {appendFileSync, readFileSync} from "fs";
 
 const strategyContractName = 'StrategyMeshSinglePool';
 
@@ -17,12 +16,16 @@ async function main() {
 
   const bookkeeper = IBookkeeper__factory.connect(core.bookkeeper, signer);
   const splitters = new Map<string, string>();
+  console.log('loading strategies...');
   const strategies = await bookkeeper.strategies();
+  console.log('strategies', strategies);
 
   for (const strategy of strategies) {
+    console.log('strategy', strategy);
     const str = IStrategy__factory.connect(strategy, signer);
     if ((await str.platform()) === 24) {
       const und = (await str.underlying()).toLowerCase();
+      console.log('und', und);
       if (splitters.has(und)) {
         throw new Error('duplicate splitter ' + strategy);
       }
@@ -33,6 +36,7 @@ async function main() {
 
   const infos = readFileSync('scripts/utils/download/data/mesh_pools.csv', 'utf8').split(/\r?\n/);
   for (const info of infos) {
+    console.log('info', info);
 
     const strat = info.split(',');
     const idx = strat[0];
@@ -41,7 +45,7 @@ async function main() {
     const underlying = strat[4];
     const proxyRewardAddress = strat[5];
 
-    if (idx === 'idx') {
+    if (idx !== '0') {
       console.log('skip', idx);
       continue;
     }

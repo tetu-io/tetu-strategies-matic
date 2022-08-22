@@ -5,8 +5,8 @@ import {
   ERC20,
   IWaultSwapPair,
   IWexPolyMaster,
-  PriceCalculator,
-  SmartVault
+  IPriceCalculator,
+  ISmartVault
 } from "../../../typechain";
 import {TokenUtils} from "../../../test/TokenUtils";
 import {mkdir, writeFileSync} from "fs";
@@ -21,7 +21,7 @@ async function downloadWault() {
 
   const chef = await DeployerUtilsLocal.connectInterface(signer, 'IWexPolyMaster', MaticAddresses.WAULT_POLYMASTER) as IWexPolyMaster;
 
-  const priceCalculator = await DeployerUtilsLocal.connectInterface(signer, 'PriceCalculator', tools.calculator) as PriceCalculator;
+  const priceCalculator = await DeployerUtilsLocal.connectInterface(signer, 'PriceCalculator', tools.calculator) as IPriceCalculator;
 
   const vaultInfos = await VaultUtils.getVaultInfoFromServer();
   const underlyingStatuses = new Map<string, boolean>();
@@ -35,7 +35,7 @@ async function downloadWault() {
     underlyingToVault.set(vInfo.underlying.toLowerCase(), vInfo.addr);
     if (vInfo.active) {
       console.log(vInfo.addr);
-      const vctr = await DeployerUtilsLocal.connectInterface(signer, 'SmartVault', vInfo.addr) as SmartVault;
+      const vctr = await DeployerUtilsLocal.connectInterface(signer, 'SmartVault', vInfo.addr) as ISmartVault;
       const rewards = await VaultUtils.vaultRewardsAmount(vctr, core.psVault);
       console.log('rewards', rewards);
       currentRewards.set(vInfo.underlying.toLowerCase(), rewards);
