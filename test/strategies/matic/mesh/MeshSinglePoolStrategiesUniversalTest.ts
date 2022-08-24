@@ -9,9 +9,10 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {ISmartVault, IStrategy, StrategyMeshSinglePool__factory} from "../../../../typechain";
+import {IFeeRewardForwarder, ISmartVault, IStrategy, StrategyMeshSinglePool__factory} from "../../../../typechain";
 import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {MeshSinglePoolDoHardWork} from "./MeshSinglePoolDoHardWork";
+import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -77,7 +78,12 @@ describe('Universal Mesh tests', async () => {
     const loopValue = 60 * 60 * 24;
     const advanceBlocks = true;
 
-    const forwarderConfigurator = null;
+    const forwarderConfigurator = async (forwarder: IFeeRewardForwarder) => {
+      await forwarder.addLargestLps(
+        [MaticAddresses.MaticX_TOKEN],
+        ["0xb0e69f24982791dd49e316313fD3A791020B8bF7"]
+      );
+    };
     // only for strategies where we expect PPFS fluctuations
     const ppfsDecreaseAllowed = false;
     const balanceTolerance = 0;

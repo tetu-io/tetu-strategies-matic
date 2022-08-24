@@ -3,7 +3,7 @@ import {DeployerUtilsLocal} from "../../DeployerUtilsLocal";
 import {
   ISmartVault__factory, IStrategySplitter__factory,
   StrategyMeshSinglePool__factory,
-  IController__factory
+  IController__factory, StrategyMeshSinglePool
 } from "../../../../typechain";
 import {appendFileSync, mkdirSync} from "fs";
 import {MaticAddresses} from "../../../addresses/MaticAddresses";
@@ -12,13 +12,14 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreAddresses} from "../../../models/CoreAddresses";
 import {TokenUtils} from "../../../../test/TokenUtils";
 import {parseUnits} from "ethers/lib/utils";
+import {VaultUtils} from "../../../../test/VaultUtils";
 
 export const strategyContractName = 'StrategyMeshSinglePool';
 export const strategyImpl = '0x6323093612a93097956Cc00479E8D5cD25918787'; // 1.0.0
 export const meshSinglePoolAddress = '0x00C3e7978Ede802d7ce6c6EfFfB4F05A4a806FD3';
 export const underlyingName = 'MaticX';
 export const underlying = MaticAddresses.MaticX_TOKEN;
-export const proxyRewardAddress = '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174';
+export const proxyRewardAddress = MaticAddresses.USDC_TOKEN;
 
 export async function deployMeshMaticXStrategy(signer: SignerWithAddress) {
   const core = await DeployerUtilsLocal.getCoreAddresses();
@@ -33,8 +34,8 @@ export async function deployMeshMaticXStrategy(signer: SignerWithAddress) {
     underlying,
     proxyRewardAddress
   );
-
 }
+
 export async function deployMeshSinglePoolStrategy(
   signer: SignerWithAddress,
   core: CoreAddresses,
@@ -49,10 +50,11 @@ export async function deployMeshSinglePoolStrategy(
 
   // VAULT
   console.log('\ndeploy vaultProxy...', DeployerUtilsLocal.getVaultLogic(signer).address);
+  const vaultLogicAddress = DeployerUtilsLocal.getVaultLogic(signer).address;
   const vaultProxy = await DeployerUtilsLocal.deployContract(
     signer,
     "TetuProxyControlled",
-    DeployerUtilsLocal.getVaultLogic(signer).address
+    vaultLogicAddress
   );
 
   const vault = ISmartVault__factory.connect(vaultProxy.address, signer);
@@ -66,7 +68,7 @@ export async function deployMeshSinglePoolStrategy(
       _underlying,
       60 * 60 * 24 * 7,
       false,
-      MaticAddresses.ZERO_ADDRESS,
+      core.psVault,
       0
     )
   );
@@ -86,7 +88,7 @@ export async function deployMeshSinglePoolStrategy(
 
   // STRATEGY
   console.log('\nstrategy deployContract...', _strategyImpl);
-  const strategy = await DeployerUtilsLocal.deployContract(signer, "TetuProxyControlled", _strategyImpl);
+  const strategy = await DeployerUtilsLocal.deployContract(signer, "TetuProxyControlled", _strategyImpl) as StrategyMeshSinglePool;
   // const [strategy, logic] = await DeployerUtilsLocal.deployTetuProxyControlled(signer, "StrategyMeshSinglePool");
   await DeployerUtilsLocal.wait(5);
 
@@ -127,6 +129,15 @@ export async function deployMeshSinglePoolStrategy(
       controller.addVaultsAndStrategies([vault.address], [splitter.address])
     );
 
+    console.log('addLargestLps...');
+    const Core = await DeployerUtilsLocal.getCoreAddressesWrapper(gov);
+    await RunHelper.runAndWait(() =>
+      Core.feeRewardForwarder.addLargestLps(
+        [MaticAddresses.MaticX_TOKEN],
+        ['0xb0e69f24982791dd49e316313fD3A791020B8bF7']
+      )
+    );
+
     // Test deposit (and invest) / withdraw
 
     const amount = parseUnits('1000', 18);
@@ -143,8 +154,11 @@ export async function deployMeshSinglePoolStrategy(
     console.log('\nrebalanceAll...');
     await splitter.connect(gov).rebalanceAll();
 
+    console.log('doHardWork...');
+    await VaultUtils.doHardWorkAndCheck(vault.connect(gov));
+
     const strategyShares = await TokenUtils.balanceOf(
-      '0x00C3e7978Ede802d7ce6c6EfFfB4F05A4a806FD3',
+      '0x00C3e7978Ede802d7ce6c6EfFfB4F05A4a806FD3', // iMaticX Mesh pool
       strategy.address
     );
     console.log('strategyShares', strategyShares.toString());
@@ -169,7 +183,9 @@ export async function deployMeshSinglePoolStrategy(
   } else {
     // verify on live network
     await DeployerUtilsLocal.wait(5);
-    // await DeployerUtilsLocal.verifyWithArgs(strategy.address, [logic.address]);
+    await DeployerUtilsLocal.verifyWithArgs(vault.address, [vaultLogicAddress]);
+    await DeployerUtilsLocal.verifyProxy(vault.address);
+    await DeployerUtilsLocal.verifyProxy(splitter.address);
     await DeployerUtilsLocal.verifyProxy(strategy.address);
   }
 
