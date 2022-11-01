@@ -18,7 +18,7 @@ import "../../third_party/balancer/IBVault.sol";
 
 /// @title Base contract for BPT farming
 /// @author belbix
-abstract contract BalancerPoolStrategyBase is ProxyStrategyBase {
+abstract contract BalancerPoolStrategyBaseBALETH is ProxyStrategyBase {
   using SafeERC20 for IERC20;
 
   // *******************************************************
@@ -26,10 +26,10 @@ abstract contract BalancerPoolStrategyBase is ProxyStrategyBase {
   // *******************************************************
 
   /// @notice Strategy type for statistical purposes
-  string public constant override STRATEGY_NAME = "BalancerPoolStrategyBase";
+  string public constant override STRATEGY_NAME = "BalancerPoolStrategyBaseBALETH";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.1.1";
 
   IBVault private constant _BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
   address private constant _BAL = 0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3;

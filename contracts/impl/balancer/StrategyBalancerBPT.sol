@@ -11,29 +11,25 @@
 */
 pragma solidity 0.8.4;
 
-import "../../strategies/balancer/BalancerPoolStrategyBase.sol";
+import "../../strategies/balancer/BalancerBPTStrategyBase.sol";
 
-contract StrategyBalancerPool is BalancerPoolStrategyBase {
+contract StrategyBalancerBPT is BalancerBPTStrategyBase {
 
   function initialize(
     address controller_,
     address vault_,
-    address underlying_,
+    address depositToken_,
     bytes32 poolId_,
     address gauge_,
-    address depositToken_,
-    uint buybackRatio_,
-    address[] memory rewardTokens_
+    uint buybackRatio_
   ) external initializer {
     initializeStrategy(
       controller_,
       vault_,
-      underlying_,
+      depositToken_,
       poolId_,
       gauge_,
-      depositToken_,
-      buybackRatio_,
-      rewardTokens_
+      buybackRatio_
     );
   }
 
