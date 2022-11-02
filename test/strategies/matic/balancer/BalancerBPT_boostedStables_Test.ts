@@ -7,21 +7,16 @@ import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
-import {
-  BalancerPoolStrategyBaseBALETH__factory,
-  ISmartVault,
-  IStrategy, StrategyBalancerBALETH__factory
-} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {Misc} from "../../../../scripts/utils/tools/Misc";
 import {BalancerLpSpecificHardWork} from "./BalancerLpSpecificHardWork";
+import {ISmartVault, IStrategy, StrategyBalancerBPT__factory} from "../../../../typechain";
 
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('Balancer LP tests', async () => {
+describe('BalancerBPT_boostedStables_Test', async () => {
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, true);
@@ -31,14 +26,13 @@ describe('Balancer LP tests', async () => {
   // **********************************************
   // ************** CONFIG*************************
   // **********************************************
-  const strategyContractName = 'StrategyBalancerBALETH';
-  const vaultName = "tetuBAL_BPT";
-  const underlying = MaticAddresses.BALANCER_POOL_tetuBAL_BPT;
-  const poolId = MaticAddresses.BALANCER_POOL_tetuBAL_BPT_ID;
-  const gauge = MaticAddresses.BALANCER_GAUGE_tetuBAL_BPT;
-  const depositToken = MaticAddresses.tetuBAL;
-  const buybackRatio = 20_00;
-  const rewardTokens = [MaticAddresses.BAL_TOKEN];
+  const strategyContractName = 'StrategyBalancerBPT';
+  const vaultName = "boostedStables";
+  const underlying = MaticAddresses.BALANCER_bbamUSD;
+  const poolId = MaticAddresses.BALANCER_bbamUSD_ID;
+  const gauge = MaticAddresses.BALANCER_bbamUSD_GAUGE;
+  const depositToken = MaticAddresses.bbamUSDC_TOKEN;
+  const buybackRatio = 2_00;
 
   // const underlying = token;
   // add custom liquidation path if necessary
@@ -48,7 +42,7 @@ describe('Balancer LP tests', async () => {
   // only for strategies where we expect PPFS fluctuations
   const balanceTolerance = 0;
   const finalBalanceTolerance = 0;
-  const deposit = 1_000;
+  const deposit = 100_000;
   // at least 3
   const loops = 3;
   const loopValue = 300;
@@ -67,15 +61,13 @@ describe('Balancer LP tests', async () => {
           signer,
           strategyContractName,
         );
-        await StrategyBalancerBALETH__factory.connect(strategy.address, signer).initialize(
+        await StrategyBalancerBPT__factory.connect(strategy.address, signer).initialize(
           core.controller.address,
           vaultAddress,
-          underlying,
+          depositToken,
           poolId,
           gauge,
-          depositToken,
-          buybackRatio,
-          rewardTokens,
+          buybackRatio
         );
         return strategy;
       },

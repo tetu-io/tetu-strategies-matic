@@ -109,6 +109,7 @@ export class VaultUtils {
   }
 
   public static async doHardWorkAndCheck(vault: ISmartVault, positiveCheck = true) {
+    console.log('/// start do hard work')
     const start = Date.now();
     const controller = await IControllableExtended__factory.connect(vault.address, vault.signer).controller();
     const controllerCtr = IController__factory.connect(controller, vault.signer);

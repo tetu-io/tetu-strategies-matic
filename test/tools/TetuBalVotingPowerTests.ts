@@ -25,7 +25,7 @@ const TETU_BAL_BPT = MaticAddresses.BALANCER_POOL_tetuBAL_BPT;
 const TETU_BAL_BPT_ID = MaticAddresses.BALANCER_POOL_tetuBAL_BPT_ID;
 const BALANCER_VAULT = '0xBA12222222228d8Ba445958a75a0704d566BF2C8';
 
-describe("Base Vaults tests", function () {
+describe("TetuBalVotingPowerTests", function () {
   let snapshotBefore: string;
   let snapshot: string;
   let signer: SignerWithAddress;

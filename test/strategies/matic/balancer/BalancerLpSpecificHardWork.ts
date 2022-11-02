@@ -26,7 +26,7 @@ export class BalancerLpSpecificHardWork extends DoHardWorkLoopBase {
 
     const owner = await DeployerUtilsLocal.impersonate('0xC128468b7Ce63eA702C1f104D55A2566b13D3ABD');
     const streamer = IChildChainStreamer__factory.connect(streamerAdr, owner);
-    await TokenUtils.getToken(MaticAddresses.BAL_TOKEN, streamer.address, parseUnits('100000'));
+    await TokenUtils.getToken(MaticAddresses.BAL_TOKEN, streamer.address, parseUnits('100'));
     await streamer.notify_reward_amount(MaticAddresses.BAL_TOKEN)
   }
 

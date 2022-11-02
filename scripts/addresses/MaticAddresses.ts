@@ -81,6 +81,7 @@ export class MaticAddresses {
   public static DYST_TOKEN = '0x39aB6574c289c3Ae4d88500eEc792AB5B947A5Eb'.toLowerCase();
   public static USDPlus_TOKEN = '0x236eeC6359fb44CCe8f97E99387aa7F8cd5cdE1f'.toLowerCase();
   public static oZEMIT_TOKEN = '0xA34E0eaCB7fbB0b0d45da89b083E0f87fcdf6157'.toLowerCase();
+  public static bbamUSDC_TOKEN = '0xF93579002DBE8046c43FEfE86ec78b1112247BB8'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -232,13 +233,17 @@ export class MaticAddresses {
   public static BALANCER_STABLE_POOL = '0x06Df3b2bbB68adc8B0e302443692037ED9f91b42'.toLowerCase();
 
 
-  public static BALANCER_POOL_MATIC_USDC_WETH_BAL_ID = '0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002'.toLowerCase();
   public static BALANCER_POOL_MATIC_USDC_WETH_BAL = '0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875'.toLowerCase();
+  public static BALANCER_POOL_MATIC_USDC_WETH_BAL_ID = '0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002'.toLowerCase();
   public static BALANCER_GAUGE_MATIC_USDC_WETH_BAL = '0x068Ff98072d3eB848D012e3390703BB507729ed6'.toLowerCase();
 
   public static BALANCER_POOL_tetuBAL_BPT_ID = '0xb797adfb7b268faeaa90cadbfed464c76ee599cd0002000000000000000005ba'.toLowerCase();
   public static BALANCER_POOL_tetuBAL_BPT = '0xb797adfb7b268faeaa90cadbfed464c76ee599cd'.toLowerCase();
   public static BALANCER_GAUGE_tetuBAL_BPT = '0xAA59736b80cf77d1E7D56B7bbA5A8050805F5064'.toLowerCase();
+
+  public static BALANCER_bbamUSD = "0x48e6B98ef6329f8f0A30eBB8c7C960330d648085".toLowerCase();
+  public static BALANCER_bbamUSD_ID = "0x48e6b98ef6329f8f0a30ebb8c7c960330d64808500000000000000000000075b".toLowerCase();
+  public static BALANCER_bbamUSD_GAUGE = "0x1c514fEc643AdD86aeF0ef14F4add28cC3425306".toLowerCase();
 
 
   // KLIMA
