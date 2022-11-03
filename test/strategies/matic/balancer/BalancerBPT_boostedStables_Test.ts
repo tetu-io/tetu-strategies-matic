@@ -9,7 +9,7 @@ import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {BalancerLpSpecificHardWork} from "./BalancerLpSpecificHardWork";
+import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
 import {ISmartVault, IStrategy, StrategyBalancerBPT__factory} from "../../../../typechain";
 
 
@@ -86,7 +86,7 @@ describe('BalancerBPT_boostedStables_Test', async () => {
     _strategy: IStrategy,
     _balanceTolerance: number
   ) => {
-    return new BalancerLpSpecificHardWork(
+    return new BalancerBPTSpecificHardWork(
       _signer,
       _user,
       _core,

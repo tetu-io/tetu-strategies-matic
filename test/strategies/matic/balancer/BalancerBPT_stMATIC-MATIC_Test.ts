@@ -9,14 +9,18 @@ import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
-import {ISmartVault, IStrategy, StrategyBalancerBPT__factory} from "../../../../typechain";
+import {
+  ISmartVault,
+  IStrategy,
+  StrategyBalancerStMaticWmatic__factory
+} from "../../../../typechain";
+import {BalancerBPTstMaticSpecificHardWork} from "./BalancerBPTstMaticSpecificHardWork";
 
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('BalancerLP_MATIC_USDC_WETH_BAL_Test', async () => {
+describe('BalancerBPT_stMATIC-MATIC_Test', async () => {
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, true);
@@ -26,13 +30,10 @@ describe('BalancerLP_MATIC_USDC_WETH_BAL_Test', async () => {
   // **********************************************
   // ************** CONFIG*************************
   // **********************************************
-  const strategyContractName = 'StrategyBalancerBPT';
-  const vaultName = "MATIC_USDC_WETH_BAL_BPT";
-  const underlying = MaticAddresses.BALANCER_POOL_MATIC_USDC_WETH_BAL;
-  const poolId = MaticAddresses.BALANCER_POOL_MATIC_USDC_WETH_BAL_ID;
-  const gauge = MaticAddresses.BALANCER_GAUGE_MATIC_USDC_WETH_BAL;
-  const depositToken = MaticAddresses.BAL_TOKEN;
-  const buybackRatio = 5_00;
+  const strategyContractName = 'StrategyBalancerStMaticWmatic';
+  const vaultName = "StrategyBalancerStMaticWmatic";
+  const underlying = MaticAddresses.BALANCER_stMATIC_MATIC;
+  const VAULT_BBAMUSD = '0xf2fB1979C4bed7E71E6ac829801E0A8a4eFa8513'.toLowerCase();
 
   // const underlying = token;
   // add custom liquidation path if necessary
@@ -61,14 +62,14 @@ describe('BalancerLP_MATIC_USDC_WETH_BAL_Test', async () => {
           signer,
           strategyContractName,
         );
-        await StrategyBalancerBPT__factory.connect(strategy.address, signer).initialize(
+        await StrategyBalancerStMaticWmatic__factory.connect(strategy.address, signer).initialize(
           core.controller.address,
           vaultAddress,
-          depositToken,
-          poolId,
-          gauge,
-          buybackRatio
         );
+
+        await core.controller.setRewardDistribution([strategy.address], true);
+        await core.vaultController.addRewardTokens([vaultAddress], VAULT_BBAMUSD);
+
         return strategy;
       },
       underlying,
@@ -86,7 +87,7 @@ describe('BalancerLP_MATIC_USDC_WETH_BAL_Test', async () => {
     _strategy: IStrategy,
     _balanceTolerance: number
   ) => {
-    return new BalancerBPTSpecificHardWork(
+    return new BalancerBPTstMaticSpecificHardWork(
       _signer,
       _user,
       _core,

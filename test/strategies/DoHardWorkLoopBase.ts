@@ -141,9 +141,11 @@ export class DoHardWorkLoopBase {
   }
 
   protected async loopStartSnapshot() {
+    console.log('try to make snapshot');
     this.loopStartTs = await Misc.getBlockTsFromChain();
     this.vaultPPFS = await this.vault.getPricePerFullShare();
     this.stratEarnedTotal = await this.strategyEarned();
+    console.log('snapshot end');
   }
 
   protected async loopEndCheck() {

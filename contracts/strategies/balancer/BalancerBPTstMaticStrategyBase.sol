@@ -17,8 +17,6 @@ import "../../third_party/balancer/IBalancerGauge.sol";
 import "../../third_party/balancer/IBVault.sol";
 import "../../interface/ITetuLiquidator.sol";
 
-import "hardhat/console.sol";
-
 /// @title Base contract for stMatic farming with bbamBPT vault rewards
 /// @author belbix
 abstract contract BalancerBPTstMaticStrategyBase is ProxyStrategyBase {
@@ -38,44 +36,41 @@ abstract contract BalancerBPTstMaticStrategyBase is ProxyStrategyBase {
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
   ITetuLiquidator public constant TETU_LIQUIDATOR = ITetuLiquidator(0xC737eaB847Ae6A92028862fE38b828db41314772);
 
+  /// @dev stMATIC-WMATIC pool id
+  bytes32 public constant POOL_ID = 0x8159462d255c1d24915cb51ec361f700174cd99400000000000000000000075d;
+  IBalancerGauge public constant GAUGE = IBalancerGauge(0x2Aa6fB79EfE19A3fcE71c46AE48EFc16372ED6dD);
+  address public constant VAULT_BBAMUSD = 0xf2fB1979C4bed7E71E6ac829801E0A8a4eFa8513;
+  /// @dev bbamUSDC_TOKEN
+  address public constant DEPOSIT_TOKEN_FOR_REWARDS = 0xF93579002DBE8046c43FEfE86ec78b1112247BB8;
+  bytes32 public constant BBAMUSD_POOL_ID = 0x48e6b98ef6329f8f0a30ebb8c7c960330d64808500000000000000000000075b;
+
   // *******************************************************
   //                      VARIABLES
   // *******************************************************
 
-  address public depositToken;
   IAsset[] public poolTokens;
-  bytes32 public poolId;
-  IBalancerGauge public gauge;
   uint public lastHw;
 
   /// @notice Initialize contract after setup it as proxy implementation
   function initializeStrategy(
     address controller_,
-    address vault_,
-    address depositToken_,
-    bytes32 poolId_,
-    address gauge_,
-    uint buybackRatio_
+    address vault_
   ) public initializer {
 
-    (IERC20[] memory tokens,,) = BALANCER_VAULT.getPoolTokens(poolId_);
+    (IERC20[] memory tokens,,) = BALANCER_VAULT.getPoolTokens(POOL_ID);
     IAsset[] memory tokenAssets = new IAsset[](tokens.length);
     for (uint i = 0; i < tokens.length; i++) {
       tokenAssets[i] = IAsset(address(tokens[i]));
     }
     poolTokens = tokenAssets;
 
-    depositToken = depositToken_;
-    poolId = poolId_;
-
-    gauge = IBalancerGauge(gauge_);
-    IERC20(_getPoolAddress(poolId_)).safeApprove(address(gauge_), type(uint).max);
+    IERC20(_getPoolAddress(POOL_ID)).safeApprove(address(GAUGE), type(uint).max);
 
 
     address[] memory rewardTokensTmp = new address[](100);
     uint rtsLength;
     for (uint i = 0; i < 100; ++i) {
-      address rt = gauge.reward_tokens(i);
+      address rt = GAUGE.reward_tokens(i);
       if (rt == address(0)) {
         break;
       }
@@ -89,10 +84,10 @@ abstract contract BalancerBPTstMaticStrategyBase is ProxyStrategyBase {
 
     ProxyStrategyBase.initializeStrategyBase(
       controller_,
-      _getPoolAddress(poolId_),
+      _getPoolAddress(POOL_ID),
       vault_,
       rewardTokens_,
-      buybackRatio_
+      2_00 // 2% by default
     );
   }
 
@@ -115,22 +110,21 @@ abstract contract BalancerBPTstMaticStrategyBase is ProxyStrategyBase {
 
   /// @dev Balance of staked LPs in the gauge
   function _rewardPoolBalance() internal override view returns (uint256) {
-    return gauge.balanceOf(address(this));
+    return GAUGE.balanceOf(address(this));
   }
 
   /// @dev Rewards amount ready to claim
   function readyToClaim() external view override returns (uint256[] memory toClaim) {
-    IBalancerGauge _gauge = gauge;
     toClaim = new uint256[](_rewardTokens.length);
     for (uint i; i < toClaim.length; i++) {
       address rt = _rewardTokens[i];
-      toClaim[i] = _gauge.claimable_reward(address(this), rt);
+      toClaim[i] = GAUGE.claimable_reward(address(this), rt);
     }
   }
 
   /// @dev Return TVL of the farmable pool
   function poolTotalAmount() external view override returns (uint256) {
-    return IERC20(_underlying()).balanceOf(address(gauge));
+    return IERC20(_underlying()).balanceOf(address(GAUGE));
   }
 
   /// @dev Platform name for statistical purposes
@@ -154,21 +148,21 @@ abstract contract BalancerBPTstMaticStrategyBase is ProxyStrategyBase {
     // doHardWork can deposit all underlyings
     amount = IERC20(_underlying()).balanceOf(address(this));
     if (amount != 0) {
-      gauge.deposit(amount);
+      GAUGE.deposit(amount);
     }
   }
 
   /// @dev Withdraw LP tokens from gauge
   function withdrawAndClaimFromPool(uint256 amount) internal override {
     if (amount != 0) {
-      gauge.withdraw(amount);
+      GAUGE.withdraw(amount);
     }
     _doHardWork(true, false);
   }
 
   /// @dev Emergency withdraw all from a gauge
   function emergencyWithdrawFromPool() internal override {
-    gauge.withdraw(gauge.balanceOf(address(this)));
+    GAUGE.withdraw(GAUGE.balanceOf(address(this)));
   }
 
   /// @dev Make something useful with rewards
@@ -179,7 +173,7 @@ abstract contract BalancerBPTstMaticStrategyBase is ProxyStrategyBase {
   function _doHardWork(bool silently, bool push) internal {
     uint _lastHw = lastHw;
     if (push || _lastHw == 0 || block.timestamp - _lastHw > 12 hours) {
-      gauge.claim_rewards();
+      GAUGE.claim_rewards();
       _liquidateRewards(silently);
       lastHw = block.timestamp;
     }
@@ -191,7 +185,6 @@ abstract contract BalancerBPTstMaticStrategyBase is ProxyStrategyBase {
   }
 
   function _liquidateRewards(bool silently) internal {
-    address _depositToken = depositToken;
     uint bbRatio = _buyBackRatio();
     address[] memory rts = _rewardTokens;
     uint targetTokenEarnedTotal;
@@ -199,10 +192,10 @@ abstract contract BalancerBPTstMaticStrategyBase is ProxyStrategyBase {
       address rt = rts[i];
       uint amount = IERC20(rt).balanceOf(address(this));
       if (amount != 0) {
-        uint toCompound = amount * (_BUY_BACK_DENOMINATOR - bbRatio) / _BUY_BACK_DENOMINATOR;
-        uint toForwarder = amount - toCompound;
-        if (toCompound != 0) {
-          _liquidate(rt, _depositToken, toCompound, silently);
+        uint toRewards = amount * (_BUY_BACK_DENOMINATOR - bbRatio) / _BUY_BACK_DENOMINATOR;
+        uint toForwarder = amount - toRewards;
+        if (toRewards != 0) {
+          _liquidate(rt, DEPOSIT_TOKEN_FOR_REWARDS, toRewards, silently);
         }
 
         if (toForwarder != 0) {
@@ -215,13 +208,24 @@ abstract contract BalancerBPTstMaticStrategyBase is ProxyStrategyBase {
       }
     }
 
-    uint toPool = IERC20(_depositToken).balanceOf(address(this));
+    uint toPool = IERC20(DEPOSIT_TOKEN_FOR_REWARDS).balanceOf(address(this));
     if (toPool != 0) {
-      _balancerJoin(poolTokens, poolId, _depositToken, toPool);
+      (IERC20[] memory tokens,,) = BALANCER_VAULT.getPoolTokens(BBAMUSD_POOL_ID);
+      IAsset[] memory tokenAssets = new IAsset[](tokens.length);
+      for (uint i = 0; i < tokens.length; i++) {
+        tokenAssets[i] = IAsset(address(tokens[i]));
+      }
+      _balancerJoin(tokenAssets, BBAMUSD_POOL_ID, DEPOSIT_TOKEN_FOR_REWARDS, toPool);
     }
-    uint undBalance = IERC20(_underlying()).balanceOf(address(this));
-    if (undBalance != 0) {
-      gauge.deposit(undBalance);
+    uint bbamUSDBalance = IERC20(_getPoolAddress(BBAMUSD_POOL_ID)).balanceOf(address(this));
+    if (bbamUSDBalance != 0) {
+      // deposit to baamVAULT
+      _approveIfNeeds(_getPoolAddress(BBAMUSD_POOL_ID), bbamUSDBalance, VAULT_BBAMUSD);
+      ISmartVault(VAULT_BBAMUSD).deposit(bbamUSDBalance);
+      uint rewardBalance = IERC20(VAULT_BBAMUSD).balanceOf(address(this));
+      address __vault = _vault();
+      _approveIfNeeds(VAULT_BBAMUSD, rewardBalance, __vault);
+      ISmartVault(__vault).notifyTargetRewardAmount(VAULT_BBAMUSD, rewardBalance);
     }
 
     IBookkeeper(IController(_controller()).bookkeeper()).registerStrategyEarned(targetTokenEarnedTotal);
@@ -230,31 +234,95 @@ abstract contract BalancerBPTstMaticStrategyBase is ProxyStrategyBase {
 
   /// @dev Join to the given pool (exchange tokenIn to underlying BPT)
   function _balancerJoin(IAsset[] memory _poolTokens, bytes32 _poolId, address _tokenIn, uint _amountIn) internal {
-    uint[] memory amounts = new uint[](_poolTokens.length);
-    for (uint i = 0; i < amounts.length; i++) {
-      amounts[i] = address(_poolTokens[i]) == _tokenIn ? _amountIn : 0;
+
+    if (_isBoostedPool(_poolTokens, _poolId)) {
+      // just swap for enter
+      _balancerSwap(_poolId, _tokenIn, _getPoolAddress(_poolId), _amountIn);
+    } else {
+      uint[] memory amounts = new uint[](_poolTokens.length);
+      for (uint i = 0; i < amounts.length; i++) {
+        amounts[i] = address(_poolTokens[i]) == _tokenIn ? _amountIn : 0;
+      }
+      bytes memory userData = abi.encode(1, amounts, 1);
+      IBVault.JoinPoolRequest memory request = IBVault.JoinPoolRequest({
+      assets : _poolTokens,
+      maxAmountsIn : amounts,
+      userData : userData,
+      fromInternalBalance : false
+      });
+      _approveIfNeeds(_tokenIn, _amountIn, address(BALANCER_VAULT));
+      BALANCER_VAULT.joinPool(_poolId, address(this), address(this), request);
     }
-    bytes memory userData = abi.encode(1, amounts, 1);
-    IBVault.JoinPoolRequest memory request = IBVault.JoinPoolRequest({
-    assets : _poolTokens,
-    maxAmountsIn : amounts,
-    userData : userData,
-    fromInternalBalance : false
-    });
-    _approveIfNeeds(_tokenIn, _amountIn, address(BALANCER_VAULT));
-    BALANCER_VAULT.joinPool(_poolId, address(this), address(this), request);
+  }
+
+  function _isBoostedPool(IAsset[] memory _poolTokens, bytes32 _poolId) internal pure returns (bool){
+    address poolAdr = _getPoolAddress(_poolId);
+    for (uint i; i < _poolTokens.length; ++i) {
+      if (address(_poolTokens[i]) == poolAdr) {
+        return true;
+      }
+    }
+    return false;
   }
 
   function _liquidate(address tokenIn, address tokenOut, uint amount, bool silently) internal {
-    if (tokenIn != tokenOut && amount != 0) {
+    address tokenOutRewrite = _rewriteLinearUSDC(tokenOut);
+
+    if (tokenIn != tokenOutRewrite && amount != 0) {
       _approveIfNeeds(tokenIn, amount, address(TETU_LIQUIDATOR));
       // don't revert on errors
       if (silently) {
-        try TETU_LIQUIDATOR.liquidate(tokenIn, tokenOut, amount, PRICE_IMPACT_TOLERANCE) {} catch {}
+        try TETU_LIQUIDATOR.liquidate(tokenIn, tokenOutRewrite, amount, PRICE_IMPACT_TOLERANCE) {} catch {}
       } else {
-        TETU_LIQUIDATOR.liquidate(tokenIn, tokenOut, amount, PRICE_IMPACT_TOLERANCE);
+        TETU_LIQUIDATOR.liquidate(tokenIn, tokenOutRewrite, amount, PRICE_IMPACT_TOLERANCE);
       }
     }
+
+    // assume need to swap rewritten token manually
+    if (tokenOut != tokenOutRewrite && amount != 0) {
+      _swapLinearUSDC(tokenOutRewrite, tokenOut);
+    }
+  }
+
+  /// @dev It is a temporally logic until liquidator doesn't have swapper for LinearPool
+  function _rewriteLinearUSDC(address token) internal pure returns (address){
+    if (token == 0xF93579002DBE8046c43FEfE86ec78b1112247BB8 /*bbamUSDC*/) {
+      // USDC
+      return 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
+    }
+    return token;
+  }
+
+  /// @dev It is a temporally logic until liquidator doesn't have swapper for LinearPool
+  function _swapLinearUSDC(address tokenIn, address tokenOut) internal {
+    _balancerSwap(
+      0xf93579002dbe8046c43fefe86ec78b1112247bb8000000000000000000000759,
+      tokenIn,
+      tokenOut,
+      IERC20(tokenIn).balanceOf(address(this))
+    );
+  }
+
+  /// @dev Swap _tokenIn to _tokenOut using pool identified by _poolId
+  function _balancerSwap(bytes32 _poolId, address _tokenIn, address _tokenOut, uint _amountIn) internal {
+    IBVault.SingleSwap memory singleSwapData = IBVault.SingleSwap({
+    poolId : _poolId,
+    kind : IBVault.SwapKind.GIVEN_IN,
+    assetIn : IAsset(_tokenIn),
+    assetOut : IAsset(_tokenOut),
+    amount : _amountIn,
+    userData : ""
+    });
+
+    IBVault.FundManagement memory fundManagementStruct = IBVault.FundManagement({
+    sender : address(this),
+    fromInternalBalance : false,
+    recipient : payable(address(this)),
+    toInternalBalance : false
+    });
+
+    _approveIfNeeds(_tokenIn, _amountIn, address(BALANCER_VAULT));
+    BALANCER_VAULT.swap(singleSwapData, fundManagementStruct, 1, block.timestamp);
   }
 
   function _toForwarder(
@@ -297,5 +365,5 @@ abstract contract BalancerBPTstMaticStrategyBase is ProxyStrategyBase {
 
 
   //slither-disable-next-line unused-state
-  uint256[45] private ______gap;
+  uint256[48] private ______gap;
 }

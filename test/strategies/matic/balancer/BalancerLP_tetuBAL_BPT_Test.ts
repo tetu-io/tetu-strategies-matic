@@ -15,7 +15,7 @@ import {
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {Misc} from "../../../../scripts/utils/tools/Misc";
-import {BalancerLpSpecificHardWork} from "./BalancerLpSpecificHardWork";
+import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
 
 
 const {expect} = chai;
@@ -94,7 +94,7 @@ describe('Balancer LP tests', async () => {
     _strategy: IStrategy,
     _balanceTolerance: number
   ) => {
-    return new BalancerLpSpecificHardWork(
+    return new BalancerBPTSpecificHardWork(
       _signer,
       _user,
       _core,

@@ -4,7 +4,7 @@ import chaiAsPromised from "chai-as-promised";
 import {
   IBalancerGauge__factory,
   IChildChainStreamer__factory,
-  StrategyBalancerBPT__factory
+  StrategyBalancerBPT__factory, StrategyBalancerStMaticWmatic__factory
 } from "../../../../typechain";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {TokenUtils} from "../../../TokenUtils";
@@ -15,13 +15,13 @@ const {expect} = chai;
 chai.use(chaiAsPromised);
 
 
-export class BalancerLpSpecificHardWork extends DoHardWorkLoopBase {
+export class BalancerBPTstMaticSpecificHardWork extends DoHardWorkLoopBase {
 
   protected async loopStartActions(i: number) {
     await super.loopStartActions(i);
 
-    const strat = StrategyBalancerBPT__factory.connect(this.strategy.address, this.signer);
-    const gauge = IBalancerGauge__factory.connect(await strat.gauge(), this.signer);
+    const strat = StrategyBalancerStMaticWmatic__factory.connect(this.strategy.address, this.signer);
+    const gauge = IBalancerGauge__factory.connect(await strat.GAUGE(), this.signer);
     const streamerAdr = await gauge.reward_contract();
 
     const owner = await DeployerUtilsLocal.impersonate('0xC128468b7Ce63eA702C1f104D55A2566b13D3ABD');
