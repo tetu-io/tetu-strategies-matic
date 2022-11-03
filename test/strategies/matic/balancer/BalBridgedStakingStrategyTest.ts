@@ -42,7 +42,7 @@ const {expect} = chai;
 chai.use(chaiAsPromised);
 
 // todo fix on CI
-describe.skip('BAL bridged staking tests', async () => {
+describe('BAL bridged staking tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }

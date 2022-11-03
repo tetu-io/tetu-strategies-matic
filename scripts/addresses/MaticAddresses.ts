@@ -9,6 +9,7 @@ export class MaticAddresses {
 
   public static ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
   public static GOV_ADDRESS = "0xcc16d636dD05b52FF1D8B9CE09B09BC62b11412B".toLowerCase();
+  public static CONTROLLER_ADDRESS = "0x6678814c273d5088114B6E40cC49C8DB04F9bC29".toLowerCase();
   // tokens
   public static WETH_TOKEN = "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619".toLowerCase();
   public static ADDY_TOKEN = "0xc3FdbadC7c795EF1D6Ba111e06fF8F16A20Ea539".toLowerCase();
@@ -69,8 +70,18 @@ export class MaticAddresses {
   public static UMA_TOKEN = '0x3066818837c5e6eD6601bd5a91B0762877A6B731'.toLowerCase();
   public static SPHERE_TOKEN = '0x8D546026012bF75073d8A586f24A5d5ff75b9716'.toLowerCase();
   public static SPHEREV2_TOKEN = '0x17e9C5b37283ac5fBE527011CeC257b832f03eb3'.toLowerCase();
-  public static SPHEREV3_TOKEN = '0x48d86b885d3e9EDB6673c94179875B0D6484A3EA'.toLowerCase();
   public static CLAM2_TOKEN = '0xc250e9987a032acac293d838726c511e6e1c029d'.toLowerCase();
+  public static MESH_TOKEN = '0x82362Ec182Db3Cf7829014Bc61E9BE8a2E82868a'.toLowerCase();
+  public static tetuMESH_TOKEN = '0xDcB8F34a3ceb48782c9f3F98dF6C12119c8d168a'.toLowerCase();
+  public static SPHEREV3_TOKEN = '0x62F594339830b90AE4C084aE7D223fFAFd9658A7'.toLowerCase();
+  public static tetuBAL = '0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33'.toLowerCase();
+  public static DF_TOKEN = '0x08C15FA26E519A78a666D19CE5C646D55047e0a3'.toLowerCase();
+  public static tetuQI_TOKEN = '0x4Cd44ced63d9a6FEF595f6AD3F7CED13fCEAc768'.toLowerCase();
+  public static PEN_TOKEN = '0x9008D70A5282a936552593f410AbcBcE2F891A97'.toLowerCase();
+  public static DYST_TOKEN = '0x39aB6574c289c3Ae4d88500eEc792AB5B947A5Eb'.toLowerCase();
+  public static USDPlus_TOKEN = '0x236eeC6359fb44CCe8f97E99387aa7F8cd5cdE1f'.toLowerCase();
+  public static oZEMIT_TOKEN = '0xA34E0eaCB7fbB0b0d45da89b083E0f87fcdf6157'.toLowerCase();
+  public static bbamUSDC_TOKEN = '0xF93579002DBE8046c43FEfE86ec78b1112247BB8'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -179,7 +190,7 @@ export class MaticAddresses {
   public static TETU_SWAP_FACTORY = "0x684d8c187be836171a1Af8D533e4724893031828".toLowerCase();
   public static TETU_SWAP_ROUTER = "0x736FD9EabB15776A3adfea1B975c868F72A29d14".toLowerCase();
 
-  // AAVE
+  // AAVE v2
   public static AAVE_PROTOCOL_DATA_PROVIDER = "0x7551b5D2763519d4e37e8B81929D336De671d46d".toLowerCase();
   public static AAVE_LENDING_POOL = '0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf'.toLowerCase();
   public static amAAVE_TOKEN = "0x1d2a0E5EC8E5bBDCA5CB219e649B565d8e5c3360".toLowerCase();
@@ -187,6 +198,18 @@ export class MaticAddresses {
   public static amDAI_TOKEN = "0x27F8D03b3a2196956ED754baDc28D73be8830A6e".toLowerCase();
   public static amETH_TOKEN = "0x28424507fefb6f7f8E9D3860F56504E4e5f5f390".toLowerCase();
   public static amBTC_TOKEN = "0x5c2ed810328349100A66B82b78a1791B101C9D61".toLowerCase();
+
+  // AAVE v3
+  public static AAVE3_POOL = '0x794a61358D6845594F94dc1DB02A252b5b4814aD'.toLowerCase();
+  public static aPolAAVE_TOKEN = "0xf329e36C7bF6E5E86ce2150875a84Ce77f477375".toLowerCase();
+  public static sPolAAVE_TOKEN = "0xfAeF6A702D15428E588d4C0614AEFb4348D83D48".toLowerCase();
+  public static vPolAAVE_TOKEN = "0xE80761Ea617F66F96274eA5e8c37f03960ecC679".toLowerCase();
+  public static aPolWMATIC_TOKEN = "0x6d80113e533a2C0fe82EaBD35f1875DcEA89Ea97".toLowerCase();
+  public static sPolWMATIC_TOKEN = "0xF15F26710c827DDe8ACBA678682F3Ce24f2Fb56E".toLowerCase();
+  public static vPolWMATIC_TOKEN = "0xfb00AC187a8Eb5AFAE4eACE434F493Eb62672df7".toLowerCase();
+  public static aPolDAI_TOKEN = "0x82E64f49Ed5EC1bC6e43DAD4FC8Af9bb3A2312EE".toLowerCase();
+  public static sPolDAI_TOKEN = "0xd94112B5B62d53C9402e7A60289c6810dEF1dC9B".toLowerCase();
+  public static vPolDAI_TOKEN = "0x8619d80FB0141ba7F184CbF22fd724116D9f7ffC".toLowerCase();
 
   // qidao
   public static camWMATICVault = '0x88d84a85A87ED12B8f098e8953B322fF789fCD1a'.toLowerCase();
@@ -208,6 +231,24 @@ export class MaticAddresses {
   public static BALANCER_POOL_WMATIC_USDC_WETH_BAL_ID = '0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002'.toLowerCase();
   public static BALANCER_BAL_ETH_POOL = '0x3d468AB2329F296e1b9d8476Bb54Dd77D8c2320f'.toLowerCase();
   public static BALANCER_STABLE_POOL = '0x06Df3b2bbB68adc8B0e302443692037ED9f91b42'.toLowerCase();
+
+
+  public static BALANCER_POOL_MATIC_USDC_WETH_BAL = '0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875'.toLowerCase();
+  public static BALANCER_POOL_MATIC_USDC_WETH_BAL_ID = '0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002'.toLowerCase();
+  public static BALANCER_GAUGE_MATIC_USDC_WETH_BAL = '0x068Ff98072d3eB848D012e3390703BB507729ed6'.toLowerCase();
+
+  public static BALANCER_POOL_tetuBAL_BPT_ID = '0xb797adfb7b268faeaa90cadbfed464c76ee599cd0002000000000000000005ba'.toLowerCase();
+  public static BALANCER_POOL_tetuBAL_BPT = '0xb797adfb7b268faeaa90cadbfed464c76ee599cd'.toLowerCase();
+  public static BALANCER_GAUGE_tetuBAL_BPT = '0xAA59736b80cf77d1E7D56B7bbA5A8050805F5064'.toLowerCase();
+
+  public static BALANCER_bbamUSD = "0x48e6B98ef6329f8f0A30eBB8c7C960330d648085".toLowerCase();
+  public static BALANCER_bbamUSD_ID = "0x48e6b98ef6329f8f0a30ebb8c7c960330d64808500000000000000000000075b".toLowerCase();
+  public static BALANCER_bbamUSD_GAUGE = "0x1c514fEc643AdD86aeF0ef14F4add28cC3425306".toLowerCase();
+
+  public static BALANCER_stMATIC_MATIC = "0x8159462d255C1D24915CB51ec361F700174cD994".toLowerCase();
+  public static BALANCER_stMATIC_MATIC_ID = "0x8159462d255c1d24915cb51ec361f700174cd99400000000000000000000075d".toLowerCase();
+  public static BALANCER_stMATIC_MATIC_GAUGE = "0x2Aa6fB79EfE19A3fcE71c46AE48EFc16372ED6dD".toLowerCase();
+
 
   // KLIMA
   public static KLIMA_STAKING = '0x25d28a24Ceb6F81015bB0b2007D795ACAc411b4d'.toLowerCase();
@@ -239,6 +280,20 @@ export class MaticAddresses {
   public static MARKET_POOLDIRECTORY = '0xA2a1cb88D86A939A37770FE5E9530E8700DEe56b'.toLowerCase();
   public static MARKET_POOLLENS = '0xe4D84b252308645098846312286E6c6D2846DbB0'.toLowerCase();
 
+  // MESHSWAP
+  public static MESH_FACTORY = '0x9f3044f7f9fc8bc9ed615d54845b4577b833282d'.toLowerCase();
+  public static MESH_ROUTER = '0x10f4a785f458bc144e3706575924889954946639'.toLowerCase();
+  public static TETU_MESH_MESH_LP = '0xcf40352253de7a0155d700a937Dc797D681c9867'.toLowerCase();
+
+  // DFORCE
+  public static DFORCE_CONTROLLER = '0x52eaCd19E38D501D006D2023C813d7E37F025f37'.toLowerCase();
+
+  // DYSTOPIA
+  public static DYSTOPIA_FACTORY = '0x1d21Db6cde1b18c7E47B0F7F42f4b3F68b9beeC9'.toLowerCase();
+  public static DYSTOPIA_ROUTER = '0xbE75Dd16D029c6B32B7aD57A0FD9C1c20Dd2862e'.toLowerCase();
+  public static DYSTOPIA_tetuQI_QI = '0x42c0cc5f1827c5d908392654389e5d93da426378'.toLowerCase();
+  public static DYSTOPIA_TETU_USDPlus = '0x5A272ad79cBd3C874879E3FEc5753C2127f77583'.toLowerCase();
+
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,
     MaticAddresses.USDT_TOKEN,
@@ -266,6 +321,10 @@ export class MaticAddresses {
         return MaticAddresses.TETU_SWAP_ROUTER;
       case MaticAddresses.DINO_FACTORY:
         return MaticAddresses.DINO_ROUTER;
+      case MaticAddresses.MESH_FACTORY:
+        return MaticAddresses.MESH_ROUTER;
+      case MaticAddresses.DYSTOPIA_FACTORY:
+        return MaticAddresses.DYSTOPIA_ROUTER;
     }
     throw Error('Unknown factory ' + factory);
   }
@@ -286,6 +345,8 @@ export class MaticAddresses {
         return 'CAFE';
       case MaticAddresses.TETU_SWAP_ROUTER:
         return "TETU";
+      case MaticAddresses.MESH_ROUTER:
+        return "MESH";
     }
     throw Error('Unknown router ' + router);
   }

@@ -13,6 +13,8 @@ import "hardhat-tracer";
 // import "hardhat-etherscan-abi";
 import "solidity-coverage"
 import "hardhat-abi-exporter"
+import {task} from "hardhat/config";
+import {deployContract} from "./scripts/deploy/DeployContract";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -35,10 +37,16 @@ const argv = require('yargs/yargs')()
     },
     maticForkBlock: {
       type: "number",
-      default: 28058008
+      default: 31243271
     },
   }).argv;
 
+task("deploy", "Deploy contract", async function (args, hre, runSuper) {
+  const [signer] = await hre.ethers.getSigners();
+  // tslint:disable-next-line:ban-ts-ignore
+  // @ts-ignore
+  await deployContract(hre, signer, args.name)
+}).addPositionalParam("name", "Name of the smart contract to deploy");
 
 export default {
   defaultNetwork: "hardhat",
@@ -57,14 +65,15 @@ export default {
         path: "m/44'/60'/0'/0",
         accountsBalance: "100000000000000000000000000000"
       },
+      // loggingEnabled: true,
     },
     matic: {
       url: argv.maticRpcUrl,
       timeout: 99999,
       chainId: 137,
-      gas: 12_000_000,
-      gasPrice: 50_000_000_000,
-      gasMultiplier: 1.3,
+      // gas: 12_000_000,
+      // gasPrice: 50_000_000_000,
+      // gasMultiplier: 1.3,
       accounts: [argv.privateKey],
     },
   },

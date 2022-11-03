@@ -1,6 +1,7 @@
 import {
+  IControllable__factory, IControllableExtended__factory,
   IController,
-  IController__factory,
+  IController__factory, IERC20__factory,
   ISmartVault,
   ISmartVault__factory,
   IStrategy__factory,
@@ -17,48 +18,18 @@ import {MintHelperUtils} from "./MintHelperUtils";
 import {Misc} from "../scripts/utils/tools/Misc";
 import {ethers} from "hardhat";
 
-const PPFS_NO_INCREASE = new Set<string>([
+export const PPFS_NO_INCREASE = new Set<string>([
   'QiStakingStrategyBase',
   'BalBridgedStakingStrategyBase',
+  'MeshLpStrategyBase',
+  'BalancerPoolStrategyBase',
+  'PenroseStrategyBase',
+  'BalancerBPTstMaticStrategyBase',
 ])
 
 export class VaultUtils {
 
   constructor(public vault: ISmartVault) {
-  }
-
-  public async checkEmptyVault(
-    strategy: string,
-    unerlying: string,
-    vaultRewardToken0: string,
-    deployer: string,
-    toInvestNumerator: number,
-    toInvestDenominator: number,
-    duration: number
-  ) {
-    const vault = this.vault;
-    // vault storage initial stats
-    expect(await vault.decimals()).to.eq(6);
-    expect(await vault.strategy()).to.eq(strategy);
-    expect((await vault.underlying()).toLowerCase()).to.eq(unerlying);
-    expect(await vault.underlyingUnit()).to.eq(1000000);
-    expect(await vault.duration()).to.eq(duration);
-    expect(await vault.active()).to.eq(true);
-    // vault stats
-    expect(await vault.underlyingBalanceInVault()).to.eq(0);
-    expect(await vault.underlyingBalanceWithInvestment()).to.eq(0);
-    expect(await vault.underlyingBalanceWithInvestmentForHolder(deployer)).to.eq(0);
-    expect(await vault.getPricePerFullShare()).to.eq(1000000);
-    expect(await vault.availableToInvestOut()).to.eq(0);
-    expect(await vault.earned(vaultRewardToken0, deployer)).to.eq(0);
-    expect(await vault.rewardPerToken(vaultRewardToken0)).to.eq(0);
-    expect(await vault.lastTimeRewardApplicable(vaultRewardToken0)).to.eq(0);
-    expect(await vault.rewardTokensLength()).to.eq(1);
-    expect(await vault.getRewardTokenIndex(vaultRewardToken0)).to.eq(0);
-    expect(await vault.periodFinishForToken(vaultRewardToken0)).to.eq(0);
-    expect(await vault.rewardRateForToken(vaultRewardToken0)).to.eq(0);
-    expect(await vault.lastUpdateTimeForToken(vaultRewardToken0)).to.eq(0);
-    expect(await vault.rewardPerTokenStoredForToken(vaultRewardToken0)).to.eq(0);
   }
 
   public static async profitSharingRatio(controller: IController): Promise<number> {
@@ -83,8 +54,14 @@ export class VaultUtils {
     expect(+utils.formatUnits(bal, dec))
       .is.greaterThanOrEqual(+utils.formatUnits(amount, dec), 'not enough balance')
 
+    const undBal = await vaultForUser.underlyingBalanceWithInvestment();
+    const totalSupply = await IERC20__factory.connect(vault.address, user).totalSupply();
+    if (!totalSupply.isZero() && undBal.isZero()) {
+      throw new Error("Wrong underlying balance! Check strategy implementation for _rewardPoolBalance()");
+    }
+
     await TokenUtils.approve(underlying, user, vault.address, amount.toString());
-    console.log('deposit', BigNumber.from(amount).toString());
+    console.log('Vault utils: deposit', BigNumber.from(amount).toString());
     if (invest) {
       return vaultForUser.depositAndInvest(BigNumber.from(amount));
     } else {
@@ -133,8 +110,9 @@ export class VaultUtils {
   }
 
   public static async doHardWorkAndCheck(vault: ISmartVault, positiveCheck = true) {
+    console.log('/// start do hard work')
     const start = Date.now();
-    const controller = await vault.controller();
+    const controller = await IControllableExtended__factory.connect(vault.address, vault.signer).controller();
     const controllerCtr = IController__factory.connect(controller, vault.signer);
     const psVault = await controllerCtr.psVault();
     const psVaultCtr = ISmartVault__factory.connect(psVault, vault.signer);
@@ -163,6 +141,7 @@ export class VaultUtils {
     } else {
       await vault.doHardWork();
     }
+    console.log('hard work called');
 
     const ppfsAfter = +utils.formatUnits(await vault.getPricePerFullShare(), undDec);
     const undBalAfter = +utils.formatUnits(await vault.underlyingBalanceWithInvestment(), undDec);

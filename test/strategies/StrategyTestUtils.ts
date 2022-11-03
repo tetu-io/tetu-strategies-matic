@@ -32,7 +32,12 @@ export class StrategyTestUtils {
     strategyDeployer: (vaultAddress: string) => Promise<IStrategy>,
     underlying: string,
     depositFee = 0,
+    addXTetuReward = true
   ): Promise<[ISmartVault, IStrategy, string]> {
+    let reward = Misc.ZERO_ADDRESS;
+    if(addXTetuReward) {
+      reward = core.psVault.address;
+    }
     const start = Date.now();
     log.info("Starting deploy")
     const data = await DeployerUtilsLocal.deployAndInitVaultAndStrategy(
@@ -41,7 +46,7 @@ export class StrategyTestUtils {
       strategyDeployer,
       core.controller,
       core.vaultController,
-      core.psVault.address,
+      reward,
       signer,
       60 * 60 * 24 * 28,
       depositFee

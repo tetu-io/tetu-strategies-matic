@@ -27,7 +27,7 @@ import {
   IRewardToken__factory,
   ISmartVault,
   ISmartVault__factory,
-  IStrategy,
+  IStrategy, IStrategy__factory,
   IStrategySplitter,
   IStrategySplitter__factory,
   IVaultController,
@@ -490,7 +490,7 @@ export class DeployerUtilsLocal {
       IRewardToken__factory.connect(core.rewardToken, signer),
       ps,
       '',
-      IStrategySplitter__factory.connect(str, signer),
+      IStrategy__factory.connect(str, signer),
       IFundKeeper__factory.connect(core.fundKeeper, signer),
       '',
       IAnnouncer__factory.connect(core.announcer, signer),
@@ -634,6 +634,18 @@ export class DeployerUtilsLocal {
   public static async setStorageAt(address: string, index: string, value: string) {
     await ethers.provider.send("hardhat_setStorageAt", [address, index, value]);
     await ethers.provider.send("evm_mine", []); // Just mines to the next block
+  }
+
+  public static async findVaultUnderlyingInBookkeeper(signer: SignerWithAddress, underlying: string) {
+    const core = await DeployerUtilsLocal.getCoreAddresses()
+    const vaults = await IBookkeeper__factory.connect(core.bookkeeper, signer).vaults();
+    for (const vault of vaults) {
+      const vaultUnd = await ISmartVault__factory.connect(vault, signer).underlying();
+      if (vaultUnd.toLowerCase() === underlying.toLowerCase()) {
+        return true;
+      }
+    }
+    return false;
   }
 
   // ****************** WAIT ******************
