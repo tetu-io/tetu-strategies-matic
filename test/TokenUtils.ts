@@ -78,6 +78,7 @@ export class TokenUtils {
     [MaticAddresses.oZEMIT_TOKEN, '0x0fbe132a5eb95f287740a7b0affbfc8d14354548'.toLowerCase()],
     [MaticAddresses.BALANCER_bbamUSD, MaticAddresses.BALANCER_bbamUSD_GAUGE.toLowerCase()], // gauge
     [MaticAddresses.BALANCER_stMATIC_MATIC, MaticAddresses.BALANCER_stMATIC_MATIC_GAUGE.toLowerCase()], // gauge
+    [MaticAddresses.BALANCER_xMATIC_MATIC, MaticAddresses.BALANCER_xMATIC_MATIC_GAUGE.toLowerCase()], // gauge
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {

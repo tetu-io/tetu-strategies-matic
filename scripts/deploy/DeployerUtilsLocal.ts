@@ -34,6 +34,7 @@ import {
   IVaultController__factory,
   TetuProxyControlled, TetuProxyControlled__factory,
 } from "../../typechain";
+import {deployContract} from "./DeployContract";
 
 // tslint:disable-next-line:no-var-requires
 const hre = require("hardhat");
@@ -50,7 +51,7 @@ const argv = require('yargs/yargs')()
     },
     vaultLogic: {
       type: "string",
-      default: "0x9ED23756ECD0B9012E4D7ee807dA0E6Ec94A1a70"
+      default: "0x0B573B9f55D4CdF3D3C1f2dd39C9828289b8A938"
     },
     splitterLogic: {
       type: "string",
@@ -69,8 +70,7 @@ export class DeployerUtilsLocal {
   public static toolsCache: ToolsContractsWrapper;
 
   public static getVaultLogic(signer: SignerWithAddress) {
-    console.log('argv.vaultLogic', argv.vaultLogic);
-    let logic = '0x9ED23756ECD0B9012E4D7ee807dA0E6Ec94A1a70';
+    let logic = '';
     if (!!argv.vaultLogic) {
       logic = argv.vaultLogic;
     }
@@ -94,41 +94,7 @@ export class DeployerUtilsLocal {
     // tslint:disable-next-line:no-any
     ...args: any[]
   ) {
-    const start = Date.now();
-    log.info(`Deploying ${name}`);
-    log.info("Account balance: " + utils.formatUnits(await signer.getBalance(), 18));
-
-    const gasPrice = await web3.eth.getGasPrice();
-    log.info("Gas price: " + gasPrice);
-    const lib: string | undefined = libraries.get(name);
-    let _factory;
-    if (lib) {
-      console.log('DEPLOY LIBRARY', lib, 'for', name);
-      const libAddress = (await DeployerUtilsLocal.deployContract(signer, lib)).address;
-      await DeployerUtilsLocal.wait(1);
-      const librariesObj: Libraries = {};
-      librariesObj[lib] = libAddress;
-      _factory = (await ethers.getContractFactory(
-        name,
-        {
-          signer,
-          libraries: librariesObj
-        }
-      )) as T;
-    } else {
-      _factory = (await ethers.getContractFactory(
-        name,
-        signer
-      )) as T;
-    }
-    const instance = await _factory.deploy(...args);
-    console.log('Deploy tx:', instance.deployTransaction.hash);
-    await instance.deployed();
-
-    const receipt = await ethers.provider.getTransactionReceipt(instance.deployTransaction.hash);
-
-    Misc.printDuration(`${name} deployed ${receipt.contractAddress} gas used: ${receipt.gasUsed.toString()}`, start);
-    return _factory.attach(receipt.contractAddress);
+    return deployContract(hre, signer, name, ...args);
   }
 
   public static async deployTetuProxyControlled<T extends ContractFactory>(

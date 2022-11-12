@@ -30,7 +30,7 @@ abstract contract BalancerBPTStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "BalancerBPTStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
 
   uint private constant PRICE_IMPACT_TOLERANCE = 10_000;
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
@@ -191,24 +191,20 @@ abstract contract BalancerBPTStrategyBase is ProxyStrategyBase {
   function _liquidateRewards(bool silently) internal {
     address _depositToken = depositToken;
     uint bbRatio = _buyBackRatio();
+    address governance = IController(_controller()).governance();
     address[] memory rts = _rewardTokens;
-    uint targetTokenEarnedTotal;
     for (uint i = 0; i < rts.length; i++) {
       address rt = rts[i];
       uint amount = IERC20(rt).balanceOf(address(this));
       if (amount != 0) {
         uint toCompound = amount * (_BUY_BACK_DENOMINATOR - bbRatio) / _BUY_BACK_DENOMINATOR;
-        uint toForwarder = amount - toCompound;
+        uint toGov = amount - toCompound;
         if (toCompound != 0) {
           _liquidate(rt, _depositToken, toCompound, silently);
         }
 
-        if (toForwarder != 0) {
-          targetTokenEarnedTotal += _toForwarder(
-            rt,
-            toForwarder,
-            silently
-          );
+        if (toGov != 0) {
+          IERC20(rt).safeTransfer(governance, toGov);
         }
       }
     }
@@ -222,7 +218,7 @@ abstract contract BalancerBPTStrategyBase is ProxyStrategyBase {
       gauge.deposit(undBalance);
     }
 
-    IBookkeeper(IController(_controller()).bookkeeper()).registerStrategyEarned(targetTokenEarnedTotal);
+    IBookkeeper(IController(_controller()).bookkeeper()).registerStrategyEarned(1);
 
   }
 
@@ -317,28 +313,6 @@ abstract contract BalancerBPTStrategyBase is ProxyStrategyBase {
 
     _approveIfNeeds(_tokenIn, _amountIn, address(BALANCER_VAULT));
     BALANCER_VAULT.swap(singleSwapData, fundManagementStruct, 1, block.timestamp);
-  }
-
-  function _toForwarder(
-    address rt,
-    uint amount,
-    bool silently
-  ) internal returns (uint targetTokenEarned){
-    address forwarder = IController(_controller()).feeRewardForwarder();
-    address vault = _vault();
-    targetTokenEarned = 0;
-    if (amount != 0) {
-      _approveIfNeeds(rt, amount, forwarder);
-      // it will sell reward token to Target Token and distribute it to SmartVault and PS
-      if (!silently) {
-        targetTokenEarned = IFeeRewardForwarder(forwarder).distribute(amount, rt, vault);
-      } else {
-        //slither-disable-next-line unused-return,variable-scope,uninitialized-local
-        try IFeeRewardForwarder(forwarder).distribute(amount, rt, vault) returns (uint r) {
-          targetTokenEarned = r;
-        } catch {}
-      }
-    }
   }
 
   function _approveIfNeeds(address token, uint amount, address spender) internal {

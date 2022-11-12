@@ -66,7 +66,7 @@ describe('Aave3 Strategy tests', async () => {
     const tokenName = start[1];
     const token = start[2];
     const aTokenName = start[3];
-    console.log(token);
+    console.log("START tokenName", tokenName);
 
     if (!idx || idx === "idx") { // skip header
       console.log('skip ', tokenName);
@@ -120,8 +120,6 @@ describe('Aave3 Strategy tests', async () => {
             underlying,
             vaultAddress
           );
-
-          // await core.vaultController.addRewardTokens([vaultAddress], MaticAddresses.tetuMESH_TOKEN);
           return strategy;
         },
         underlying,
