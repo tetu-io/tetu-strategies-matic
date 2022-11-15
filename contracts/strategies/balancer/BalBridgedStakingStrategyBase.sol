@@ -108,6 +108,10 @@ abstract contract BalBridgedStakingStrategyBase is ProxyStrategyBase {
 
   /// @dev Collect profit and do something useful with them
   function doHardWork() external override {
+    // do not spend gas for dust
+    if (IERC20(_BAL).balanceOf(address(this)) < 10e18) {
+      return;
+    }
 
     // send part of BAL to POL
     _generatePol();
@@ -122,7 +126,7 @@ abstract contract BalBridgedStakingStrategyBase is ProxyStrategyBase {
     uint balBalance = IERC20(_BAL).balanceOf(address(this));
     uint toPol = balBalance * polRatio() / 100;
 
-    if(toPol == 0) {
+    if (toPol == 0) {
       return;
     }
 
@@ -136,6 +140,7 @@ abstract contract BalBridgedStakingStrategyBase is ProxyStrategyBase {
   }
 
   function liquidateReward() internal override {
+    address vaultForRewards = targetVault();
     uint balBalance = IERC20(_BAL).balanceOf(address(this));
 
     uint toBPT = balBalance * (_BUY_BACK_DENOMINATOR - _buyBackRatio()) / _BUY_BACK_DENOMINATOR;
@@ -168,67 +173,67 @@ abstract contract BalBridgedStakingStrategyBase is ProxyStrategyBase {
       block.timestamp
     );
 
-    // use the same proportion for join
-    // don't care about slippage lost
-    uint wethForJoin = IERC20(_WETH).balanceOf(address(this)) * balForWethPart / balForSwap;
+    if (toBPT != 0) {
+      // use the same proportion for join
+      // don't care about slippage lost
+      uint wethForJoin = IERC20(_WETH).balanceOf(address(this)) * balForWethPart / balForSwap;
 
-    // -------------- INVEST TO BALANCER POOL ------------
+      // -------------- INVEST TO BALANCER POOL ------------
 
-    IAsset[] memory joinAssets = new  IAsset[](2);
-    joinAssets[0] = IAsset(_WETH);
-    joinAssets[1] = IAsset(_BAL);
+      IAsset[] memory joinAssets = new  IAsset[](2);
+      joinAssets[0] = IAsset(_WETH);
+      joinAssets[1] = IAsset(_BAL);
 
-    // don't care about slippage a lot
-    uint[] memory maxAmounts = new uint[](2);
-    maxAmounts[0] = wethForJoin * 10;
-    maxAmounts[1] = balForJoin * 10;
+      // don't care about slippage a lot
+      uint[] memory maxAmounts = new uint[](2);
+      maxAmounts[0] = wethForJoin * 10;
+      maxAmounts[1] = balForJoin * 10;
 
-    uint[] memory amounts = new uint[](2);
-    amounts[0] = wethForJoin;
-    amounts[1] = balForJoin;
+      uint[] memory amounts = new uint[](2);
+      amounts[0] = wethForJoin;
+      amounts[1] = balForJoin;
 
-    bytes memory userData = abi.encode(IBVault.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT, amounts, 0);
+      bytes memory userData = abi.encode(IBVault.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT, amounts, 0);
 
-    IERC20(_WETH).safeApprove(_BALANCER_VAULT, 0);
-    IERC20(_WETH).safeApprove(_BALANCER_VAULT, wethForJoin);
-    IERC20(_BAL).safeApprove(_BALANCER_VAULT, 0);
-    IERC20(_BAL).safeApprove(_BALANCER_VAULT, balForJoin);
+      IERC20(_WETH).safeApprove(_BALANCER_VAULT, 0);
+      IERC20(_WETH).safeApprove(_BALANCER_VAULT, wethForJoin);
+      IERC20(_BAL).safeApprove(_BALANCER_VAULT, 0);
+      IERC20(_BAL).safeApprove(_BALANCER_VAULT, balForJoin);
 
-    IBVault(_BALANCER_VAULT).joinPool(
-      _BAL_ETH_POOL_ID,
-      address(this),
-      address(this),
-      IBVault.JoinPoolRequest({
-    assets : joinAssets,
-    maxAmountsIn : maxAmounts,
-    userData : userData,
-    fromInternalBalance : false
-    })
-    );
+      IBVault(_BALANCER_VAULT).joinPool(
+        _BAL_ETH_POOL_ID,
+        address(this),
+        address(this),
+        IBVault.JoinPoolRequest({
+      assets : joinAssets,
+      maxAmountsIn : maxAmounts,
+      userData : userData,
+      fromInternalBalance : false
+      })
+      );
 
-    // -------------- INVEST TO VAULT ------------
+      // -------------- INVEST TO VAULT ------------
 
-    // all wrapped tokens go to rewards
-    uint toVault = IERC20(_underlying()).balanceOf(address(this));
-    address vaultForRewards = targetVault();
-    if (vaultForRewards == address(0)) {
-      vaultForRewards = _vault();
+      // all wrapped tokens go to rewards
+      uint toVault = IERC20(_underlying()).balanceOf(address(this));
+      if (vaultForRewards == address(0)) {
+        vaultForRewards = _vault();
+      }
+
+      if (toVault != 0) {
+        // wrap BPT tokens to tetuBAL
+        ISmartVault sv = ISmartVault(_vault());
+        IERC20(_underlying()).safeApprove(_vault(), 0);
+        IERC20(_underlying()).safeApprove(_vault(), toVault);
+        // make sure that we not call doHardWork again in the vault during investment process
+        sv.depositAndInvest(toVault);
+        uint shareBalance = IERC20(address(sv)).balanceOf(address(this));
+        // add deposited amount to vault rewards
+        IERC20(address(sv)).safeApprove(vaultForRewards, 0);
+        IERC20(address(sv)).safeApprove(vaultForRewards, shareBalance);
+        ISmartVault(vaultForRewards).notifyTargetRewardAmount(address(sv), shareBalance);
+      }
     }
-
-    if (toVault != 0) {
-      // wrap BPT tokens to tetuBAL
-      ISmartVault sv = ISmartVault(_vault());
-      IERC20(_underlying()).safeApprove(_vault(), 0);
-      IERC20(_underlying()).safeApprove(_vault(), toVault);
-      // make sure that we not call doHardWork again in the vault during investment process
-      sv.depositAndInvest(toVault);
-      uint shareBalance = IERC20(address(sv)).balanceOf(address(this));
-      // add deposited amount to vault rewards
-      IERC20(address(sv)).safeApprove(vaultForRewards, 0);
-      IERC20(address(sv)).safeApprove(vaultForRewards, shareBalance);
-      ISmartVault(vaultForRewards).notifyTargetRewardAmount(address(sv), shareBalance);
-    }
-
     // -------------- LIQUIDATE PLATFORM PART ------------
 
     // we should have a part of swapped amount in WETH
