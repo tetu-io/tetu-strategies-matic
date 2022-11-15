@@ -27,7 +27,7 @@ abstract contract BalBridgedStakingStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "BalBridgedStakingStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.1";
+  string public constant VERSION = "1.1.2";
   /// @dev 20% buybacks
   uint256 private constant _BUY_BACK_RATIO = 20_00;
   address internal constant _WETH = 0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
@@ -36,9 +36,11 @@ abstract contract BalBridgedStakingStrategyBase is ProxyStrategyBase {
   bytes32 private constant _BAL_ETH_USDC_WMATIC_POOL_ID = 0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002;
   bytes32 private constant _BAL_ETH_POOL_ID = 0x3d468ab2329f296e1b9d8476bb54dd77d8c2320f000200000000000000000426;
   address private constant _BALANCER_VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
+  ISmartVault private constant _BAL_TETU_VAULT = ISmartVault(0x1AB27A11A5A932e415067f6f20a65245Bd47E4D1);
   bytes32 internal constant _SENDER_KEY = bytes32(uint256(keccak256("s.sender")) - 1);
   bytes32 internal constant _INVESTED_KEY = bytes32(uint256(keccak256("s.invested")) - 1);
   bytes32 internal constant _TARGET_VAULT = bytes32(uint256(keccak256("s.target.vault")) - 1);
+  bytes32 internal constant _POL_RATIO = bytes32(uint256(keccak256("s.pol.ratio")) - 1);
 
 
   /// @notice Initialize contract after setup it as proxy implementation
@@ -76,6 +78,11 @@ abstract contract BalBridgedStakingStrategyBase is ProxyStrategyBase {
     _TARGET_VAULT.set(value);
   }
 
+  /// @dev Set POL ratio
+  function setPolRatio(uint value) external restricted {
+    _POL_RATIO.set(value);
+  }
+
   /// @dev Transfer BPT tokens to sender
   function _sendToBridge() internal {
     IERC20 u = IERC20(_underlying());
@@ -102,21 +109,34 @@ abstract contract BalBridgedStakingStrategyBase is ProxyStrategyBase {
   /// @dev Collect profit and do something useful with them
   function doHardWork() external override {
 
+    // send part of BAL to POL
+    _generatePol();
+
     // we should receive periodically BAL tokens from mainnet
     // wrap them into vault shares and send as rewards to the vault
     liquidateReward();
   }
 
-  uint private constant _WETH_BPT_RATIO = 20;
-
-  function liquidateReward() internal override {
+  /// @dev Should be called before liquidation
+  function _generatePol() internal {
     uint balBalance = IERC20(_BAL).balanceOf(address(this));
+    uint toPol = balBalance * polRatio() / 100;
 
-    // threshold 1 BAL
-    if (balBalance < 1 * (10 ** 18)) {
+    if(toPol == 0) {
       return;
     }
 
+    IERC20(_BAL).safeApprove(address(_BAL_TETU_VAULT), 0);
+    IERC20(_BAL).safeApprove(address(_BAL_TETU_VAULT), toPol);
+
+    _BAL_TETU_VAULT.depositAndInvest(toPol);
+    uint shareBalance = IERC20(address(_BAL_TETU_VAULT)).balanceOf(address(this));
+
+    IERC20(address(_BAL_TETU_VAULT)).safeTransfer(IController(_controller()).fund(), shareBalance);
+  }
+
+  function liquidateReward() internal override {
+    uint balBalance = IERC20(_BAL).balanceOf(address(this));
 
     uint toBPT = balBalance * (_BUY_BACK_DENOMINATOR - _buyBackRatio()) / _BUY_BACK_DENOMINATOR;
     uint balForPS = balBalance - toBPT;
@@ -188,7 +208,7 @@ abstract contract BalBridgedStakingStrategyBase is ProxyStrategyBase {
 
     // -------------- INVEST TO VAULT ------------
 
-    // all wrapped tokens got to rewards
+    // all wrapped tokens go to rewards
     uint toVault = IERC20(_underlying()).balanceOf(address(this));
     address vaultForRewards = targetVault();
     if (vaultForRewards == address(0)) {
@@ -254,6 +274,11 @@ abstract contract BalBridgedStakingStrategyBase is ProxyStrategyBase {
   /// @dev Assume that sent tokes is the whole pool balance
   function poolTotalAmount() external view override returns (uint256) {
     return _INVESTED_KEY.getUint();
+  }
+
+  /// @dev How much veBAL rewards will send to POL
+  function polRatio() public view returns (uint256) {
+    return _POL_RATIO.getUint();
   }
 
   /// @dev Platform name for statistical purposes

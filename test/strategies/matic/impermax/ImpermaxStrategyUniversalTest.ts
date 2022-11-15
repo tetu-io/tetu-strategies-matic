@@ -38,7 +38,7 @@ const argv = require('yargs/yargs')()
 
 chai.use(chaiAsPromised);
 
-describe('Universal Impermax tests', async () => {
+describe.skip('Universal Impermax tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
