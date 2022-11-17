@@ -190,6 +190,7 @@ export class MaticAddresses {
   // TetuSwap
   public static TETU_SWAP_FACTORY = "0x684d8c187be836171a1Af8D533e4724893031828".toLowerCase();
   public static TETU_SWAP_ROUTER = "0x736FD9EabB15776A3adfea1B975c868F72A29d14".toLowerCase();
+  public static TETU_SWAP_USDC_BTC = "0xA2Ac987AF47CC54250fAE6b8b8f0742E8C531d74".toLowerCase();
 
   // AAVE v2
   public static AAVE_PROTOCOL_DATA_PROVIDER = "0x7551b5D2763519d4e37e8B81929D336De671d46d".toLowerCase();

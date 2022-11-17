@@ -79,6 +79,7 @@ export class TokenUtils {
     [MaticAddresses.BALANCER_bbamUSD, MaticAddresses.BALANCER_bbamUSD_GAUGE.toLowerCase()], // gauge
     [MaticAddresses.BALANCER_stMATIC_MATIC, MaticAddresses.BALANCER_stMATIC_MATIC_GAUGE.toLowerCase()], // gauge
     [MaticAddresses.BALANCER_xMATIC_MATIC, MaticAddresses.BALANCER_xMATIC_MATIC_GAUGE.toLowerCase()], // gauge
+    [MaticAddresses.TETU_SWAP_USDC_BTC, MaticAddresses.GOV_ADDRESS.toLowerCase()], // should be preminted in strategy
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {
@@ -152,11 +153,12 @@ export class TokenUtils {
     return tokenId;
   }
 
-  public static async getToken(token: string, to: string, amount?: BigNumber) {
+  public static async getToken(token: string, to: string, amount?: BigNumber): Promise<BigNumber> {
     const start = Date.now();
     console.log('transfer token from biggest holder', token, amount?.toString());
 
     if (token.toLowerCase() === await DeployerUtilsLocal.getNetworkTokenAddress()) {
+      amount = amount ? amount : parseUnits('1000000');
       await IWmatic__factory.connect(token, await DeployerUtilsLocal.impersonate(to)).deposit({value: amount});
       return amount;
     }

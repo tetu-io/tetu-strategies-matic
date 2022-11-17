@@ -12,91 +12,210 @@
 
 pragma solidity 0.8.4;
 
-import "@tetu_io/tetu-contracts/contracts/base/strategies/StrategyBase.sol";
+import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
 import "@tetu_io/tetu-contracts/contracts/base/interface/ISmartVault.sol";
 import "@tetu_io/tetu-contracts/contracts/swap/interfaces/ITetuSwapPair.sol";
 
+import "hardhat/console.sol";
+
 /// @title Abstract contract for Tetu swap strategy implementation
 /// @author belbix
-abstract contract TetuSwapStrategyBase is StrategyBase {
+abstract contract TetuSwapStrategyBase is ProxyStrategyBase {
   using SafeERC20 for IERC20;
 
-  // ************ VARIABLES **********************
+  // ************ CONSTANTS **********************
+
   /// @notice Strategy type for statistical purposes
   string public constant override STRATEGY_NAME = "TetuSwapStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.2.2";
-  /// @dev 10% buybacks
-  uint256 private constant _BUY_BACK_RATIO = 10_00;
+  string public constant VERSION = "1.3.0";
 
-  /// @notice TetuSwap pair
-  address public pair;
+  /// @dev TetuSwap router
+  address public constant TETU_SWAP_ROUTER = 0xBCA055F25c3670fE0b1463e8d470585Fe15Ca819;
+  uint internal constant _DUST = 10000;
 
-  /// @notice Uniswap router for underlying LP
-  address public router;
+  // ************ VARIABLES **********************
 
-  /// @notice Contract constructor using on strategy implementation
-  /// @dev The implementation should check each parameter
-  /// @param _controller Controller address
-  /// @param _underlying Underlying token address
-  /// @param _vault SmartVault address that will provide liquidity
-  /// @param __rewardTokens Reward tokens that the strategy will farm
-  constructor(
+  /// @dev In case if TetuSwap pair wanna be disabled we will redirect all rewards to another place/
+  address public rewardsDestination;
+
+  // ************ INIT **********************
+
+  function _initializeStrategy(
     address _controller,
     address _underlying,
-    address _vault,
-    address[] memory __rewardTokens,
-    address _router
-  ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
+    address _vault
+  ) internal initializer {
     require(_vault != address(0), "Zero vault");
     require(_underlying != address(0), "Zero underlying");
-    pair = _underlying;
-    _rewardTokens.push(ITetuSwapPair(pair).token0());
-    _rewardTokens.push(ITetuSwapPair(pair).token1());
-    router = _router;
+
+    ProxyStrategyBase.initializeStrategyBase(
+      _controller,
+      _underlying,
+      _vault,
+      ISmartVault(_vault).rewardTokens(),
+      _BUY_BACK_DENOMINATOR
+    );
+  }
+
+  // ************* GOV *******************
+
+  /// @dev Set new reward tokens
+  function setRewardTokens(address[] memory rts) external restricted {
+    delete _rewardTokens;
+    for (uint i = 0; i < rts.length; i++) {
+      _rewardTokens.push(rts[i]);
+      _unsalvageableTokens[rts[i]] = true;
+    }
+  }
+
+  /// @dev Redirect all rewards to another place. Set zero for disable.
+  function setRewardDestination(address value) external restricted {
+    rewardsDestination = value;
   }
 
   // ************* VIEWS *******************
 
-  /// @notice Stabbed to 0
-  function rewardPoolBalance() public override pure returns (uint256) {
+  /// @notice Stabbed to 0. We do not invest LP tokens
+  function _rewardPoolBalance() internal override pure returns (uint256) {
     return 0;
   }
 
   /// @notice Stabbed to 0
   function readyToClaim() external view override returns (uint256[] memory) {
-    uint256[] memory rewards = new uint256[](rewardTokens().length);
+    uint256[] memory rewards = new uint256[](_rewardTokens.length);
     return rewards;
   }
 
   /// @notice Pair total supply
   function poolTotalAmount() external view override returns (uint256) {
-    return IERC20(pair).totalSupply();
+    return IERC20(_underlying()).totalSupply();
   }
 
-  // ************ GOVERNANCE ACTIONS **************************
+  // ************ HARD WORK **************************
 
-  /// @notice Claim rewards from external project and send them to FeeRewardForwarder
+  /// @notice Claim rewards from pool and forward them to underlying vault.
+  ///         Swap fees will be send to this contract, need to autocompound them
   function doHardWork() external onlyNotPausedInvesting override hardWorkers {
-    ITetuSwapPair(pair).claimAll();
-    liquidateReward();
+    _doHardWork(false);
+  }
+
+  function _doHardWork(bool silently) internal {
+    _swapFeesToForwarder(silently);
+    ITetuSwapPair(_underlying()).claimAll();
+    _redirectPairRewards();
+  }
+
+  function _swapFeesToForwarder(bool silently) internal {
+    address forwarder = IController(_controller()).feeRewardForwarder();
+    address vault = _vault();
+    address pair = _underlying();
+    uint targetTokenEarned;
+    targetTokenEarned += _toForwarder(
+      ITetuSwapPair(pair).token0(),
+      forwarder,
+      vault,
+      silently
+    );
+
+    targetTokenEarned += _toForwarder(
+      ITetuSwapPair(pair).token1(),
+      forwarder,
+      vault,
+      silently
+    );
+
+    IBookkeeper(IController(_controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
+  }
+
+  /// @dev Redirect xTETU to the underlying vault
+  function _redirectPairRewards() internal {
+    // assume underlying vault contains all possible rewards from pair vaults
+    address __vault = _vault();
+    address[] memory rts = ISmartVault(__vault).rewardTokens();
+
+    for (uint i; i < rts.length; ++i) {
+      address rt = rts[i];
+      // it is redirected rewards - PS already had their part of income
+      // in case of pair with xTETU-XXX we not able to separate it
+      uint256 amount = IERC20(rt).balanceOf(address(this));
+      if (amount > _DUST) {
+        address _rewardsDestination = rewardsDestination;
+        if (_rewardsDestination != address(0)) {
+          IERC20(rt).safeTransfer(_rewardsDestination, amount);
+        } else {
+          _approveIfNeeds(rt, amount, __vault);
+          ISmartVault(__vault).notifyTargetRewardAmount(rt, amount);
+        }
+      }
+    }
+  }
+
+  function _toForwarder(
+    address rt,
+    address forwarder,
+    address vault,
+    bool silently
+  ) internal returns (uint targetTokenEarned) {
+    targetTokenEarned = 0;
+    uint amount = IERC20(rt).balanceOf(address(this));
+    if (amount > _DUST) {
+      address _rewardsDestination = rewardsDestination;
+      if (_rewardsDestination != address(0)) {
+        IERC20(rt).safeTransfer(_rewardsDestination, amount);
+      } else {
+        _approveIfNeeds(rt, amount, forwarder);
+        if (silently) {
+          // slither-disable-next-line unused-return,variable-scope,uninitialized-local
+          try IFeeRewardForwarder(forwarder).distribute(amount, rt, vault) returns (uint r) {
+            targetTokenEarned = r;
+          } catch {}
+        } else {
+          IFeeRewardForwarder(forwarder).distribute(amount, rt, vault);
+        }
+      }
+    }
   }
 
   // ************ INTERNAL LOGIC IMPLEMENTATION **************************
 
   /// @dev No operations
-  function depositToPool(uint256 amount) internal override {
-    // noop
+  function depositToPool(uint256 /*amount*/) internal override {
+    _doHardWork(true);
   }
 
   /// @dev No operations
-  function withdrawAndClaimFromPool(uint256 amount) internal override {
-    // noop
+  function withdrawAndClaimFromPool(uint256 /*amount*/) internal override {
+    _doHardWork(true);
   }
 
   /// @dev No operations
   function emergencyWithdrawFromPool() internal override {
     // noop
   }
+
+  function _approveIfNeeds(address token, uint amount, address spender) internal {
+    if (IERC20(token).allowance(address(this), spender) < amount) {
+      IERC20(token).safeApprove(spender, 0);
+      IERC20(token).safeApprove(spender, type(uint).max);
+    }
+  }
+
+  function platform() external override pure returns (IStrategy.Platform) {
+    return IStrategy.Platform.TETU_SWAP;
+  }
+
+  // assets should reflect underlying tokens need to investing
+  function assets() external override view returns (address[] memory) {
+    address[] memory result = new address[](2);
+    result[0] = ITetuSwapPair(_underlying()).token0();
+    result[1] = ITetuSwapPair(_underlying()).token1();
+    return result;
+  }
+
+  function liquidateReward() internal override {/*noop*/}
+
+  //slither-disable-next-line unused-state
+  uint256[50] private ______gap;
 }
