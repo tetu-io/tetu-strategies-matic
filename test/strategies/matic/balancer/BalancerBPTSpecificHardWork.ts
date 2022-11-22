@@ -18,8 +18,16 @@ chai.use(chaiAsPromised);
 export class BalancerBPTSpecificHardWork extends DoHardWorkLoopBase {
 
   protected async loopStartActions(i: number) {
+    await this.refuelRewards();
     await super.loopStartActions(i);
+  }
 
+  protected async loopEndActions(i: number) {
+    await this.refuelRewards();
+    await super.loopEndActions(i);
+  }
+
+  async refuelRewards() {
     const strat = StrategyBalancerBPT__factory.connect(this.strategy.address, this.signer);
     const gauge = IBalancerGauge__factory.connect(await strat.gauge(), this.signer);
     const streamerAdr = await gauge.reward_contract();

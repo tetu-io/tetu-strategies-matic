@@ -30,7 +30,7 @@ abstract contract BalancerBPTStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "BalancerBPTStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.0.2";
 
   uint private constant PRICE_IMPACT_TOLERANCE = 10_000;
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
@@ -193,6 +193,7 @@ abstract contract BalancerBPTStrategyBase is ProxyStrategyBase {
     uint bbRatio = _buyBackRatio();
     address governance = IController(_controller()).governance();
     address[] memory rts = _rewardTokens;
+    uint undBalanceBefore = IERC20(_underlying()).balanceOf(address(this));
     for (uint i = 0; i < rts.length; i++) {
       address rt = rts[i];
       uint amount = IERC20(rt).balanceOf(address(this));
@@ -213,35 +214,36 @@ abstract contract BalancerBPTStrategyBase is ProxyStrategyBase {
     if (toPool != 0) {
       _balancerJoin(poolTokens, poolId, _depositToken, toPool);
     }
-    uint undBalance = IERC20(_underlying()).balanceOf(address(this));
+    uint undBalance = IERC20(_underlying()).balanceOf(address(this)) - undBalanceBefore;
     if (undBalance != 0) {
       gauge.deposit(undBalance);
     }
 
-    IBookkeeper(IController(_controller()).bookkeeper()).registerStrategyEarned(1);
+    IBookkeeper(IController(_controller()).bookkeeper()).registerStrategyEarned(0);
 
   }
 
   /// @dev Join to the given pool (exchange tokenIn to underlying BPT)
   function _balancerJoin(IAsset[] memory _poolTokens, bytes32 _poolId, address _tokenIn, uint _amountIn) internal {
-
-    if (_isBoostedPool(_poolTokens, _poolId)) {
-      // just swap for enter
-      _balancerSwap(_poolId, _tokenIn, _getPoolAddress(_poolId), _amountIn);
-    } else {
-      uint[] memory amounts = new uint[](_poolTokens.length);
-      for (uint i = 0; i < amounts.length; i++) {
-        amounts[i] = address(_poolTokens[i]) == _tokenIn ? _amountIn : 0;
+    if (_amountIn != 0) {
+      if (_isBoostedPool(_poolTokens, _poolId)) {
+        // just swap for enter
+        _balancerSwap(_poolId, _tokenIn, _getPoolAddress(_poolId), _amountIn);
+      } else {
+        uint[] memory amounts = new uint[](_poolTokens.length);
+        for (uint i = 0; i < amounts.length; i++) {
+          amounts[i] = address(_poolTokens[i]) == _tokenIn ? _amountIn : 0;
+        }
+        bytes memory userData = abi.encode(1, amounts, 1);
+        IBVault.JoinPoolRequest memory request = IBVault.JoinPoolRequest({
+        assets : _poolTokens,
+        maxAmountsIn : amounts,
+        userData : userData,
+        fromInternalBalance : false
+        });
+        _approveIfNeeds(_tokenIn, _amountIn, address(BALANCER_VAULT));
+        BALANCER_VAULT.joinPool(_poolId, address(this), address(this), request);
       }
-      bytes memory userData = abi.encode(1, amounts, 1);
-      IBVault.JoinPoolRequest memory request = IBVault.JoinPoolRequest({
-      assets : _poolTokens,
-      maxAmountsIn : amounts,
-      userData : userData,
-      fromInternalBalance : false
-      });
-      _approveIfNeeds(_tokenIn, _amountIn, address(BALANCER_VAULT));
-      BALANCER_VAULT.joinPool(_poolId, address(this), address(this), request);
     }
   }
 
@@ -295,24 +297,26 @@ abstract contract BalancerBPTStrategyBase is ProxyStrategyBase {
 
   /// @dev Swap _tokenIn to _tokenOut using pool identified by _poolId
   function _balancerSwap(bytes32 _poolId, address _tokenIn, address _tokenOut, uint _amountIn) internal {
-    IBVault.SingleSwap memory singleSwapData = IBVault.SingleSwap({
-    poolId : _poolId,
-    kind : IBVault.SwapKind.GIVEN_IN,
-    assetIn : IAsset(_tokenIn),
-    assetOut : IAsset(_tokenOut),
-    amount : _amountIn,
-    userData : ""
-    });
+    if (_amountIn != 0) {
+      IBVault.SingleSwap memory singleSwapData = IBVault.SingleSwap({
+      poolId : _poolId,
+      kind : IBVault.SwapKind.GIVEN_IN,
+      assetIn : IAsset(_tokenIn),
+      assetOut : IAsset(_tokenOut),
+      amount : _amountIn,
+      userData : ""
+      });
 
-    IBVault.FundManagement memory fundManagementStruct = IBVault.FundManagement({
-    sender : address(this),
-    fromInternalBalance : false,
-    recipient : payable(address(this)),
-    toInternalBalance : false
-    });
+      IBVault.FundManagement memory fundManagementStruct = IBVault.FundManagement({
+      sender : address(this),
+      fromInternalBalance : false,
+      recipient : payable(address(this)),
+      toInternalBalance : false
+      });
 
-    _approveIfNeeds(_tokenIn, _amountIn, address(BALANCER_VAULT));
-    BALANCER_VAULT.swap(singleSwapData, fundManagementStruct, 1, block.timestamp);
+      _approveIfNeeds(_tokenIn, _amountIn, address(BALANCER_VAULT));
+      BALANCER_VAULT.swap(singleSwapData, fundManagementStruct, 1, block.timestamp);
+    }
   }
 
   function _approveIfNeeds(address token, uint amount, address spender) internal {

@@ -150,7 +150,7 @@ export class DoHardWorkLoopBase {
 
   protected async loopEndCheck() {
     // ** check to claim
-    if (this.totalToClaimInTetuN !== 0 && this.bbRatio !== 0) {
+    if (!XTETU_NO_INCREASE.has(await this.strategy.STRATEGY_NAME()) && this.totalToClaimInTetuN !== 0 && this.bbRatio !== 0) {
       const earnedN = +utils.formatUnits(this.stratEarned);
       const earnedNAdjusted = earnedN / (this.bbRatio / 10000);
       expect(earnedNAdjusted).is.greaterThanOrEqual(this.totalToClaimInTetuN * this.toClaimCheckTolerance); // very approximately
