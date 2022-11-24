@@ -255,6 +255,10 @@ export class MaticAddresses {
   public static BALANCER_xMATIC_MATIC_ID = "0xb20fc01d21a50d2c734c4a1262b4404d41fa7bf000000000000000000000075c".toLowerCase();
   public static BALANCER_xMATIC_MATIC_GAUGE = "0xdFFe97094394680362Ec9706a759eB9366d804C2".toLowerCase();
 
+  public static BALANCER_tetuQi_QI = "0x05F21bAcc4Fd8590D1eaCa9830a64B66a733316C".toLowerCase();
+  public static BALANCER_tetuQi_QI_ID = "0x05f21bacc4fd8590d1eaca9830a64b66a733316c00000000000000000000087e".toLowerCase();
+  public static BALANCER_tetuQi_QI_GAUGE = "0xa02883E738854a17A7CD37F0871E9C2c0eD8CF7f".toLowerCase();
+
 
   // KLIMA
   public static KLIMA_STAKING = '0x25d28a24Ceb6F81015bB0b2007D795ACAc411b4d'.toLowerCase();
