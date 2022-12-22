@@ -17,6 +17,14 @@ import "@tetu_io/tetu-contracts/contracts/openzeppelin/IERC20Metadata.sol";
 import "@tetu_io/tetu-contracts/contracts/base/governance/ControllableV2.sol";
 import "../third_party/balancer/IBVault.sol";
 
+interface IVeTetu {
+  function balanceOfNFT(uint) external view returns (uint);
+
+  function tokenOfOwnerByIndex(address _owner, uint _tokenIndex) external view returns (uint);
+
+  function lockedDerivedAmount(uint veId) external view returns (uint);
+}
+
 contract TetuBalVotingPower is IERC20, IERC20Metadata, ControllableV2 {
 
   // *************************************************************
@@ -27,6 +35,7 @@ contract TetuBalVotingPower is IERC20, IERC20Metadata, ControllableV2 {
   address public constant TETU_BAL = 0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33;
   bytes32 public constant TETU_BAL_BPT_ID = 0xb797adfb7b268faeaa90cadbfed464c76ee599cd0002000000000000000005ba;
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
+  address public constant VE_TETU = 0x6FB29DD17fa6E27BD112Bc3A2D0b8dae597AeDA4;
 
   // *************************************************************
   //                        INIT
@@ -63,7 +72,7 @@ contract TetuBalVotingPower is IERC20, IERC20Metadata, ControllableV2 {
 
   /// @dev Sum of powers for given account
   function balanceOf(address account) external view override returns (uint) {
-    return tetuBalPower(account) + dxTetuPower(account);
+    return tetuBalPower(account) + veTetuPower(account);
   }
 
   // --- tetuBAL
@@ -82,6 +91,25 @@ contract TetuBalVotingPower is IERC20, IERC20Metadata, ControllableV2 {
     uint tetuBalBalance = balances[1];
 
     return tetuBalBalance * dxTetuBalance / dxTetuTotalSupply;
+  }
+
+  function veTetuPower(address account) public view returns (uint) {
+    (,uint[] memory balances,) = BALANCER_VAULT.getPoolTokens(TETU_BAL_BPT_ID);
+    uint tetuBalBalance = balances[1];
+
+    uint veTetuTotalPower = IERC20(VE_TETU).totalSupply();
+
+    uint nftCount = IERC20(VE_TETU).balanceOf(account);
+
+    // protection against ddos
+    nftCount = nftCount > 20 ? 20 : nftCount;
+
+    uint power;
+    for (uint i; i < nftCount; ++i) {
+      uint veId = IVeTetu(VE_TETU).tokenOfOwnerByIndex(account, i);
+      power += IVeTetu(VE_TETU).balanceOfNFT(veId);
+    }
+    return tetuBalBalance * power / veTetuTotalPower;
   }
 
   // **********************************************
