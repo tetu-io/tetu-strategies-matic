@@ -15,7 +15,6 @@ pragma solidity 0.8.4;
 import "@tetu_io/tetu-contracts/contracts/openzeppelin/IERC20.sol";
 import "@tetu_io/tetu-contracts/contracts/openzeppelin/IERC20Metadata.sol";
 import "@tetu_io/tetu-contracts/contracts/base/governance/ControllableV2.sol";
-import "../third_party/balancer/IBVault.sol";
 
 interface IVeTetu {
   function balanceOfNFT(uint) external view returns (uint);
@@ -25,16 +24,12 @@ interface IVeTetu {
   function lockedDerivedAmount(uint veId) external view returns (uint);
 }
 
-contract TetuBalVotingPower is IERC20, IERC20Metadata, ControllableV2 {
+contract VeTETUVotingPower is IERC20, IERC20Metadata, ControllableV2 {
 
   // *************************************************************
   //                        CONSTANTS
   // *************************************************************
 
-  address public constant DX_TETU = 0xAcEE7Bd17E7B04F7e48b29c0C91aF67758394f0f;
-  address public constant TETU_BAL = 0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33;
-  bytes32 public constant TETU_BAL_BPT_ID = 0xb797adfb7b268faeaa90cadbfed464c76ee599cd0002000000000000000005ba;
-  IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
   address public constant VE_TETU = 0x6FB29DD17fa6E27BD112Bc3A2D0b8dae597AeDA4;
 
   // *************************************************************
@@ -50,20 +45,20 @@ contract TetuBalVotingPower is IERC20, IERC20Metadata, ControllableV2 {
   // *************************************************************
 
   function name() external pure override returns (string memory) {
-    return "tetuBAL Voting Power";
+    return "veTETU Voting Power";
   }
 
   function symbol() external pure override returns (string memory) {
-    return "tetuBALPower";
+    return "veTETUVotingPower";
   }
 
   function decimals() external pure override returns (uint8) {
     return uint8(18);
   }
 
-  /// @dev Sum of all powers should be total supply of tetuBAL
+  /// @dev Sum of all powers should be total supply of veTETU
   function totalSupply() external view override returns (uint) {
-    return IERC20(TETU_BAL).totalSupply();
+    return IERC20(VE_TETU).totalSupply();
   }
 
   // *************************************************************
@@ -72,33 +67,10 @@ contract TetuBalVotingPower is IERC20, IERC20Metadata, ControllableV2 {
 
   /// @dev Sum of powers for given account
   function balanceOf(address account) external view override returns (uint) {
-    return tetuBalPower(account) + veTetuPower(account);
+    return veTetuPower(account);
   }
 
-  // --- tetuBAL
-
-  function tetuBalPower(address account) public view returns (uint) {
-    return IERC20(TETU_BAL).balanceOf(account);
-  }
-
-  // --- BPT tetuBAL-ETH/BAL
-
-  function dxTetuPower(address account) public view returns (uint) {
-    uint dxTetuBalance = IERC20(DX_TETU).balanceOf(account);
-    uint dxTetuTotalSupply = IERC20(DX_TETU).totalSupply();
-
-    (,uint[] memory balances,) = BALANCER_VAULT.getPoolTokens(TETU_BAL_BPT_ID);
-    uint tetuBalBalance = balances[1];
-
-    return tetuBalBalance * dxTetuBalance / dxTetuTotalSupply;
-  }
-
-  function veTetuPower(address account) public view returns (uint) {
-    (,uint[] memory balances,) = BALANCER_VAULT.getPoolTokens(TETU_BAL_BPT_ID);
-    uint tetuBalBalance = balances[1];
-
-    uint veTetuTotalPower = IERC20(VE_TETU).totalSupply();
-
+  function veTetuPower(address account) internal view returns (uint) {
     uint nftCount = IERC20(VE_TETU).balanceOf(account);
 
     // protection against ddos
@@ -109,7 +81,7 @@ contract TetuBalVotingPower is IERC20, IERC20Metadata, ControllableV2 {
       uint veId = IVeTetu(VE_TETU).tokenOfOwnerByIndex(account, i);
       power += IVeTetu(VE_TETU).balanceOfNFT(veId);
     }
-    return tetuBalBalance * power / veTetuTotalPower;
+    return power;
   }
 
   // **********************************************

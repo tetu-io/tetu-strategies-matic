@@ -82,6 +82,7 @@ export class MaticAddresses {
   public static USDPlus_TOKEN = '0x236eeC6359fb44CCe8f97E99387aa7F8cd5cdE1f'.toLowerCase();
   public static oZEMIT_TOKEN = '0xA34E0eaCB7fbB0b0d45da89b083E0f87fcdf6157'.toLowerCase();
   public static bbamUSDC_TOKEN = '0xF93579002DBE8046c43FEfE86ec78b1112247BB8'.toLowerCase();
+  public static SD_TOKEN = '0x1d734A02eF1e1f5886e66b0673b71Af5B53ffA94'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -189,6 +190,7 @@ export class MaticAddresses {
   // TetuSwap
   public static TETU_SWAP_FACTORY = "0x684d8c187be836171a1Af8D533e4724893031828".toLowerCase();
   public static TETU_SWAP_ROUTER = "0x736FD9EabB15776A3adfea1B975c868F72A29d14".toLowerCase();
+  public static TETU_SWAP_USDC_BTC = "0xA2Ac987AF47CC54250fAE6b8b8f0742E8C531d74".toLowerCase();
 
   // AAVE v2
   public static AAVE_PROTOCOL_DATA_PROVIDER = "0x7551b5D2763519d4e37e8B81929D336De671d46d".toLowerCase();
@@ -248,6 +250,18 @@ export class MaticAddresses {
   public static BALANCER_stMATIC_MATIC = "0x8159462d255C1D24915CB51ec361F700174cD994".toLowerCase();
   public static BALANCER_stMATIC_MATIC_ID = "0x8159462d255c1d24915cb51ec361f700174cd99400000000000000000000075d".toLowerCase();
   public static BALANCER_stMATIC_MATIC_GAUGE = "0x2Aa6fB79EfE19A3fcE71c46AE48EFc16372ED6dD".toLowerCase();
+
+  public static BALANCER_xMATIC_MATIC = "0xb20fC01D21A50d2C734C4a1262B4404d41fA7BF0".toLowerCase();
+  public static BALANCER_xMATIC_MATIC_ID = "0xb20fc01d21a50d2c734c4a1262b4404d41fa7bf000000000000000000000075c".toLowerCase();
+  public static BALANCER_xMATIC_MATIC_GAUGE = "0xdFFe97094394680362Ec9706a759eB9366d804C2".toLowerCase();
+
+  public static BALANCER_tetuQi_QI = "0x05F21bAcc4Fd8590D1eaCa9830a64B66a733316C".toLowerCase();
+  public static BALANCER_tetuQi_QI_ID = "0x05f21bacc4fd8590d1eaca9830a64b66a733316c00000000000000000000087e".toLowerCase();
+  public static BALANCER_tetuQi_QI_GAUGE = "0xa02883E738854a17A7CD37F0871E9C2c0eD8CF7f".toLowerCase();
+
+  public static BALANCER_TETU_USDC = "0xE2f706EF1f7240b803AAe877C9C762644bb808d8".toLowerCase();
+  public static BALANCER_TETU_USDC_ID = "0xe2f706ef1f7240b803aae877c9c762644bb808d80002000000000000000008c2".toLowerCase();
+  public static BALANCER_TETU_USDC_GAUGE = "0x9FB2Eb86aE9DbEBf276A7A67DF1F2D48A49b95EC".toLowerCase();
 
 
   // KLIMA

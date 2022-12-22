@@ -9,19 +9,11 @@
 * as all warranties, including any fitness for a particular purpose with respect
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
+
 pragma solidity 0.8.4;
 
-import "../../strategies/tetu/TetuSwapStrategyBase.sol";
+interface ITetuBalHolder {
 
-contract StrategyTetuSwap is TetuSwapStrategyBase {
-
-  function init(
-    address _controller,
-    address _vault,
-    address _underlying
-  ) external initializer {
-    _initializeStrategy(_controller, _underlying, _vault);
-  }
-
+  function depositBAL(uint balAmount) external;
 
 }

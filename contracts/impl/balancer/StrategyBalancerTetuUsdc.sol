@@ -11,17 +11,22 @@
 */
 pragma solidity 0.8.4;
 
-import "../../strategies/tetu/TetuSwapStrategyBase.sol";
+import "../../strategies/balancer/BalancerBPTTetuUsdcStrategyBase.sol";
 
-contract StrategyTetuSwap is TetuSwapStrategyBase {
+contract StrategyBalancerTetuUsdc is BalancerBPTTetuUsdcStrategyBase {
 
-  function init(
-    address _controller,
-    address _vault,
-    address _underlying
+  function initialize(
+    address controller_,
+    address vault_,
+    address tetuBalHolder_,
+    address bribeReceiver_
   ) external initializer {
-    _initializeStrategy(_controller, _underlying, _vault);
+    initializeStrategy(
+      controller_,
+      vault_,
+      tetuBalHolder_,
+      bribeReceiver_
+    );
   }
-
 
 }

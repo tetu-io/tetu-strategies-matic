@@ -9,19 +9,21 @@
 * as all warranties, including any fitness for a particular purpose with respect
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
+
 pragma solidity 0.8.4;
 
-import "../../strategies/tetu/TetuSwapStrategyBase.sol";
+interface ITetuSwapFactory {
 
-contract StrategyTetuSwap is TetuSwapStrategyBase {
+  function getPair(address tokenA, address tokenB) external view returns (address pair);
 
-  function init(
-    address _controller,
-    address _vault,
-    address _underlying
-  ) external initializer {
-    _initializeStrategy(_controller, _underlying, _vault);
-  }
+  function allPairs(uint) external view returns (address pair);
 
+  function allPairsLength() external view returns (uint);
+
+  function createPair(address tokenA, address tokenB) external returns (address pair);
+
+  function validPairs(address _pair) external view returns (bool);
+
+  function setPairRewardRecipients(address[] memory _pairs, address[] memory _recipients) external;
 
 }

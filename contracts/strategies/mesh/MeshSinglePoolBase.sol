@@ -11,6 +11,7 @@
 */
 
 pragma solidity 0.8.4;
+
 import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
 import "@tetu_io/tetu-contracts/contracts/base/SlotsLib.sol";
 import "../../third_party/mesh/ISinglePool.sol";
@@ -18,7 +19,7 @@ import "../../third_party/IERC20Extended.sol";
 
 /// @title Abstract contract for MeshVault strategy implementation
 /// @author olegn
-abstract contract MeshSinglePoolBase is ProxyStrategyBase{
+abstract contract MeshSinglePoolBase is ProxyStrategyBase {
   using SafeERC20 for IERC20;
   using SlotsLib for bytes32;
 
@@ -27,7 +28,7 @@ abstract contract MeshSinglePoolBase is ProxyStrategyBase{
   string public constant override STRATEGY_NAME = "MeshSinglePoolBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
   /// @dev precision for the folding profitability calculation
   uint256 private constant _PRECISION = 10 ** 18;
   /// @dev 10% buyback
@@ -50,7 +51,7 @@ abstract contract MeshSinglePoolBase is ProxyStrategyBase{
     address[] memory __rewardTokens,
     address proxyRewardToken,
     address _meshSinglePool
-  ) public initializer{
+  ) public initializer {
     ProxyStrategyBase.initializeStrategyBase(
       _controller,
       _underlying,
@@ -72,7 +73,7 @@ abstract contract MeshSinglePoolBase is ProxyStrategyBase{
     uint256 iTokenBalance = meshSinglePool().balanceOf(address(this));
     uint256 exchangeRateStored = meshSinglePool().exchangeRateStored();
     uint256 underlyingInPool = iTokenBalance * exchangeRateStored / _PRECISION + 1;
-    return underlyingInPool > 1 ? underlyingInPool: 0;
+    return underlyingInPool > 1 ? underlyingInPool : 0;
   }
 
   /// @notice Return approximately amount of reward tokens ready to claim in meshSinglePool pool
@@ -89,9 +90,9 @@ abstract contract MeshSinglePoolBase is ProxyStrategyBase{
   /// @return Pool TVL
   function poolTotalAmount() external view override returns (uint) {
     return
-      meshSinglePool().getCash() +
-      meshSinglePool().totalBorrows() -
-      meshSinglePool().totalReserves();
+    meshSinglePool().getCash() +
+    meshSinglePool().totalBorrows() -
+    meshSinglePool().totalReserves();
   }
 
   // ************ GOVERNANCE ACTIONS **************************
@@ -108,7 +109,7 @@ abstract contract MeshSinglePoolBase is ProxyStrategyBase{
   /// @dev Deposit underlying to mesh pool
   /// @param amount Deposit amount
   function depositToPool(uint amount) internal override {
-    if(amount > 0){
+    if (amount > 0) {
       IERC20(_underlying()).safeApprove(address(meshSinglePool()), 0);
       IERC20(_underlying()).safeApprove(address(meshSinglePool()), amount);
       meshSinglePool().depositToken(amount);
@@ -180,14 +181,16 @@ abstract contract MeshSinglePoolBase is ProxyStrategyBase{
   }
 
   /// @dev swaps rewards to proxy rewards
-  function _swapRTtoProxyRT() internal{
+  function _swapRTtoProxyRT() internal {
     for (uint i = 0; i < _rewardTokens.length; i++) {
       address rt = _rewardTokens[i];
       uint256 rtBalance = IERC20(rt).balanceOf(address(this));
-      address[] memory route = new address[](2);
-      route[0] = rt;
-      route[1] = _proxyRewardToken();
-      _meshSwap(rtBalance, route);
+      if (rtBalance != 0) {
+        address[] memory route = new address[](2);
+        route[0] = rt;
+        route[1] = _proxyRewardToken();
+        _meshSwap(rtBalance, route);
+      }
     }
   }
 
@@ -209,7 +212,7 @@ abstract contract MeshSinglePoolBase is ProxyStrategyBase{
     return ISinglePool(_MESH_POOL_SLOT.getAddress());
   }
 
-  function _proxyRewardToken() internal view returns(address){
+  function _proxyRewardToken() internal view returns (address){
     return _PROXY_REWARD_TOKEN_SLOT.getAddress();
   }
 

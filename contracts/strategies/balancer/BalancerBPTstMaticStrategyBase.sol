@@ -30,7 +30,7 @@ abstract contract BalancerBPTstMaticStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "BalancerBPTstMaticStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
 
   uint private constant PRICE_IMPACT_TOLERANCE = 10_000;
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
@@ -234,24 +234,25 @@ abstract contract BalancerBPTstMaticStrategyBase is ProxyStrategyBase {
 
   /// @dev Join to the given pool (exchange tokenIn to underlying BPT)
   function _balancerJoin(IAsset[] memory _poolTokens, bytes32 _poolId, address _tokenIn, uint _amountIn) internal {
-
-    if (_isBoostedPool(_poolTokens, _poolId)) {
-      // just swap for enter
-      _balancerSwap(_poolId, _tokenIn, _getPoolAddress(_poolId), _amountIn);
-    } else {
-      uint[] memory amounts = new uint[](_poolTokens.length);
-      for (uint i = 0; i < amounts.length; i++) {
-        amounts[i] = address(_poolTokens[i]) == _tokenIn ? _amountIn : 0;
+    if (_amountIn != 0) {
+      if (_isBoostedPool(_poolTokens, _poolId)) {
+        // just swap for enter
+        _balancerSwap(_poolId, _tokenIn, _getPoolAddress(_poolId), _amountIn);
+      } else {
+        uint[] memory amounts = new uint[](_poolTokens.length);
+        for (uint i = 0; i < amounts.length; i++) {
+          amounts[i] = address(_poolTokens[i]) == _tokenIn ? _amountIn : 0;
+        }
+        bytes memory userData = abi.encode(1, amounts, 1);
+        IBVault.JoinPoolRequest memory request = IBVault.JoinPoolRequest({
+        assets : _poolTokens,
+        maxAmountsIn : amounts,
+        userData : userData,
+        fromInternalBalance : false
+        });
+        _approveIfNeeds(_tokenIn, _amountIn, address(BALANCER_VAULT));
+        BALANCER_VAULT.joinPool(_poolId, address(this), address(this), request);
       }
-      bytes memory userData = abi.encode(1, amounts, 1);
-      IBVault.JoinPoolRequest memory request = IBVault.JoinPoolRequest({
-      assets : _poolTokens,
-      maxAmountsIn : amounts,
-      userData : userData,
-      fromInternalBalance : false
-      });
-      _approveIfNeeds(_tokenIn, _amountIn, address(BALANCER_VAULT));
-      BALANCER_VAULT.joinPool(_poolId, address(this), address(this), request);
     }
   }
 
@@ -295,34 +296,39 @@ abstract contract BalancerBPTstMaticStrategyBase is ProxyStrategyBase {
 
   /// @dev It is a temporally logic until liquidator doesn't have swapper for LinearPool
   function _swapLinearUSDC(address tokenIn, address tokenOut) internal {
-    _balancerSwap(
-      0xf93579002dbe8046c43fefe86ec78b1112247bb8000000000000000000000759,
-      tokenIn,
-      tokenOut,
-      IERC20(tokenIn).balanceOf(address(this))
-    );
+    uint amount = IERC20(tokenIn).balanceOf(address(this));
+    if (amount != 0) {
+      _balancerSwap(
+        0xf93579002dbe8046c43fefe86ec78b1112247bb8000000000000000000000759,
+        tokenIn,
+        tokenOut,
+        amount
+      );
+    }
   }
 
   /// @dev Swap _tokenIn to _tokenOut using pool identified by _poolId
   function _balancerSwap(bytes32 _poolId, address _tokenIn, address _tokenOut, uint _amountIn) internal {
-    IBVault.SingleSwap memory singleSwapData = IBVault.SingleSwap({
-    poolId : _poolId,
-    kind : IBVault.SwapKind.GIVEN_IN,
-    assetIn : IAsset(_tokenIn),
-    assetOut : IAsset(_tokenOut),
-    amount : _amountIn,
-    userData : ""
-    });
+    if (_amountIn != 0) {
+      IBVault.SingleSwap memory singleSwapData = IBVault.SingleSwap({
+      poolId : _poolId,
+      kind : IBVault.SwapKind.GIVEN_IN,
+      assetIn : IAsset(_tokenIn),
+      assetOut : IAsset(_tokenOut),
+      amount : _amountIn,
+      userData : ""
+      });
 
-    IBVault.FundManagement memory fundManagementStruct = IBVault.FundManagement({
-    sender : address(this),
-    fromInternalBalance : false,
-    recipient : payable(address(this)),
-    toInternalBalance : false
-    });
+      IBVault.FundManagement memory fundManagementStruct = IBVault.FundManagement({
+      sender : address(this),
+      fromInternalBalance : false,
+      recipient : payable(address(this)),
+      toInternalBalance : false
+      });
 
-    _approveIfNeeds(_tokenIn, _amountIn, address(BALANCER_VAULT));
-    BALANCER_VAULT.swap(singleSwapData, fundManagementStruct, 1, block.timestamp);
+      _approveIfNeeds(_tokenIn, _amountIn, address(BALANCER_VAULT));
+      BALANCER_VAULT.swap(singleSwapData, fundManagementStruct, 1, block.timestamp);
+    }
   }
 
   function _toForwarder(

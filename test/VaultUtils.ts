@@ -18,13 +18,22 @@ import {MintHelperUtils} from "./MintHelperUtils";
 import {Misc} from "../scripts/utils/tools/Misc";
 import {ethers} from "hardhat";
 
-export const PPFS_NO_INCREASE = new Set<string>([
+export const XTETU_NO_INCREASE = new Set<string>([
   'QiStakingStrategyBase',
   'BalBridgedStakingStrategyBase',
   'MeshLpStrategyBase',
   'BalancerPoolStrategyBase',
   'PenroseStrategyBase',
   'BalancerBPTstMaticStrategyBase',
+  'BalancerBPTStrategyBase',
+])
+export const VAULT_SHARE_NO_INCREASE = new Set<string>([
+  'QiStakingStrategyBase',
+  'BalBridgedStakingStrategyBase',
+  'MeshLpStrategyBase',
+  'BalancerBPTstMaticStrategyBase',
+  'PenroseStrategyBase',
+  'BalancerBPTTetuUsdcStrategyBase',
 ])
 
 export class VaultUtils {
@@ -171,7 +180,7 @@ export class VaultUtils {
       if (bbRatio !== 10000 && !ppfsDecreaseAllowed) {
         // it is a unique case where we send profit to vault instead of AC
         const strategyName = await strategyCtr.STRATEGY_NAME();
-        if (!PPFS_NO_INCREASE.has(strategyName)) {
+        if (!VAULT_SHARE_NO_INCREASE.has(strategyName)) {
           expect(ppfsAfter).is.greaterThan(ppfs, 'With not 100% buybacks we should autocompound underlying asset');
         }
       }
