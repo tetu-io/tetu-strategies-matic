@@ -28,7 +28,7 @@ export async function deployBalancerVaultAndStrategy(pool: string, poolId: strin
     pool,
     60 * 60 * 24 * 7,
     false,
-    MaticAddresses.xTETU,
+    MaticAddresses.TETU_TOKEN,
     0
   ));
   const strategyProxy = await DeployerUtilsLocal.deployContract(signer, "TetuProxyControlled", BalancerConstants.STRATEGY_BALANCER_BPT_LOGIC);

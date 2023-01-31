@@ -83,6 +83,7 @@ export class MaticAddresses {
   public static oZEMIT_TOKEN = '0xA34E0eaCB7fbB0b0d45da89b083E0f87fcdf6157'.toLowerCase();
   public static bbamUSDC_TOKEN = '0xF93579002DBE8046c43FEfE86ec78b1112247BB8'.toLowerCase();
   public static SD_TOKEN = '0x1d734A02eF1e1f5886e66b0673b71Af5B53ffA94'.toLowerCase();
+  public static wUSDR_TOKEN = '0xAF0D9D65fC54de245cdA37af3d18cbEc860A4D4b'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -262,6 +263,10 @@ export class MaticAddresses {
   public static BALANCER_TETU_USDC = "0xE2f706EF1f7240b803AAe877C9C762644bb808d8".toLowerCase();
   public static BALANCER_TETU_USDC_ID = "0xe2f706ef1f7240b803aae877c9c762644bb808d80002000000000000000008c2".toLowerCase();
   public static BALANCER_TETU_USDC_GAUGE = "0x9FB2Eb86aE9DbEBf276A7A67DF1F2D48A49b95EC".toLowerCase();
+
+  public static BALANCER_USDC_wUSDR = "0x34A81e8956BF20b7448b31990A2c06F96830a6e4".toLowerCase();
+  public static BALANCER_USDC_wUSDR_ID = "0x34a81e8956bf20b7448b31990a2c06f96830a6e4000200000000000000000a14".toLowerCase();
+  public static BALANCER_USDC_wUSDR_GAUGE = "0x11F6b6fC8f652aF0a0cE411c01AEAe8536Fb836D".toLowerCase();
 
 
   // KLIMA
