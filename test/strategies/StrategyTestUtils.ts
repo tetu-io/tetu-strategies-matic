@@ -55,19 +55,19 @@ export class StrategyTestUtils {
     const vault = data[1] as ISmartVault;
     const strategy = data[2] as IStrategy;
 
-    const rewardTokenLp = await UniswapUtils.createTetuUsdc(
-      signer, core, "1000000"
-    );
-    log.info("LP created");
+    // const rewardTokenLp = await UniswapUtils.createTetuUsdc(
+    //   signer, core, "1000000"
+    // );
+    // log.info("LP created");
 
-    await core.feeRewardForwarder.addLargestLps([core.rewardToken.address], [rewardTokenLp]);
+    // await core.feeRewardForwarder.addLargestLps([core.rewardToken.address], [rewardTokenLp]);
     log.info("Path setup completed");
 
     expect((await strategy.underlying()).toLowerCase()).is.eq(underlying.toLowerCase());
     expect((await vault.underlying()).toLowerCase()).is.eq(underlying.toLowerCase());
 
     Misc.printDuration('Vault and strategy deployed and initialized', start);
-    return [vault, strategy, rewardTokenLp];
+    return [vault, strategy, 'deprectaed'];
   }
 
   public static async checkStrategyRewardsBalance(strategy: IStrategy, balances: string[]) {

@@ -19,6 +19,7 @@ import "../../third_party/penrose/IPenPool.sol";
 import "../../third_party/penrose/IUserProxyFactory.sol";
 import "../../third_party/penrose/IMultiRewards.sol";
 import "../../third_party/penrose/IUserProxyInterface.sol";
+import "../../third_party/penrose/IVotingSnapshot.sol";
 import "../../third_party/dystopia/IDystopiaPair.sol";
 import "../../third_party/dystopia/IDystopiaRouter.sol";
 import "../../third_party/IERC20Extended.sol";
@@ -33,13 +34,14 @@ abstract contract PenroseStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "PenroseStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.0";
+  string public constant VERSION = "1.1.2";
 
   uint private constant PRICE_IMPACT_TOLERANCE = 10_000;
 
   IUserProxyInterface public constant PENROSE_USER_PROXY_INTERFACE = IUserProxyInterface(0xc9Ae7Dac956f82074437C6D40f67D6a5ABf3E34b);
   IUserProxyFactory public constant PENROSE_USER_PROXY_FACTORY = IUserProxyFactory(0x22Eb3955Ac17AA32374dA5932BbB2C46163E39E3);
   IPenPoolFactory public constant PEN_POOL_FACTORY = IPenPoolFactory(0xdf37c9c17dCdbB8B52ca9651d5C53406894a4abF);
+  IVotingSnapshot public constant PEN_SNAPSHOT_VOTING = IVotingSnapshot(0xC166e512ef3127e835Ffe96a5F87014DEf46A904);
   IDystopiaRouter private constant DYSTOPIA_ROUTER = IDystopiaRouter(0xbE75Dd16D029c6B32B7aD57A0FD9C1c20Dd2862e);
   ITetuLiquidator private constant TETU_LIQUIDATOR = ITetuLiquidator(0xC737eaB847Ae6A92028862fE38b828db41314772);
   address private constant PEN = 0x9008D70A5282a936552593f410AbcBcE2F891A97;
@@ -265,7 +267,7 @@ abstract contract PenroseStrategyBase is ProxyStrategyBase {
       amount0 = amountFor0;
     }
 
-    if (rt != token0) {
+    if (rt != token1) {
       TETU_LIQUIDATOR.liquidate(rt, token1, amountFor1, PRICE_IMPACT_TOLERANCE);
       amount1 = IERC20(token1).balanceOf(address(this));
     } else {
@@ -307,7 +309,10 @@ abstract contract PenroseStrategyBase is ProxyStrategyBase {
       _approveIfNeeds(PEN, toInvest, address(userProxy));
       userProxy.voteLockPen(toInvest, 0);
 
-      userProxy.vote(_underlying(), int256(toInvest));
+      // reset and vote again for the underlying pool
+      userProxy.resetVotes();
+      uint votes = PEN_SNAPSHOT_VOTING.voteWeightTotalByAccount(address(userProxy));
+      userProxy.vote(_underlying(), int256(votes));
     }
   }
 

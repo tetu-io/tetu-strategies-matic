@@ -7,11 +7,15 @@ import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
-import {ISmartVault, IStrategy, StrategyBalancerPool__factory} from "../../../../typechain";
+import {
+  BalancerPoolStrategyBaseBALETH__factory,
+  ISmartVault,
+  IStrategy, StrategyBalancerBALETH__factory
+} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {Misc} from "../../../../scripts/utils/tools/Misc";
-import {BalancerLpSpecificHardWork} from "./BalancerLpSpecificHardWork";
+import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
 
 
 const {expect} = chai;
@@ -27,7 +31,7 @@ describe('Balancer LP tests', async () => {
   // **********************************************
   // ************** CONFIG*************************
   // **********************************************
-  const strategyContractName = 'StrategyBalancerPool';
+  const strategyContractName = 'StrategyBalancerBALETH';
   const vaultName = "tetuBAL_BPT";
   const underlying = MaticAddresses.BALANCER_POOL_tetuBAL_BPT;
   const poolId = MaticAddresses.BALANCER_POOL_tetuBAL_BPT_ID;
@@ -63,7 +67,7 @@ describe('Balancer LP tests', async () => {
           signer,
           strategyContractName,
         );
-        await StrategyBalancerPool__factory.connect(strategy.address, signer).initialize(
+        await StrategyBalancerBALETH__factory.connect(strategy.address, signer).initialize(
           core.controller.address,
           vaultAddress,
           underlying,
@@ -90,7 +94,7 @@ describe('Balancer LP tests', async () => {
     _strategy: IStrategy,
     _balanceTolerance: number
   ) => {
-    return new BalancerLpSpecificHardWork(
+    return new BalancerBPTSpecificHardWork(
       _signer,
       _user,
       _core,

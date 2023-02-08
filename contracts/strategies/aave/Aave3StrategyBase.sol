@@ -27,7 +27,7 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
 
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.AAVE_LEND; // same as for AAVEv2
 
@@ -189,8 +189,8 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
 
       // _lastTotalIncome can increase totalIncome a bit after withdrawing toBuybacks-amount from the pool
       uint toBuybacks = totalIncome > _totalIncomeProcessed
-        ? (totalIncome - _totalIncomeProcessed) * _buyBackRatio() / _BUY_BACK_DENOMINATOR
-        : 0;
+      ? (totalIncome - _totalIncomeProcessed) * _buyBackRatio() / _BUY_BACK_DENOMINATOR
+      : 0;
       if (toBuybacks != 0) {
         _pool.withdraw(_underlying(), toBuybacks, address(this));
         uint amountToForward = toBuybacks;

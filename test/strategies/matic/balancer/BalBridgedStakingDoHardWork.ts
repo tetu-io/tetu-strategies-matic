@@ -5,7 +5,11 @@ import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {utils} from "ethers";
 import {TokenUtils} from "../../../TokenUtils";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
-import {BalSender__factory, StrategyBalBridgedStaking__factory} from "../../../../typechain";
+import {
+  BalSender__factory,
+  IERC20__factory,
+  StrategyBalBridgedStaking__factory
+} from "../../../../typechain";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -35,6 +39,9 @@ export class BalBridgedStakingDoHardWork extends DoHardWorkLoopBase {
     expect(await TokenUtils.balanceOf(MaticAddresses.BALANCER_BAL_ETH_POOL, senderAdr)).is.eq(0);
     expect(await TokenUtils.balanceOf(MaticAddresses.BAL_TOKEN, senderAdr)).is.eq(0);
     expect(await TokenUtils.balanceOf(MaticAddresses.WETH_TOKEN, senderAdr)).is.eq(0);
+
+    const xBAL = '0x1AB27A11A5A932e415067f6f20a65245Bd47E4D1';
+    expect(await IERC20__factory.connect(xBAL, this.signer).balanceOf(this.core.fundKeeper.address)).above(0);
   }
 
   protected async postLoopCheck() {

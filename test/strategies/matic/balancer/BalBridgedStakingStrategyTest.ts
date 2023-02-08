@@ -91,6 +91,7 @@ describe('BAL bridged staking tests', async () => {
           strategyContractName,
         ) as StrategyBalBridgedStaking;
         await strategy.initialize(core.controller.address, vaultAddress, sender.address);
+        await strategy.setPolRatio(50);
         return strategy;
       },
       underlying

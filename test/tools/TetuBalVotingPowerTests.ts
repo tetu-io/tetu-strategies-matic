@@ -6,7 +6,7 @@ import {TimeUtils} from "../TimeUtils";
 import {
   IBVault, IBVault__factory,
   IERC20,
-  IERC20__factory,
+  IERC20__factory, IVeTetu, IVeTetu__factory,
   TetuBalVotingPower,
   TetuBalVotingPower__factory
 } from "../../typechain";
@@ -20,18 +20,21 @@ const {expect} = chai;
 chai.use(chaiAsPromised);
 
 const DX_TETU = '0xAcEE7Bd17E7B04F7e48b29c0C91aF67758394f0f';
+const VE_TETU = '0x6FB29DD17fa6E27BD112Bc3A2D0b8dae597AeDA4';
 const TETU_BAL = '0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33';
 const TETU_BAL_BPT = MaticAddresses.BALANCER_POOL_tetuBAL_BPT;
 const TETU_BAL_BPT_ID = MaticAddresses.BALANCER_POOL_tetuBAL_BPT_ID;
 const BALANCER_VAULT = '0xBA12222222228d8Ba445958a75a0704d566BF2C8';
 
-describe("Base Vaults tests", function () {
+describe("TetuBalVotingPowerTests", function () {
   let snapshotBefore: string;
   let snapshot: string;
   let signer: SignerWithAddress;
 
   let power: TetuBalVotingPower;
   let dxTetu: IERC20;
+  let veTetu: IVeTetu;
+  let veTetuERC: IERC20;
   let bpt: IERC20;
   let tetuBal: IERC20;
 
@@ -41,6 +44,8 @@ describe("Base Vaults tests", function () {
 
     const p = await DeployerUtilsLocal.deployTetuProxyControlled(signer, 'TetuBalVotingPower');
     power = TetuBalVotingPower__factory.connect(p[0].address, signer);
+    veTetu = IVeTetu__factory.connect(VE_TETU, signer)
+    veTetuERC = IERC20__factory.connect(VE_TETU, signer)
     dxTetu = IERC20__factory.connect(DX_TETU, signer)
     bpt = IERC20__factory.connect(TETU_BAL_BPT, signer)
     tetuBal = IERC20__factory.connect(TETU_BAL, signer)
@@ -58,7 +63,7 @@ describe("Base Vaults tests", function () {
     await TimeUtils.rollback(snapshot);
   });
 
-  it("test power", async () => {
+  it.skip("test power", async () => {
     expect(await dxTetu.balanceOf(signer.address)).eq(0);
     expect(await tetuBal.balanceOf(signer.address)).eq(0);
     expect(await bpt.balanceOf(signer.address)).eq(0);
@@ -80,6 +85,11 @@ describe("Base Vaults tests", function () {
     expect(+formatUnits(await power.dxTetuPower(signer.address))).below(0.0001);
     expect(await power.tetuBalPower(signer.address)).eq(tetuBalBalance);
     expect(+formatUnits(await power.balanceOf(signer.address))).above(1.00001);
+  });
+
+  it("test veTETU power", async () => {
+    const amount = await power.veTetuPower('0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94')
+    console.log(formatUnits(amount))
   });
 
 

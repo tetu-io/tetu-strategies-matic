@@ -86,7 +86,7 @@ describe('Qi staking tests', async () => {
     );
     await ISmartVault__factory.connect(data[0].address, signer).changeDoHardWorkOnInvest(true);
     await ISmartVault__factory.connect(data[0].address, signer).changeAlwaysInvest(true);
-    await core.vaultController.addRewardTokens([data[0].address], data[0].address);
+    // await core.vaultController.addRewardTokens([data[0].address], data[0].address);
     await core.controller.setRewardDistribution([data[1].address], true);
     return data;
   };

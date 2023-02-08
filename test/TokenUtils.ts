@@ -76,6 +76,14 @@ export class TokenUtils {
     [MaticAddresses.DYSTOPIA_TETU_USDPlus, '0x17274fa0e56421f620b993596fc34e77c1706885'.toLowerCase()], // dyst gauge
     [MaticAddresses.USDPlus_TOKEN, '0x421a018cc5839c4c0300afb21c725776dc389b1a'.toLowerCase()], // dyst gauge
     [MaticAddresses.oZEMIT_TOKEN, '0x0fbe132a5eb95f287740a7b0affbfc8d14354548'.toLowerCase()],
+    [MaticAddresses.BALANCER_bbamUSD, MaticAddresses.BALANCER_bbamUSD_GAUGE.toLowerCase()], // gauge
+    [MaticAddresses.BALANCER_stMATIC_MATIC, MaticAddresses.BALANCER_stMATIC_MATIC_GAUGE.toLowerCase()], // gauge
+    [MaticAddresses.BALANCER_xMATIC_MATIC, MaticAddresses.BALANCER_xMATIC_MATIC_GAUGE.toLowerCase()], // gauge
+    [MaticAddresses.BALANCER_tetuQi_QI, MaticAddresses.BALANCER_tetuQi_QI_GAUGE.toLowerCase()], // gauge
+    [MaticAddresses.BALANCER_USDC_wUSDR, MaticAddresses.BALANCER_USDC_wUSDR_GAUGE.toLowerCase()], // gauge
+    // [MaticAddresses.BALANCER_TETU_USDC, MaticAddresses.BALANCER_TETU_USDC_GAUGE.toLowerCase()], // gauge
+    [MaticAddresses.BALANCER_TETU_USDC, '0x7ad5935ea295c4e743e4f2f5b4cda951f41223c2'.toLowerCase()], // gauge
+    [MaticAddresses.TETU_SWAP_USDC_BTC, MaticAddresses.GOV_ADDRESS.toLowerCase()], // should be preminted in strategy
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {
@@ -149,11 +157,12 @@ export class TokenUtils {
     return tokenId;
   }
 
-  public static async getToken(token: string, to: string, amount?: BigNumber) {
+  public static async getToken(token: string, to: string, amount?: BigNumber): Promise<BigNumber> {
     const start = Date.now();
     console.log('transfer token from biggest holder', token, amount?.toString());
 
     if (token.toLowerCase() === await DeployerUtilsLocal.getNetworkTokenAddress()) {
+      amount = amount ? amount : parseUnits('1000000');
       await IWmatic__factory.connect(token, await DeployerUtilsLocal.impersonate(to)).deposit({value: amount});
       return amount;
     }

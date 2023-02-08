@@ -14,49 +14,14 @@ pragma solidity 0.8.4;
 import "../../strategies/tetu/TetuSwapStrategyBase.sol";
 
 contract StrategyTetuSwap is TetuSwapStrategyBase {
-  using SafeERC20 for IERC20;
 
-  address public constant X_TETU = address(0x225084D30cc297F3b177d9f93f5C3Ab8fb6a1454);
-  IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.TETU_SWAP;
-  address private constant _ROUTER = address(0xBCA055F25c3670fE0b1463e8d470585Fe15Ca819);
-  // rewards
-  address[] private _rewards = [X_TETU];
-  address[] private _assets;
-
-  constructor(
+  function init(
     address _controller,
     address _vault,
     address _underlying
-  ) TetuSwapStrategyBase(_controller, _underlying, _vault, _rewards, _ROUTER) {
-    require(_underlying != address(0), "zero underlying");
-    _assets.push(ITetuSwapPair(_underlying).token0());
-    _assets.push(ITetuSwapPair(_underlying).token1());
+  ) external initializer {
+    _initializeStrategy(_controller, _underlying, _vault);
   }
 
-  function platform() external override pure returns (IStrategy.Platform) {
-    return _PLATFORM;
-  }
 
-  // assets should reflect underlying tokens need to investing
-  function assets() external override view returns (address[] memory) {
-    return _assets;
-  }
-
-  /// @dev Do something useful with farmed rewards
-  function liquidateReward() internal override {
-    // assume only xTetu rewards exist
-    address rt = IController(controller()).psVault();
-
-    // it is redirected rewards - PS already had their part of income
-    // in case of pair with xTETU-XXX we not able to separate it
-    uint256 amount = IERC20(rt).balanceOf(address(this));
-    if (amount > 0) {
-      IERC20(rt).safeApprove(_smartVault, 0);
-      IERC20(rt).safeApprove(_smartVault, amount);
-      ISmartVault(_smartVault).notifyTargetRewardAmount(rt, amount);
-    }
-    autocompoundLP(router);
-    // if no not enough fees for buybacks it should not ruin hardwork process
-    liquidateRewardSilently();
-  }
 }

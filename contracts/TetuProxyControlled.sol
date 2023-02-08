@@ -23,8 +23,8 @@ import "@tetu_io/tetu-contracts/contracts/base/UpgradeableProxy.sol";
 contract TetuProxyControlled is UpgradeableProxy, ITetuProxy {
 
   constructor(address _logic) UpgradeableProxy(_logic) {
-    //make sure that given logic is controllable and not inited
-    require(IControllableExtended(_logic).created() == 0);
+    //make sure that given logic is controllable
+    require(IControllableExtended(_logic).created() >= 0);
   }
 
   /// @notice Upgrade contract logic

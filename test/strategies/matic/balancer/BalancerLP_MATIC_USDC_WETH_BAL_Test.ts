@@ -7,17 +7,16 @@ import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
-import {ISmartVault, IStrategy, StrategyBalancerPool__factory} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {Misc} from "../../../../scripts/utils/tools/Misc";
-import {BalancerLpSpecificHardWork} from "./BalancerLpSpecificHardWork";
+import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
+import {ISmartVault, IStrategy, StrategyBalancerBPT__factory} from "../../../../typechain";
 
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('Balancer LP tests', async () => {
+describe('BalancerLP_MATIC_USDC_WETH_BAL_Test', async () => {
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, true);
@@ -27,14 +26,13 @@ describe('Balancer LP tests', async () => {
   // **********************************************
   // ************** CONFIG*************************
   // **********************************************
-  const strategyContractName = 'StrategyBalancerPool';
+  const strategyContractName = 'StrategyBalancerBPT';
   const vaultName = "MATIC_USDC_WETH_BAL_BPT";
   const underlying = MaticAddresses.BALANCER_POOL_MATIC_USDC_WETH_BAL;
   const poolId = MaticAddresses.BALANCER_POOL_MATIC_USDC_WETH_BAL_ID;
   const gauge = MaticAddresses.BALANCER_GAUGE_MATIC_USDC_WETH_BAL;
   const depositToken = MaticAddresses.BAL_TOKEN;
-  const buybackRatio = 500;
-  const rewardTokens = [MaticAddresses.BAL_TOKEN];
+  const buybackRatio = 5_00;
 
   // const underlying = token;
   // add custom liquidation path if necessary
@@ -63,17 +61,14 @@ describe('Balancer LP tests', async () => {
           signer,
           strategyContractName,
         );
-        await StrategyBalancerPool__factory.connect(strategy.address, signer).initialize(
+        await StrategyBalancerBPT__factory.connect(strategy.address, signer).initialize(
           core.controller.address,
           vaultAddress,
-          underlying,
+          depositToken,
           poolId,
           gauge,
-          depositToken,
-          buybackRatio,
-          rewardTokens,
+          buybackRatio
         );
-        // await StrategyBalancerPool__factory.connect(strategy.address, signer).setGauge(MaticAddresses.BALANCER_GAUGE_MATIC_USDC_WETH_BAL);
         return strategy;
       },
       underlying,
@@ -91,7 +86,7 @@ describe('Balancer LP tests', async () => {
     _strategy: IStrategy,
     _balanceTolerance: number
   ) => {
-    return new BalancerLpSpecificHardWork(
+    return new BalancerBPTSpecificHardWork(
       _signer,
       _user,
       _core,

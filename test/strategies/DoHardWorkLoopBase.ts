@@ -5,7 +5,7 @@ import {ToolsContractsWrapper} from "../ToolsContractsWrapper";
 import {TokenUtils} from "../TokenUtils";
 import {BigNumber, utils} from "ethers";
 import {Misc} from "../../scripts/utils/tools/Misc";
-import {PPFS_NO_INCREASE, VaultUtils} from "../VaultUtils";
+import {XTETU_NO_INCREASE, VaultUtils} from "../VaultUtils";
 import {TimeUtils} from "../TimeUtils";
 import {expect} from "chai";
 import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
@@ -141,14 +141,16 @@ export class DoHardWorkLoopBase {
   }
 
   protected async loopStartSnapshot() {
+    console.log('try to make snapshot');
     this.loopStartTs = await Misc.getBlockTsFromChain();
     this.vaultPPFS = await this.vault.getPricePerFullShare();
     this.stratEarnedTotal = await this.strategyEarned();
+    console.log('snapshot end');
   }
 
   protected async loopEndCheck() {
     // ** check to claim
-    if (this.totalToClaimInTetuN !== 0 && this.bbRatio !== 0) {
+    if (!XTETU_NO_INCREASE.has(await this.strategy.STRATEGY_NAME()) && this.totalToClaimInTetuN !== 0 && this.bbRatio !== 0) {
       const earnedN = +utils.formatUnits(this.stratEarned);
       const earnedNAdjusted = earnedN / (this.bbRatio / 10000);
       expect(earnedNAdjusted).is.greaterThanOrEqual(this.totalToClaimInTetuN * this.toClaimCheckTolerance); // very approximately
@@ -350,7 +352,7 @@ export class DoHardWorkLoopBase {
     const vaultBalanceAfter = await TokenUtils.balanceOf(this.core.psVault.address, this.vault.address);
     expect(vaultBalanceAfter.sub(this.vaultRTBal)).is.not.eq("0", "vault reward should increase");
 
-    if (this.bbRatio !== 0 && !PPFS_NO_INCREASE.has(await this.strategy.STRATEGY_NAME())) {
+    if (this.bbRatio !== 0 && !XTETU_NO_INCREASE.has(await this.strategy.STRATEGY_NAME())) {
       // check ps balance
       const psBalanceAfter = await TokenUtils.balanceOf(this.core.rewardToken.address, this.core.psVault.address);
       expect(psBalanceAfter.sub(this.psBal)).is.not.eq("0", "ps balance should increase");

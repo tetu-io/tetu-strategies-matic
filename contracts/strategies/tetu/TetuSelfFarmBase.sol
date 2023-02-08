@@ -23,7 +23,7 @@ abstract contract TetuSelfFarmBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "TetuSelfFarmBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.1.1";
   // we don't collect additional fees on self farm
   uint private constant _BUY_BACK_RATIO = 0;
 
@@ -33,6 +33,7 @@ abstract contract TetuSelfFarmBase is ProxyStrategyBase {
   // should be only maps/arrays, or use storage contract
 
   mapping(bytes32 => address) private strategyAddressStorage;
+  uint public lastCompound;
 
   /// @notice Initialize contract after setup it as proxy implementation
   function initializeStrategy(
@@ -62,11 +63,38 @@ abstract contract TetuSelfFarmBase is ProxyStrategyBase {
     _investAllUnderlying();
     // claim all rewards
     _farmableVault().getAllRewards();
-    liquidateReward();
+    _compound(false, true);
+    IBookkeeper(IController(_controller()).bookkeeper()).registerStrategyEarned(1);
+  }
+
+  function _compound(bool silently, bool push) internal {
+    if (push || lastCompound == 0 || block.timestamp - lastCompound > 12 hours) {
+      address forwarder = IController(_controller()).feeRewardForwarder();
+      address[] memory rts = _farmableVault().rewardTokens();
+      for (uint i = 0; i < rts.length; i++) {
+        address rt = rts[i];
+        uint toCompound = IERC20(rt).balanceOf(address(this));
+        if (toCompound != 0) {
+          if (rt == IController(_controller()).psVault()) {
+            ISmartVault(rt).exit();
+            rt = ISmartVault(rt).underlying();
+            toCompound = IERC20(rt).balanceOf(address(this));
+          }
+          _approveIfNeeds(rt, toCompound, forwarder);
+          if (silently) {
+            try IFeeRewardForwarder(forwarder).liquidate(rt, _underlying(), toCompound) {}  catch {}
+          } else {
+            IFeeRewardForwarder(forwarder).liquidate(rt, _underlying(), toCompound);
+          }
+        }
+      }
+      lastCompound = block.timestamp;
+    }
   }
 
   /// @dev Stake underlying into farmable vault
   function depositToPool(uint amount) internal override {
+    _compound(true, false);
     if (amount > 0) {
       // allowance should be setup in init
       _farmableVault().depositAndInvest(amount);
@@ -75,6 +103,7 @@ abstract contract TetuSelfFarmBase is ProxyStrategyBase {
 
   /// @dev Withdraw underlying
   function withdrawAndClaimFromPool(uint underlyingAmount) internal override {
+    _compound(true, false);
     ISmartVault sv = _farmableVault();
     uint numberOfShares = underlyingAmount * sv.underlyingUnit() / sv.getPricePerFullShare();
     numberOfShares = Math.min(numberOfShares, IERC20(address(sv)).balanceOf(address(this)));
@@ -88,23 +117,9 @@ abstract contract TetuSelfFarmBase is ProxyStrategyBase {
     _farmableVault().exit();
   }
 
+  /// @dev Deprecated
   function liquidateReward() internal override {
-    address forwarder = IController(_controller()).feeRewardForwarder();
-    address[] memory rts = _farmableVault().rewardTokens();
-    for (uint i = 0; i < rts.length; i++) {
-      address rt = rts[i];
-      uint toCompound = IERC20(rt).balanceOf(address(this));
-      if (toCompound != 0) {
-        if (rt == IController(_controller()).psVault()) {
-          ISmartVault(rt).exit();
-          rt = ISmartVault(rt).underlying();
-          toCompound = IERC20(rt).balanceOf(address(this));
-        }
-        IERC20(rt).safeApprove(forwarder, 0);
-        IERC20(rt).safeApprove(forwarder, toCompound);
-        IFeeRewardForwarder(forwarder).liquidate(rt, _underlying(), toCompound);
-      }
-    }
+    // noop
   }
 
   /// @dev No claimable tokens
@@ -143,6 +158,13 @@ abstract contract TetuSelfFarmBase is ProxyStrategyBase {
     return IStrategy(_farmableVault().strategy()).assets();
   }
 
+  function _approveIfNeeds(address token, uint amount, address spender) internal {
+    if (IERC20(token).allowance(address(this), spender) < amount) {
+      IERC20(token).safeApprove(spender, 0);
+      IERC20(token).safeApprove(spender, type(uint).max);
+    }
+  }
+
   // --------------------- STORAGE FUNCTIONS -------------------------
   function _setStrategyAddress(bytes32 key, address _value) private {
     strategyAddressStorage[key] = _value;
@@ -151,4 +173,7 @@ abstract contract TetuSelfFarmBase is ProxyStrategyBase {
   function _getStrategyAddress(bytes32 key) private view returns (address) {
     return strategyAddressStorage[key];
   }
+
+  //slither-disable-next-line unused-state
+  uint256[49] private ______gap;
 }

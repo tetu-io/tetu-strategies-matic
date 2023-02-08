@@ -270,4 +270,6 @@ interface ISmartVault {
   function withdraw(uint256 numberOfShares) external;
 
   function withdrawAllToVault() external;
+
+  function setRewardsRedirect(address owner, address receiver) external;
 }
