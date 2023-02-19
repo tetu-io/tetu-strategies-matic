@@ -1,6 +1,6 @@
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
-import {IStrategy, ISmartVault, IStrategySplitter__factory} from "../../typechain";
+import {IStrategy, ISmartVault, IStrategySplitter__factory, IERC20__factory} from "../../typechain";
 import {ToolsContractsWrapper} from "../ToolsContractsWrapper";
 import {TokenUtils} from "../TokenUtils";
 import {BigNumber, utils} from "ethers";
@@ -9,6 +9,7 @@ import {XTETU_NO_INCREASE, VaultUtils} from "../VaultUtils";
 import {TimeUtils} from "../TimeUtils";
 import {expect} from "chai";
 import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
+import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 
 
 export class DoHardWorkLoopBase {
@@ -22,7 +23,7 @@ export class DoHardWorkLoopBase {
   public readonly strategy: IStrategy;
   public readonly balanceTolerance: number;
   public readonly finalBalanceTolerance: number;
-  private vaultRt: string;
+  protected vaultRt: string;
   vaultForUser: ISmartVault;
   undDec = 0;
   userDeposited = BigNumber.from(0);
@@ -30,8 +31,7 @@ export class DoHardWorkLoopBase {
   userWithdrew = BigNumber.from(0);
   userRTBal = BigNumber.from(0);
   vaultRTBal = BigNumber.from(0);
-  psBal = BigNumber.from(0);
-  psPPFS = BigNumber.from(0);
+  veDistBal = BigNumber.from(0);
 
   loops = 0;
   loopStartTs = 0;
@@ -67,7 +67,7 @@ export class DoHardWorkLoopBase {
     this.finalBalanceTolerance = finalBalanceTolerance;
 
     this.vaultForUser = vault.connect(user);
-    this.vaultRt = this.core.psVault.address;
+    this.vaultRt = this.core.rewardToken.address;
   }
 
   public async start(deposit: BigNumber, loops: number, loopValue: number, advanceBlocks: boolean) {
@@ -96,8 +96,7 @@ export class DoHardWorkLoopBase {
     console.log('>>>initialSnapshot start')
     this.userRTBal = await TokenUtils.balanceOf(this.vaultRt, this.user.address);
     this.vaultRTBal = await TokenUtils.balanceOf(this.vaultRt, this.vault.address);
-    this.psBal = await TokenUtils.balanceOf(this.vaultRt, this.core.psVault.address);
-    this.psPPFS = await this.core.psVault.getPricePerFullShare();
+    this.veDistBal = await IERC20__factory.connect(this.core.rewardToken.address, this.signer).balanceOf(MaticAddresses.TETU_VE_DIST_ADDRESS);
     this.startTs = await Misc.getBlockTsFromChain();
     this.bbRatio = (await this.strategy.buyBackRatio()).toNumber();
     console.log('initialSnapshot end')
@@ -349,21 +348,17 @@ export class DoHardWorkLoopBase {
     }
 
     // check vault balance
-    const vaultBalanceAfter = await TokenUtils.balanceOf(this.core.psVault.address, this.vault.address);
+    const vaultBalanceAfter = await TokenUtils.balanceOf(this.vaultRt, this.vault.address);
     expect(vaultBalanceAfter.sub(this.vaultRTBal)).is.not.eq("0", "vault reward should increase");
 
     if (this.bbRatio !== 0 && !XTETU_NO_INCREASE.has(await this.strategy.STRATEGY_NAME())) {
       // check ps balance
-      const psBalanceAfter = await TokenUtils.balanceOf(this.core.rewardToken.address, this.core.psVault.address);
-      expect(psBalanceAfter.sub(this.psBal)).is.not.eq("0", "ps balance should increase");
-
-      // check ps PPFS
-      const psSharePriceAfter = await this.core.psVault.getPricePerFullShare();
-      expect(psSharePriceAfter.sub(this.psPPFS)).is.not.eq("0", "ps share price should increase");
+      const veDistAfter = await IERC20__factory.connect(this.core.rewardToken.address, this.signer).balanceOf(MaticAddresses.TETU_VE_DIST_ADDRESS);
+      expect(veDistAfter.sub(this.veDistBal)).is.not.eq("0", "veDist balance should increase");
     }
 
     // check reward for user
-    const rewardBalanceAfter = await TokenUtils.balanceOf(this.core.psVault.address, this.user.address);
+    const rewardBalanceAfter = await TokenUtils.balanceOf(this.vaultRt, this.user.address);
     expect(rewardBalanceAfter.sub(this.userRTBal).toString())
       .is.not.eq("0", "should have earned xTETU rewards");
 

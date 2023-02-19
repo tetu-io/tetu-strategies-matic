@@ -27,7 +27,7 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.0.2";
 
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.AAVE_LEND; // same as for AAVEv2
 
@@ -97,7 +97,8 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
   /// @dev Only for statistic
   /// @return Pool TVL
   function poolTotalAmount() external view override returns (uint256) {
-    return _aToken().totalSupply(); // scaled total supply
+    // scaled total supply
+    return _aToken().totalSupply();
   }
 
   /// ******************************************************
@@ -105,7 +106,7 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
   /// ******************************************************
 
   function doHardWork() external onlyNotPausedInvesting override hardWorkers {
-    _forwardBuybacks();
+    _forwardBuybacks(false);
   }
 
   /// ******************************************************
@@ -128,7 +129,7 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
   /// @dev Withdraw underlying from AAVE3 pool
   function withdrawAndClaimFromPool(uint256 amount_) internal override {
     // take buybacks..
-    _forwardBuybacks();
+    _forwardBuybacks(true);
 
     // ..and withdraw remaining amount
     uint amountToWithdraw = Math.min(_rewardPoolBalance(), amount_);
@@ -139,9 +140,10 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
   /// @dev Exit from external project without caring about rewards, for emergency cases only
   function emergencyWithdrawFromPool() internal override {
     uint balanceBefore = IERC20(_underlying()).balanceOf(address(this));
-    _pool.withdraw(_underlying()
-      , type(uint256).max // withdraw all, see https://docs.aave.com/developers/core-contracts/pool#withdraw
-      , address(this)
+    _pool.withdraw(
+      _underlying(),
+      type(uint256).max, // withdraw all, see https://docs.aave.com/developers/core-contracts/pool#withdraw
+      address(this)
     );
     _totalWithdrawn += balanceBefore - IERC20(_underlying()).balanceOf(address(this));
   }
@@ -182,9 +184,9 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
   /// ******************************************************
 
   /// @notice calculate and send buyback
-  function _forwardBuybacks() internal {
+  function _forwardBuybacks(bool silent) internal {
     uint poolBalance = _rewardPoolBalance();
-    if (poolBalance != 0) {
+    if (poolBalance != 0 && (poolBalance + _totalWithdrawn) >= _totalDeposited) {
       uint totalIncome = poolBalance + _totalWithdrawn - _totalDeposited;
 
       // _lastTotalIncome can increase totalIncome a bit after withdrawing toBuybacks-amount from the pool
@@ -201,14 +203,21 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
 
         uint targetTokenEarned;
         // small amounts produce 'F2: Zero swap amount' error in distribute, so we need try/catch
-        try IFeeRewardForwarder(forwarder).distribute(toBuybacks, _underlying(), _vault()) returns (uint r) {
-          // buybacks were successfully forwarded
-          targetTokenEarned = r;
-          amountToForward = 0;
+        if (silent) {
+          try IFeeRewardForwarder(forwarder).distribute(toBuybacks, _underlying(), _vault()) returns (uint r) {
+            // buybacks were successfully forwarded
+            targetTokenEarned = r;
+            amountToForward = 0;
 
+            // remember total amount from which we have already taken buybacks
+            _totalIncomeProcessed = totalIncome;
+          } catch {}
+        } else {
+          targetTokenEarned = IFeeRewardForwarder(forwarder).distribute(toBuybacks, _underlying(), _vault());
+          amountToForward = 0;
           // remember total amount from which we have already taken buybacks
           _totalIncomeProcessed = totalIncome;
-        } catch {}
+        }
 
         if (amountToForward != 0) {
           // buybacks were not forwarded, so let's return taken amount back to the pool
