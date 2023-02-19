@@ -85,6 +85,7 @@ export class TokenUtils {
     [MaticAddresses.BALANCER_TETU_USDC, '0x7ad5935ea295c4e743e4f2f5b4cda951f41223c2'.toLowerCase()], // gauge
     [MaticAddresses.TETU_SWAP_USDC_BTC, MaticAddresses.GOV_ADDRESS.toLowerCase()], // should be preminted in strategy
     [MaticAddresses.BALANCER_SPHERE_MATIC, '0x1a2ce410a034424b784d4b228f167a061b94cff4'.toLowerCase()], //
+    [MaticAddresses.stMATIC, '0xb975364bf0368726075a80da76d1bf260244a25d'.toLowerCase()], //
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {

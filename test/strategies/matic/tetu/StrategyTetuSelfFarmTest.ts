@@ -59,7 +59,7 @@ describe('StrategyTetuSelfFarmTest', async () => {
       core.controller,
       core.vaultController,
       underlying,
-      core.psVault.address
+      core.rewardToken.address
     );
     farmableVault = vault.address;
     await VaultUtils.addRewardsXTetu(

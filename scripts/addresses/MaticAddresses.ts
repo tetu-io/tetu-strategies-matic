@@ -10,6 +10,7 @@ export class MaticAddresses {
   public static ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
   public static GOV_ADDRESS = "0xcc16d636dD05b52FF1D8B9CE09B09BC62b11412B".toLowerCase();
   public static CONTROLLER_ADDRESS = "0x6678814c273d5088114B6E40cC49C8DB04F9bC29".toLowerCase();
+  public static TETU_VE_DIST_ADDRESS = "0xf8d97eC3a778028E84D4364bCd72bb3E2fb5D18e".toLowerCase();
   // tokens
   public static WETH_TOKEN = "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619".toLowerCase();
   public static ADDY_TOKEN = "0xc3FdbadC7c795EF1D6Ba111e06fF8F16A20Ea539".toLowerCase();
@@ -84,6 +85,7 @@ export class MaticAddresses {
   public static bbamUSDC_TOKEN = '0xF93579002DBE8046c43FEfE86ec78b1112247BB8'.toLowerCase();
   public static SD_TOKEN = '0x1d734A02eF1e1f5886e66b0673b71Af5B53ffA94'.toLowerCase();
   public static wUSDR_TOKEN = '0xAF0D9D65fC54de245cdA37af3d18cbEc860A4D4b'.toLowerCase();
+  public static stMATIC = '0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 

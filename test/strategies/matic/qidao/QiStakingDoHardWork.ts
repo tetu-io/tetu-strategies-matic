@@ -44,7 +44,7 @@ export class QiStakingDoHardWork extends DoHardWorkLoopBase {
     }
 
     // check vault balance
-    const vaultBalanceAfter = await TokenUtils.balanceOf(this.core.psVault.address, this.vault.address);
+    const vaultBalanceAfter = await TokenUtils.balanceOf(this.vaultRt, this.vault.address);
     expect(vaultBalanceAfter.sub(this.vaultRTBal)).is.not.eq("0", "vault reward should increase");
 
     // check bpt vault rewards
@@ -52,7 +52,7 @@ export class QiStakingDoHardWork extends DoHardWorkLoopBase {
     expect(bptVaultRewardsAfter.sub(this.bptVaultRewardsBefore)).is.not.eq("0", "bpt vault rewards should increase");
 
     // check reward for user
-    const rewardBalanceAfter = await TokenUtils.balanceOf(this.core.psVault.address, this.user.address);
+    const rewardBalanceAfter = await TokenUtils.balanceOf(this.vaultRt, this.user.address);
     expect(rewardBalanceAfter.sub(this.userRTBal).toString())
       .is.not.eq("0", "should have earned xTETU rewards");
   }
