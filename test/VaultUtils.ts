@@ -17,6 +17,7 @@ import {MaticAddresses} from "../scripts/addresses/MaticAddresses";
 import {MintHelperUtils} from "./MintHelperUtils";
 import {Misc} from "../scripts/utils/tools/Misc";
 import {ethers} from "hardhat";
+import {formatUnits} from "ethers/lib/utils";
 
 export const XTETU_NO_INCREASE = new Set<string>([
   'QiStakingStrategyBase',
@@ -123,8 +124,6 @@ export class VaultUtils {
     const start = Date.now();
     const controller = await IControllableExtended__factory.connect(vault.address, vault.signer).controller();
     const controllerCtr = IController__factory.connect(controller, vault.signer);
-    const psVault = await controllerCtr.psVault();
-    const psVaultCtr = ISmartVault__factory.connect(psVault, vault.signer);
     const und = await vault.underlying();
     const undDec = await TokenUtils.decimals(und);
     const rt = (await vault.rewardTokens())[0];
@@ -135,7 +134,7 @@ export class VaultUtils {
 
     const ppfs = +utils.formatUnits(await vault.getPricePerFullShare(), undDec);
     const undBal = +utils.formatUnits(await vault.underlyingBalanceWithInvestment(), undDec);
-    const psPpfs = +utils.formatUnits(await psVaultCtr.getPricePerFullShare());
+    const veDistBalanceBefore = +formatUnits(await IERC20__factory.connect(MaticAddresses.TETU_TOKEN, vault.signer).balanceOf(MaticAddresses.TETU_VE_DIST_ADDRESS));
     const rtBal = +utils.formatUnits(await TokenUtils.balanceOf(rt, vault.address));
 
     const strategyPlatform = (await strategyCtr.platform());
@@ -154,7 +153,7 @@ export class VaultUtils {
 
     const ppfsAfter = +utils.formatUnits(await vault.getPricePerFullShare(), undDec);
     const undBalAfter = +utils.formatUnits(await vault.underlyingBalanceWithInvestment(), undDec);
-    const psPpfsAfter = +utils.formatUnits(await psVaultCtr.getPricePerFullShare());
+    const veDistBalanceAfter = +formatUnits(await IERC20__factory.connect(MaticAddresses.TETU_TOKEN, vault.signer).balanceOf(MaticAddresses.TETU_VE_DIST_ADDRESS));
     const rtBalAfter = +utils.formatUnits(await TokenUtils.balanceOf(rt, vault.address));
     const bbRatio = (await strategyCtr.buyBackRatio()).toNumber();
 
@@ -164,14 +163,14 @@ export class VaultUtils {
     console.log('- Vault Share price change:', ppfsAfter - ppfs);
     console.log('- Vault und balance change:', undBalAfter - undBal);
     console.log('- Vault first RT change:', rtBalAfter - rtBal);
-    console.log('- xTETU share price change:', psPpfsAfter - psPpfs);
+    console.log('- veDIST balance change:', veDistBalanceAfter - veDistBalanceBefore);
     console.log('- PS ratio:', psRatio);
     console.log('--------------------------');
 
     if (positiveCheck) {
       if (bbRatio > 1000) {
-        expect(psPpfsAfter).is.greaterThan(psPpfs,
-          'PS didnt have any income, it means that rewards was not liquidated and properly sent to PS.' +
+        expect(veDistBalanceAfter).is.greaterThan(veDistBalanceBefore,
+          'veDIST didnt have any income, it means that rewards was not liquidated and properly sent to PS.' +
           ' Check reward tokens list and liquidation paths');
         if (psRatio !== 1) {
           expect(rtBalAfter).is.greaterThan(rtBal, 'With ps ratio less than 1 we should send a part of buybacks to vaults as rewards.');

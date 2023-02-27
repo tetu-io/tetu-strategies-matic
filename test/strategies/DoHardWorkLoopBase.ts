@@ -188,14 +188,14 @@ export class DoHardWorkLoopBase {
     console.log('PPFS before withdraw', (await this.vault.getPricePerFullShare()).toString());
     await this.userCheckBalanceInVault();
     if (exit) {
-      console.log('exit');
-      await this.vaultForUser.exit();
+      console.log('Full Exit from vault for user');
+      await this.vaultForUser.exit({gasLimit: 10_000_000});
       await this.userCheckBalance(this.userDeposited);
       this.userWithdrew = this.userDeposited;
     } else {
       const userUndBal = await TokenUtils.balanceOf(this.underlying, this.user.address);
-      console.log('withdraw', amount.toString());
-      await this.vaultForUser.withdraw(amount);
+      console.log('Withdraw for user, amount', amount.toString());
+      await this.vaultForUser.withdraw(amount, {gasLimit: 10_000_000});
       await this.userCheckBalance(this.userWithdrew.add(amount));
       const userUndBalAfter = await TokenUtils.balanceOf(this.underlying, this.user.address);
       this.userWithdrew = this.userWithdrew.add(userUndBalAfter.sub(userUndBal));
@@ -327,13 +327,13 @@ export class DoHardWorkLoopBase {
     await TimeUtils.advanceNBlocks(3000);
     await this.withdraw(true, BigNumber.from(0));
     // exit for signer
-    await this.vault.connect(this.signer).exit();
-    await this.strategy.withdrawAllToVault();
+    await this.vault.connect(this.signer).exit({gasLimit: 10_000_000});
+    await this.strategy.withdrawAllToVault({gasLimit: 10_000_000});
 
     expect(await this.strategy.investedUnderlyingBalance()).is.eq(0);
 
     // need to call hard work for sell a little excess rewards
-    await this.strategy.doHardWork();
+    await this.strategy.doHardWork({gasLimit: 10_000_000});
 
 
     // strategy should not contain any tokens in the end

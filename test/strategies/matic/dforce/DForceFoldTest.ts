@@ -53,13 +53,7 @@ describe('Universal DForce Fold tests', async () => {
     // **********************************************
     const strategyContractName = 'StrategyDForceFold';
     const underlying = token;
-    // add custom liquidation path if necessary
-    const forwarderConfigurator = async (f: IFeeRewardForwarder) => {
-      await f.addLargestLps(
-        [MaticAddresses.DF_TOKEN],
-        ['0x84c6B5b5CB47f117ff442C44d25E379e06Df5d8a']
-      )
-    };
+    const forwarderConfigurator = null;
     // only for strategies where we expect PPFS fluctuations
     const ppfsDecreaseAllowed = true;
     // only for strategies where we expect PPFS fluctuations
@@ -82,20 +76,6 @@ describe('Universal DForce Fold tests', async () => {
         core,
         tokenName,
         async vaultAddress => {
-
-
-          await TokenUtils.getToken(MaticAddresses.DF_TOKEN, signer.address, parseUnits('100000'));
-          await TokenUtils.getToken(MaticAddresses.USDC_TOKEN, signer.address, parseUnits('100000', 6));
-          await UniswapUtils.addLiquidity(
-            signer,
-            MaticAddresses.DF_TOKEN,
-            MaticAddresses.USDC_TOKEN,
-            parseUnits('100000').toString(),
-            parseUnits('100000', 6).toString(),
-            MaticAddresses.QUICK_FACTORY,
-            MaticAddresses.QUICK_ROUTER
-          );
-
           const strategyArgs = [
             core.controller.address,
             vaultAddress,
