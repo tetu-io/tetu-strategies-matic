@@ -23,7 +23,7 @@ abstract contract UniversalLendStrategy is ProxyStrategyBase {
   /// ******************************************************
   uint private constant _DUST = 10_000;
 
-  uint private localBalance;
+  uint internal localBalance;
   uint public lastHw;
 
   /// ******************************************************
@@ -72,19 +72,52 @@ abstract contract UniversalLendStrategy is ProxyStrategyBase {
   ///              Specific Internal logic
   /// ******************************************************
 
+  /// @dev Deposit to pool and increase local balance
   function _simpleDepositToPool(uint amount) internal virtual;
 
+  /// @dev Refresh rates and return actual deposited balance in underlying tokens
   function _getActualPoolBalance() internal virtual returns (uint);
 
+  /// @dev Perform only withdraw action, without changing local balance
+  function _withdrawFromPoolWithoutChangeLocalBalance(uint amount, uint poolBalance) internal virtual returns (bool withdrewAll);
+
+  /// @dev Withdraw all and set localBalance to zero
   function _withdrawAllFromPool() internal virtual;
 
-  function _withdrawFromPoolWithoutChangeLocalBalance(uint amount) internal virtual;
-
+  /// @dev Claim all possible rewards to the current contract
   function _claimReward() internal virtual;
 
   /// ******************************************************
   ///              Internal logic implementation
   /// ******************************************************
+
+  /// @dev Deposit underlying to the pool
+  /// @param amount Deposit amount
+  function depositToPool(uint256 amount) internal override {
+    address u = _underlying();
+    amount = Math.min(IERC20(u).balanceOf(address(this)), amount);
+    if (amount > 0) {
+      _simpleDepositToPool(amount);
+    }
+  }
+
+  /// @dev Withdraw underlying from the pool
+  function withdrawAndClaimFromPool(uint256 amount_) internal override {
+    uint poolBalance = _doHardWork(true, false);
+
+    bool withdrewAll = _withdrawFromPoolWithoutChangeLocalBalance(amount_, poolBalance);
+
+    if (withdrewAll) {
+      localBalance = 0;
+    } else {
+      localBalance > amount_ ? localBalance -= amount_ : localBalance = 0;
+    }
+  }
+
+  /// @dev Exit from external project without caring about rewards, for emergency cases only
+  function emergencyWithdrawFromPool() internal override {
+    _withdrawAllFromPool();
+  }
 
   function liquidateReward() internal override {
     // noop
@@ -177,23 +210,27 @@ abstract contract UniversalLendStrategy is ProxyStrategyBase {
           localBalance += remaining;
         }
 
-        // if no users use everything for buybacks
+        // if no users, withdraw all and send to controller for remove dust from this contract
         if (toBuybacks == poolBalance) {
           _withdrawAllFromPool();
+          IERC20(u).safeTransfer(address(c), IERC20(u).balanceOf(address(this)));
         } else {
-          _withdrawFromPoolWithoutChangeLocalBalance(toBuybacks);
-        }
+          bool withdrewAll = _withdrawFromPoolWithoutChangeLocalBalance(toBuybacks, poolBalance);
+          if (withdrewAll) {
+            localBalance = 0;
+          }
 
-        address forwarder = c.feeRewardForwarder();
-        _approveIfNeeds(u, toBuybacks, forwarder);
+          address forwarder = c.feeRewardForwarder();
+          _approveIfNeeds(u, toBuybacks, forwarder);
 
-        // small amounts produce 'F2: Zero swap amount' error in distribute, so we need try/catch
-        if (silent) {
-          try IFeeRewardForwarder(forwarder).distribute(toBuybacks, u, _vault()) returns (uint r) {
-            targetTokenEarned += r;
-          } catch {}
-        } else {
-          targetTokenEarned += IFeeRewardForwarder(forwarder).distribute(toBuybacks, u, _vault());
+          // small amounts produce 'F2: Zero swap amount' error in distribute, so we need try/catch
+          if (silent) {
+            try IFeeRewardForwarder(forwarder).distribute(toBuybacks, u, _vault()) returns (uint r) {
+              targetTokenEarned += r;
+            } catch {}
+          } else {
+            targetTokenEarned += IFeeRewardForwarder(forwarder).distribute(toBuybacks, u, _vault());
+          }
         }
       }
     }

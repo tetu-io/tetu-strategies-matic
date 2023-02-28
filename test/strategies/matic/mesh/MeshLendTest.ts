@@ -140,6 +140,7 @@ describe('MeshLendStrategy tests', async () => {
         _balanceTolerance,
         finalBalanceTolerance,
       );
+      hw.allowLittleDustInStrategyAfterFullExit = true;
       // hw.toClaimCheckTolerance = 0.1; // toClaim returns too aprox value
       return hw;
     };
