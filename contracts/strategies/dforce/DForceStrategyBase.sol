@@ -11,13 +11,13 @@
 */
 pragma solidity 0.8.4;
 
-import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
+import "../UniversalLendStrategy.sol";
 import "../../third_party/dforce/IiToken.sol";
 import "../../third_party/dforce/IRewardDistributorV3.sol";
 
 /// @title Contract for DForce strategy implementation
 /// @author belbix
-abstract contract DForceStrategyBase is ProxyStrategyBase {
+abstract contract DForceStrategyBase is UniversalLendStrategy {
   using SafeERC20 for IERC20;
 
   /// ******************************************************
@@ -27,15 +27,13 @@ abstract contract DForceStrategyBase is ProxyStrategyBase {
   /// @notice Version of the contract
   string public constant VERSION = "1.0.0";
 
-  IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.D_FORCE;
-  uint private constant _DUST = 10_000;
+  IStrategy.Platform public constant override platform = IStrategy.Platform.D_FORCE;
 
   /// @notice Strategy type for statistical purposes
   string public constant override STRATEGY_NAME = "DForceStrategyBase";
   IRewardDistributorV3 public constant REWARD_DISTRIBUTOR = IRewardDistributorV3(0x47C19A2ab52DA26551A22e2b2aEED5d19eF4022F);
 
   IiToken public iToken;
-  uint private localBalance;
 
 
   /// ******************************************************
@@ -51,29 +49,16 @@ abstract contract DForceStrategyBase is ProxyStrategyBase {
     address[] memory __rewardTokens,
     address _iToken
   ) public initializer {
-    ProxyStrategyBase.initializeStrategyBase(
+    UniversalLendStrategy.initializeLendStrategy(
       controller_,
       underlying_,
       vault_,
-      __rewardTokens,
-      buybackRatio_
+      buybackRatio_,
+      __rewardTokens
     );
 
     iToken = IiToken(_iToken);
     require(IiToken(_iToken).underlying() == _underlying(), "Wrong underlying");
-  }
-
-  // *******************************************************
-  //                      GOV ACTIONS
-  // *******************************************************
-
-  /// @dev Set new reward tokens
-  function setRewardTokens(address[] memory rts) external restricted {
-    delete _rewardTokens;
-    for (uint i = 0; i < rts.length; i++) {
-      _rewardTokens.push(rts[i]);
-      _unsalvageableTokens[rts[i]] = true;
-    }
   }
 
   /// ******************************************************
@@ -99,63 +84,43 @@ abstract contract DForceStrategyBase is ProxyStrategyBase {
   }
 
   /// ******************************************************
-  ///              Do hard work
-  /// ******************************************************
-
-  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
-    _forwardBuybacks(false);
-  }
-
-  /// ******************************************************
   ///              Internal logic implementation
   /// ******************************************************
 
-  /// @dev Deposit underlying to the pool
-  /// @param amount Deposit amount
-  function depositToPool(uint256 amount) internal override {
+
+  /// @dev Refresh rates and return actual deposited balance in underlying tokens
+  function _getActualPoolBalance() internal override returns (uint) {
+    return iToken.balanceOfUnderlying(address(this));
+  }
+
+  /// @dev Deposit to pool and increase local balance
+  function _simpleDepositToPool(uint amount) internal override {
     address u = _underlying();
     IiToken _iToken = iToken;
-    amount = Math.min(IERC20(u).balanceOf(address(this)), amount);
-    if (amount > 0) {
-      _approveIfNeeds(u, amount, address(_iToken));
-      _iToken.mintForSelfAndEnterMarket(amount);
+    _approveIfNeeds(u, amount, address(_iToken));
+    _iToken.mintForSelfAndEnterMarket(amount);
+    localBalance += amount;
+  }
 
-      localBalance += amount;
+  /// @dev Perform only withdraw action, without changing local balance
+  function _withdrawFromPoolWithoutChangeLocalBalance(uint amount, uint poolBalance) internal override returns (bool withdrewAll) {
+    if (amount < poolBalance) {
+      iToken.redeemUnderlying(address(this), amount);
+      return false;
+    } else {
+      iToken.redeemUnderlying(address(this), _rewardPoolBalance());
+      return true;
     }
   }
 
-  /// @dev Withdraw underlying from the pool
-  function withdrawAndClaimFromPool(uint256 amount_) internal override {
-    _forwardBuybacks(true);
-
-    uint amountToWithdraw = Math.min(amount_, iToken.balanceOfUnderlying(address(this)));
-    localBalance > amountToWithdraw ? localBalance -= amountToWithdraw : localBalance = 0;
-    iToken.redeemUnderlying(address(this), amountToWithdraw);
-  }
-
-  /// @dev Exit from external project without caring about rewards, for emergency cases only
-  function emergencyWithdrawFromPool() internal override {
+  /// @dev Withdraw all and set localBalance to zero
+  function _withdrawAllFromPool() internal override {
     iToken.redeemUnderlying(address(this), _rewardPoolBalance());
     localBalance = 0;
   }
 
-  function liquidateReward() internal override {
-    // noop
-  }
-
-  function platform() external override pure returns (IStrategy.Platform) {
-    return _PLATFORM;
-  }
-
-  /// @dev assets should reflect underlying tokens need to investing
-  function assets() external override view returns (address[] memory) {
-    address[] memory arr = new address[](1);
-    arr[0] = _underlying();
-    return arr;
-  }
-
   /// @dev Claim distribution rewards
-  function _claimReward() internal {
+  function _claimReward() internal override {
     address[] memory holders = new address[](1);
     holders[0] = address(this);
     address[] memory rts = new address[](1);
@@ -163,108 +128,6 @@ abstract contract DForceStrategyBase is ProxyStrategyBase {
     REWARD_DISTRIBUTOR.claimReward(holders, rts);
   }
 
-  function _claimAndLiquidate(bool silent) internal returns (uint){
-    address und = _underlying();
-    uint underlyingBalance = IERC20(und).balanceOf(address(this));
-    _claimReward();
-    address targetVault = _vault();
-    address forwarder = IController(_controller()).feeRewardForwarder();
-    uint targetTokenEarned;
-    address[] memory rts = _rewardTokens;
-    for (uint i; i < rts.length; ++i) {
-      address rt = rts[i];
-      uint amount = IERC20(rt).balanceOf(address(this));
-      if (und == rt) {
-        // if claimed underlying exclude what we had before the claim
-        amount = amount - underlyingBalance;
-      }
-      if (amount > _DUST) {
-
-        uint toBuyBacks = amount * _buyBackRatio() / _BUY_BACK_DENOMINATOR;
-        uint toCompound = amount - toBuyBacks;
-
-        if (toBuyBacks != 0) {
-          _approveIfNeeds(rt, toBuyBacks, forwarder);
-          if (silent) {
-            try IFeeRewardForwarder(forwarder).distribute(toBuyBacks, rt, targetVault) returns (uint r) {
-              targetTokenEarned += r;
-            } catch {}
-          } else {
-            targetTokenEarned += IFeeRewardForwarder(forwarder).distribute(toBuyBacks, rt, targetVault);
-          }
-        }
-
-        if (toCompound != 0 && und != rt) {
-          if (silent) {
-            try IFeeRewardForwarder(forwarder).liquidate(rt, und, toCompound) returns (uint r) {
-              underlyingBalance += r;
-            } catch {}
-          } else {
-            underlyingBalance += IFeeRewardForwarder(forwarder).liquidate(rt, und, toCompound);
-          }
-        } else {
-          underlyingBalance += toCompound;
-        }
-      }
-    }
-
-    if (underlyingBalance != 0) {
-      iToken.mintForSelfAndEnterMarket(underlyingBalance);
-      localBalance += underlyingBalance;
-    }
-
-    return targetTokenEarned;
-  }
-
-  /// @notice calculate and send buyback
-  function _forwardBuybacks(bool silent) internal returns (uint poolBalance) {
-
-    poolBalance = iToken.balanceOfUnderlying(address(this));
-
-    address u = _underlying();
-    IController c = IController(_controller());
-    uint targetTokenEarned = _claimAndLiquidate(silent);
-    uint _localBalance = localBalance;
-
-    if (poolBalance != 0 && poolBalance > _localBalance) {
-      uint profit = poolBalance - _localBalance;
-
-      // protection if something went wrong
-      require(_localBalance < _DUST || profit < poolBalance / 20, 'Too huge profit');
-
-      uint toBuybacks = profit * _buyBackRatio() / _BUY_BACK_DENOMINATOR;
-      uint remaining = profit - toBuybacks;
-
-      if (toBuybacks > _DUST) {
-        localBalance += remaining;
-        iToken.redeemUnderlying(address(this), toBuybacks);
-
-        address forwarder = c.feeRewardForwarder();
-        _approveIfNeeds(u, toBuybacks, forwarder);
-
-        // small amounts produce 'F2: Zero swap amount' error in distribute, so we need try/catch
-        if (silent) {
-          try IFeeRewardForwarder(forwarder).distribute(toBuybacks, u, _vault()) returns (uint r) {
-            targetTokenEarned += r;
-          } catch {}
-        } else {
-          targetTokenEarned += IFeeRewardForwarder(forwarder).distribute(toBuybacks, u, _vault());
-        }
-      }
-    }
-
-    IBookkeeper(c.bookkeeper()).registerStrategyEarned(targetTokenEarned);
-  }
-
-  /// ******************************************************
-  ///                       Utils
-  /// ******************************************************
-
-  function _approveIfNeeds(address token, uint amount, address spender) internal {
-    if (IERC20(token).allowance(address(this), spender) < amount) {
-      IERC20(token).safeApprove(spender, 0);
-      IERC20(token).safeApprove(spender, type(uint).max);
-    }
-  }
-
+  //slither-disable-next-line unused-state
+  uint256[48] private ______gap;
 }
