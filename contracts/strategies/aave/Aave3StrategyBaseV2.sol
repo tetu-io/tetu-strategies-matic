@@ -27,9 +27,10 @@ abstract contract Aave3StrategyBaseV2 is ProxyStrategyBase {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
 
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.AAVE_LEND; // same as for AAVEv2
+  uint private constant _DUST = 10_000;
 
   /// @notice Strategy type for statistical purposes
   string public constant override STRATEGY_NAME = "Aave3StrategyBaseV2";
@@ -60,6 +61,19 @@ abstract contract Aave3StrategyBaseV2 is ProxyStrategyBase {
     );
 
     require(_aToken().UNDERLYING_ASSET_ADDRESS() == underlying_, "wrong underlying");
+  }
+
+  // *******************************************************
+  //                      GOV ACTIONS
+  // *******************************************************
+
+  /// @dev Set new reward tokens
+  function setRewardTokens(address[] memory rts) external restricted {
+    delete _rewardTokens;
+    for (uint i = 0; i < rts.length; i++) {
+      _rewardTokens.push(rts[i]);
+      _unsalvageableTokens[rts[i]] = true;
+    }
   }
 
   /// ******************************************************
@@ -171,7 +185,7 @@ abstract contract Aave3StrategyBaseV2 is ProxyStrategyBase {
         // if claimed underlying exclude what we had before the claim
         amount = amount - underlyingBalance;
       }
-      if (amount != 0) {
+      if (amount > _DUST) {
 
         uint toBuyBacks = amount * _buyBackRatio() / _BUY_BACK_DENOMINATOR;
         uint toCompound = amount - toBuyBacks;
@@ -214,16 +228,20 @@ abstract contract Aave3StrategyBaseV2 is ProxyStrategyBase {
     address u = _underlying();
     IController c = IController(_controller());
     uint targetTokenEarned = _claimAndLiquidate(silent);
+    uint _localBalance = localBalance;
 
     poolBalance = _rewardPoolBalance();
-    if (poolBalance != 0 && poolBalance > localBalance) {
-      uint profit = poolBalance - localBalance;
+    if (poolBalance != 0 && poolBalance > _localBalance) {
+      uint profit = poolBalance - _localBalance;
+
+      // protection if something went wrong
+      require(_localBalance < _DUST || profit < poolBalance / 20, 'Too huge profit');
 
       uint toBuybacks = profit * _buyBackRatio() / _BUY_BACK_DENOMINATOR;
       uint remaining = profit - toBuybacks;
-      localBalance += remaining;
 
-      if (toBuybacks != 0) {
+      if (toBuybacks > _DUST) {
+        localBalance += remaining;
         AAVE_V3_POOL_MATIC.withdraw(u, toBuybacks, address(this));
 
         address forwarder = c.feeRewardForwarder();

@@ -1,5 +1,5 @@
 import {MaticAddresses} from "../../../addresses/MaticAddresses";
-import {deployAave3Strat} from "./deploy-aave3-strat";
+import {deployAave3StratV2} from "./deploy-aave3-strat-v2";
 import {deployAave2Strat} from "./deploy-aave2-strat";
 
 async function main() {

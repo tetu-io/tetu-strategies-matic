@@ -12,14 +12,12 @@
 pragma solidity 0.8.4;
 
 import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
-import "../../third_party/aave/IAToken.sol";
-import "../../third_party/aave/ILendingPool.sol";
-import "../../third_party/aave/IAaveIncentivesController.sol";
-import "../../third_party/aave/IProtocolDataProvider.sol";
+import "../../third_party/dforce/IiToken.sol";
+import "../../third_party/dforce/IRewardDistributorV3.sol";
 
-/// @title Contract for AAVEv2 strategy simplified
+/// @title Contract for DForce strategy implementation
 /// @author belbix
-abstract contract Aave2StrategyBase is ProxyStrategyBase {
+abstract contract DForceStrategyBase is ProxyStrategyBase {
   using SafeERC20 for IERC20;
 
   /// ******************************************************
@@ -27,21 +25,16 @@ abstract contract Aave2StrategyBase is ProxyStrategyBase {
   /// ******************************************************
 
   /// @notice Version of the contract
-  /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.0.0";
 
-  IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.AAVE_LEND;
+  IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.D_FORCE;
   uint private constant _DUST = 10_000;
 
   /// @notice Strategy type for statistical purposes
-  string public constant override STRATEGY_NAME = "Aave2StrategyBase";
+  string public constant override STRATEGY_NAME = "DForceStrategyBase";
+  IRewardDistributorV3 public constant REWARD_DISTRIBUTOR = IRewardDistributorV3(0x47C19A2ab52DA26551A22e2b2aEED5d19eF4022F);
 
-  ILendingPool public constant AAVE_LENDING_POOL = ILendingPool(0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf);
-  IAaveIncentivesController public constant AAVE_CONTROLLER = IAaveIncentivesController(0x357D51124f59836DeD84c8a1730D72B749d8BC23);
-  IProtocolDataProvider public constant AAVE_DATA_PROVIDER = IProtocolDataProvider(0x7551b5D2763519d4e37e8B81929D336De671d46d);
-
-  address public aToken;
-  address public dToken;
+  IiToken public iToken;
   uint private localBalance;
 
 
@@ -55,7 +48,8 @@ abstract contract Aave2StrategyBase is ProxyStrategyBase {
     address underlying_,
     address vault_,
     uint buybackRatio_,
-    address[] memory __rewardTokens
+    address[] memory __rewardTokens,
+    address _iToken
   ) public initializer {
     ProxyStrategyBase.initializeStrategyBase(
       controller_,
@@ -65,11 +59,9 @@ abstract contract Aave2StrategyBase is ProxyStrategyBase {
       buybackRatio_
     );
 
-    (aToken,,dToken) = AAVE_DATA_PROVIDER.getReserveTokensAddresses(underlying_);
-    address _lpt = IAToken(aToken).UNDERLYING_ASSET_ADDRESS();
-    require(_lpt == _underlying(), "Wrong underlying");
+    iToken = IiToken(_iToken);
+    require(IiToken(_iToken).underlying() == _underlying(), "Wrong underlying");
   }
-
 
   // *******************************************************
   //                      GOV ACTIONS
@@ -90,20 +82,20 @@ abstract contract Aave2StrategyBase is ProxyStrategyBase {
 
   /// @notice Invested assets in the pool
   function _rewardPoolBalance() internal override view returns (uint) {
-    (uint suppliedUnderlying,,,,,,,,) = AAVE_DATA_PROVIDER.getUserReserveData(_underlying(), address(this));
-    return suppliedUnderlying;
+    IiToken _iToken = iToken;
+    return _iToken.balanceOf(address(this)) * _iToken.exchangeRateStored() / 1e18;
   }
 
   /// @notice Return approximately amount of reward tokens ready to claim
   function readyToClaim() external view override returns (uint[] memory) {
-    uint[] memory rewards = new uint256[](1);
-    rewards[0] = AAVE_CONTROLLER.getUserUnclaimedRewards(address(this));
+    uint[] memory rewards = new uint[](1);
+    rewards[0] = REWARD_DISTRIBUTOR.reward(address(this));
     return rewards;
   }
 
   /// @notice TVL of the underlying in the pool
   function poolTotalAmount() external view override returns (uint256) {
-    return IERC20(_underlying()).balanceOf(aToken);
+    return iToken.getCash() + iToken.totalBorrows() - iToken.totalReserves();
   }
 
   /// ******************************************************
@@ -122,10 +114,11 @@ abstract contract Aave2StrategyBase is ProxyStrategyBase {
   /// @param amount Deposit amount
   function depositToPool(uint256 amount) internal override {
     address u = _underlying();
+    IiToken _iToken = iToken;
     amount = Math.min(IERC20(u).balanceOf(address(this)), amount);
     if (amount > 0) {
-      _approveIfNeeds(u, amount, address(AAVE_LENDING_POOL));
-      AAVE_LENDING_POOL.deposit(u, amount, address(this), 0);
+      _approveIfNeeds(u, amount, address(_iToken));
+      _iToken.mintForSelfAndEnterMarket(amount);
 
       localBalance += amount;
     }
@@ -133,22 +126,16 @@ abstract contract Aave2StrategyBase is ProxyStrategyBase {
 
   /// @dev Withdraw underlying from the pool
   function withdrawAndClaimFromPool(uint256 amount_) internal override {
-    uint poolBalance = _forwardBuybacks(true);
+    _forwardBuybacks(true);
 
-    uint amountToWithdraw = amount_;
+    uint amountToWithdraw = Math.min(amount_, iToken.balanceOfUnderlying(address(this)));
     localBalance > amountToWithdraw ? localBalance -= amountToWithdraw : localBalance = 0;
-
-    if (amount_ >= poolBalance) {
-      // for full withdraw need to call max value, otherwise revert is possible
-      amountToWithdraw = type(uint).max;
-    }
-
-    AAVE_LENDING_POOL.withdraw(_underlying(), amountToWithdraw, address(this));
+    iToken.redeemUnderlying(address(this), amountToWithdraw);
   }
 
   /// @dev Exit from external project without caring about rewards, for emergency cases only
   function emergencyWithdrawFromPool() internal override {
-    AAVE_LENDING_POOL.withdraw(_underlying(), type(uint).max, address(this));
+    iToken.redeemUnderlying(address(this), _rewardPoolBalance());
     localBalance = 0;
   }
 
@@ -169,10 +156,11 @@ abstract contract Aave2StrategyBase is ProxyStrategyBase {
 
   /// @dev Claim distribution rewards
   function _claimReward() internal {
-    address[] memory a = new address[](2);
-    a[0] = aToken;
-    a[1] = dToken;
-    AAVE_CONTROLLER.claimRewards(a, type(uint256).max, address(this));
+    address[] memory holders = new address[](1);
+    holders[0] = address(this);
+    address[] memory rts = new address[](1);
+    rts[0] = address(iToken);
+    REWARD_DISTRIBUTOR.claimReward(holders, rts);
   }
 
   function _claimAndLiquidate(bool silent) internal returns (uint){
@@ -221,7 +209,7 @@ abstract contract Aave2StrategyBase is ProxyStrategyBase {
     }
 
     if (underlyingBalance != 0) {
-      AAVE_LENDING_POOL.deposit(und, underlyingBalance, address(this), 0);
+      iToken.mintForSelfAndEnterMarket(underlyingBalance);
       localBalance += underlyingBalance;
     }
 
@@ -229,13 +217,15 @@ abstract contract Aave2StrategyBase is ProxyStrategyBase {
   }
 
   /// @notice calculate and send buyback
-  function _forwardBuybacks(bool silent) internal returns (uint poolBalance){
+  function _forwardBuybacks(bool silent) internal returns (uint poolBalance) {
+
+    poolBalance = iToken.balanceOfUnderlying(address(this));
+
     address u = _underlying();
     IController c = IController(_controller());
     uint targetTokenEarned = _claimAndLiquidate(silent);
     uint _localBalance = localBalance;
 
-    poolBalance = _rewardPoolBalance();
     if (poolBalance != 0 && poolBalance > _localBalance) {
       uint profit = poolBalance - _localBalance;
 
@@ -247,7 +237,7 @@ abstract contract Aave2StrategyBase is ProxyStrategyBase {
 
       if (toBuybacks > _DUST) {
         localBalance += remaining;
-        AAVE_LENDING_POOL.withdraw(u, toBuybacks, address(this));
+        iToken.redeemUnderlying(address(this), toBuybacks);
 
         address forwarder = c.feeRewardForwarder();
         _approveIfNeeds(u, toBuybacks, forwarder);

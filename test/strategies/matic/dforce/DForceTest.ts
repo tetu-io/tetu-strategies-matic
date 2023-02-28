@@ -1,105 +1,79 @@
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {readFileSync} from "fs";
-import {config as dotEnvConfig} from "dotenv";
-import {DeployInfo} from "../../DeployInfo";
-import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
-import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {StrategyTestUtils} from "../../StrategyTestUtils";
-import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
-import {
-  IStrategy,
-  ISmartVault,
-  Aave3Strategy__factory,
-  Aave2Strategy__factory
-} from "../../../../typechain";
-import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {FoldingProfitabilityTest} from "../../FoldingProfitabilityTest";
+import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
+import {StrategyTestUtils} from "../../StrategyTestUtils";
+import {
+  Aave2Strategy__factory, DForceStrategy__factory,
+  IFeeRewardForwarder,
+  ISmartVault, ISmartVault__factory,
+  IStrategy, IVaultController__factory
+} from "../../../../typechain";
+import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
+import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
+import {DeployInfo} from "../../DeployInfo";
 import {FoldingDoHardWork} from "../../FoldingDoHardWork";
+import {FoldingProfitabilityTest} from "../../FoldingProfitabilityTest";
+import {TokenUtils} from "../../../TokenUtils";
+import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
+import {parseUnits} from "ethers/lib/utils";
+import {UniswapUtils} from "../../../UniswapUtils";
 import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
-
-dotEnvConfig();
-// tslint:disable-next-line:no-var-requires
-const argv = require('yargs/yargs')()
-  .env('TETU')
-  .options({
-    disableStrategyTests: {
-      type: "boolean",
-      default: false,
-    },
-    onlyOneAave2StrategyTest: {
-      type: "number",
-      default: -1,
-    },
-    deployCoreContracts: {
-      type: "boolean",
-      default: false,
-    },
-    hardhatChainId: {
-      type: "number",
-      default: 137
-    },
-  }).argv;
+import {DForceChangePriceUtils} from "./DForceChangePriceUtils";
+import {HardWorkForDForce} from "./HardWorkForDForce";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('Aave2Test', async () => {
-
-  if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
-    return;
-  }
-  const infos = readFileSync('scripts/utils/download/data/aave_markets.csv', 'utf8').split(/\r?\n/);
-
+describe('DForce tests', async () => {
+  const infos = readFileSync('scripts/utils/download/data/dforce_markets.csv', 'utf8').split(/\r?\n/);
   const deployInfo: DeployInfo = new DeployInfo();
+
   before(async function () {
-    await StrategyTestUtils.deployCoreAndInit(deployInfo, argv.deployCoreContracts);
+    await StrategyTestUtils.deployCoreAndInit(deployInfo, false);
   });
 
   infos.forEach(info => {
-    const start = info.split(',');
+    const strat = info.split(',');
 
-    const idx = start[0];
-    const tokenName = start[1];
-    const token = start[2];
-    const aTokenName = start[3];
-    const aTokenAddress = start[4];
-    const ltv = start[7];
-    const usageAsCollateralEnabled = start[9];
-    const borrowingEnabled = start[10];
-    const ltvNum = Number(ltv);
-    const collateralFactor = (ltvNum).toFixed(0);
-    const borrowTarget = (ltvNum * 0.99).toFixed(0);
+    const idx = strat[0];
+    const rTokenName = strat[1];
+    const rTokenAddress = strat[2];
+    const token = strat[3];
+    const tokenName = strat[4];
+    const collateralFactor = strat[5];
+    const borrowTarget = strat[6];
 
     if (!idx || idx === 'idx') {
-      console.log('skip ', tokenName);
+      console.log('skip', idx);
       return;
     }
 
-    if (argv.onlyOneAave2StrategyTest !== -1 && parseFloat(idx) !== argv.onlyOneAave2StrategyTest) {
-      return;
-    }
-    console.log('Start test strategy', idx, aTokenName);
+    // if (idx !== '0') {
+    //   return;
+    // }
+
+    console.log('Start test strategy', idx, rTokenName);
     // **********************************************
     // ************** CONFIG*************************
     // **********************************************
-    const strategyContractName = 'Aave2Strategy';
+    const strategyContractName = 'DForceStrategy';
     const underlying = token;
-    // add custom liquidation path if necessary
     const forwarderConfigurator = null;
     // only for strategies where we expect PPFS fluctuations
     const ppfsDecreaseAllowed = true;
     // only for strategies where we expect PPFS fluctuations
     const balanceTolerance = 0;
     const finalBalanceTolerance = 0;
-    const deposit = 100_000;
+    const deposit = 1000_000;
     // at least 3
     const loops = 3;
     // number of blocks or timestamp value
-    const loopValue = 60 * 60 * 24 * 7;
+    const loopValue = 3000;
     // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
-    const advanceBlocks = false;
+    const advanceBlocks = true;
     const specificTests = null;
     // **********************************************
 
@@ -114,13 +88,15 @@ describe('Aave2Test', async () => {
             signer,
             strategyContractName,
           );
-          await Aave2Strategy__factory.connect(strategy.address, signer).initialize(
+          await DForceStrategy__factory.connect(strategy.address, signer).initialize(
             core.controller.address,
             underlying,
             vaultAddress,
             50_00,
-            []
+            [],
+            rTokenAddress
           );
+
           return strategy;
         },
         underlying
@@ -136,7 +112,7 @@ describe('Aave2Test', async () => {
       _strategy: IStrategy,
       _balanceTolerance: number
     ) => {
-      return new DoHardWorkLoopBase(
+      const hw = new HardWorkForDForce(
         _signer,
         _user,
         _core,
@@ -145,12 +121,14 @@ describe('Aave2Test', async () => {
         _vault,
         _strategy,
         _balanceTolerance,
-        finalBalanceTolerance,
+        finalBalanceTolerance
       );
+      hw.rTokenAddress = rTokenAddress;
+      return hw;
     };
 
     universalStrategyTest(
-      'Aave2Test_' + aTokenName,
+      'DForceTest_' + rTokenName,
       deployInfo,
       deployer,
       hwInitiator,
@@ -161,7 +139,7 @@ describe('Aave2Test', async () => {
       loops,
       loopValue,
       advanceBlocks,
-      specificTests,
+      specificTests
     );
   });
 });

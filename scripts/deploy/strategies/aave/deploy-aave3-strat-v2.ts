@@ -1,7 +1,7 @@
 import {ethers} from "hardhat";
 import {DeployerUtilsLocal} from "../../DeployerUtilsLocal";
 import {
-  Aave3Strategy__factory, IBookkeeper__factory,
+  Aave3Strategy__factory, Aave3StrategyV2__factory, IBookkeeper__factory,
   ISmartVault__factory, IStrategy__factory, IStrategySplitter__factory,
   StrategyTetuMeshLp__factory
 } from "../../../../typechain";
@@ -10,9 +10,9 @@ import {MaticAddresses} from "../../../addresses/MaticAddresses";
 import {RunHelper} from "../../../utils/tools/RunHelper";
 import {TokenUtils} from "../../../../test/TokenUtils";
 
-const strategyContractName = 'Aave3Strategy';
+const strategyContractName = 'Aave3StrategyV2';
 
-export async function deployAave3Strat(underlying: string) {
+export async function deployAave3StratV2(underlying: string) {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtilsLocal.getCoreAddresses();
 
@@ -37,7 +37,13 @@ export async function deployAave3Strat(underlying: string) {
 
 
   const [proxy, logic] = await DeployerUtilsLocal.deployTetuProxyControlled(signer, strategyContractName);
-  await RunHelper.runAndWait(() => Aave3Strategy__factory.connect(proxy.address, signer).initialize(core.controller, underlying, splitter));
+  await RunHelper.runAndWait(() => Aave3StrategyV2__factory.connect(proxy.address, signer).initialize(
+    core.controller,
+    underlying,
+    splitter,
+    100_00,
+    []
+  ));
 
   const txt = `
   vault: ${vaultAdr}
