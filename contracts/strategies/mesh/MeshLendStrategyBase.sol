@@ -133,4 +133,6 @@ abstract contract MeshLendStrategyBase is UniversalLendStrategy {
     pool.claimReward();
   }
 
+  //slither-disable-next-line unused-state
+  uint256[48] private ______gap;
 }

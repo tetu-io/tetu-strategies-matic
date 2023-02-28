@@ -275,4 +275,6 @@ abstract contract Aave3StrategyBaseV2 is ProxyStrategyBase {
     }
   }
 
+  //slither-disable-next-line unused-state
+  uint256[48] private ______gap;
 }
