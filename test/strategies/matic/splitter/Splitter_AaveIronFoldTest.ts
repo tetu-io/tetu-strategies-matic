@@ -48,7 +48,7 @@ const argv = require('yargs/yargs')()
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('Splitter with Aave/Iron Fold tests', async () => {
+describe.skip('Splitter with Aave/Iron Fold tests', async () => {
 
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;

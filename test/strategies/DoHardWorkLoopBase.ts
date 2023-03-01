@@ -24,7 +24,7 @@ export class DoHardWorkLoopBase {
   public readonly strategy: IStrategy;
   public readonly balanceTolerance: number;
   public readonly finalBalanceTolerance: number;
-  protected vaultRt: string;
+  public vaultRt: string;
   vaultForUser: ISmartVault;
   undDec = 0;
   userDeposited = BigNumber.from(0);
@@ -45,7 +45,7 @@ export class DoHardWorkLoopBase {
   priceCache = new Map<string, BigNumber>();
   totalToClaimInTetuN = 0;
   toClaimCheckTolerance = 0.3;
-  allowLittleDustInStrategyAfterFullExit = false
+  allowLittleDustInStrategyAfterFullExit = BigNumber.from(0)
 
   constructor(
     signer: SignerWithAddress,
@@ -87,17 +87,22 @@ export class DoHardWorkLoopBase {
 
   protected async init() {
     this.undDec = await TokenUtils.decimals(this.underlying);
-    this.vaultRt = (await this.vault.rewardTokens())[0].toLowerCase()
+    // this.vaultRt = (await this.vault.rewardTokens())[0].toLowerCase()
   }
 
   protected async initialCheckVault() {
-    expect((await this.vault.rewardTokens())[0].toLowerCase()).eq(this.vaultRt.toLowerCase());
+    if (this.vaultRt !== Misc.ZERO_ADDRESS) {
+      const rt = (await this.vault.rewardTokens())[0];
+      expect(rt.toLowerCase()).eq(this.vaultRt.toLowerCase());
+    }
   }
 
   protected async initialSnapshot() {
     console.log('>>>initialSnapshot start')
-    this.userRTBal = await TokenUtils.balanceOf(this.vaultRt, this.user.address);
-    this.vaultRTBal = await TokenUtils.balanceOf(this.vaultRt, this.vault.address);
+    if (this.vaultRt !== Misc.ZERO_ADDRESS) {
+      this.userRTBal = await TokenUtils.balanceOf(this.vaultRt, this.user.address);
+      this.vaultRTBal = await TokenUtils.balanceOf(this.vaultRt, this.vault.address);
+    }
     this.veDistBal = await IERC20__factory.connect(this.core.rewardToken.address, this.signer).balanceOf(MaticAddresses.TETU_VE_DIST_ADDRESS);
     this.startTs = await Misc.getBlockTsFromChain();
     this.bbRatio = (await this.strategy.buyBackRatio()).toNumber();
@@ -199,7 +204,7 @@ export class DoHardWorkLoopBase {
       const balAfter = await TokenUtils.balanceOf(this.underlying, this.user.address);
       console.log('Withdrew expected', formatUnits(expectedOutput, this.undDec))
       console.log('Withdrew actual', formatUnits(balAfter.sub(balBefore), this.undDec))
-      if(check) expect(expectedOutput.sub(balAfter.sub(balBefore)).toNumber()).below(10, 'withdrew lower than expected');
+      if (check) expect(expectedOutput.sub(balAfter.sub(balBefore)).toNumber()).below(10, 'withdrew lower than expected');
 
       await this.userCheckBalance(this.userDeposited);
       this.userWithdrew = this.userDeposited;
@@ -217,7 +222,7 @@ export class DoHardWorkLoopBase {
       const balAfter = await TokenUtils.balanceOf(this.underlying, this.user.address);
       console.log('Withdrew expected', formatUnits(expectedOutput, this.undDec))
       console.log('Withdrew actual', formatUnits(balAfter.sub(balBefore), this.undDec))
-      if(check) expect(expectedOutput.sub(balAfter.sub(balBefore)).toNumber()).below(10, 'withdrew lower than expected');
+      if (check) expect(expectedOutput.sub(balAfter.sub(balBefore)).toNumber()).below(10, 'withdrew lower than expected');
 
       await this.userCheckBalance(this.userWithdrew.add(amount));
       const userUndBalAfter = await TokenUtils.balanceOf(this.underlying, this.user.address);
@@ -370,8 +375,10 @@ export class DoHardWorkLoopBase {
     }
 
     // check vault balance
-    const vaultBalanceAfter = await TokenUtils.balanceOf(this.vaultRt, this.vault.address);
-    expect(vaultBalanceAfter.sub(this.vaultRTBal)).is.not.eq("0", "vault reward should increase");
+    if (this.vaultRt !== Misc.ZERO_ADDRESS) {
+      const vaultBalanceAfter = await TokenUtils.balanceOf(this.vaultRt, this.vault.address);
+      expect(vaultBalanceAfter.sub(this.vaultRTBal)).is.not.eq("0", "vault reward should increase");
+    }
 
     if (this.bbRatio !== 0 && !XTETU_NO_INCREASE.has(await this.strategy.STRATEGY_NAME())) {
       // check ps balance
@@ -380,9 +387,12 @@ export class DoHardWorkLoopBase {
     }
 
     // check reward for user
-    const rewardBalanceAfter = await TokenUtils.balanceOf(this.vaultRt, this.user.address);
-    expect(rewardBalanceAfter.sub(this.userRTBal).toString())
-      .is.not.eq("0", "should have earned xTETU rewards");
+    if (this.vaultRt !== Misc.ZERO_ADDRESS) {
+      const rewardBalanceAfter = await TokenUtils.balanceOf(this.vaultRt, this.user.address);
+      expect(rewardBalanceAfter.sub(this.userRTBal).toString())
+        .is.not.eq("0", "should have earned xTETU rewards");
+    }
+
 
     const userDepositedN = +utils.formatUnits(this.userDeposited, this.undDec);
     // some pools have auto compounding so user balance can increase
@@ -399,10 +409,10 @@ export class DoHardWorkLoopBase {
     console.log('Signer final balance +-: ', DoHardWorkLoopBase.toPercent(signerUnderlyingBalanceAfterN, signerDepositedN));
     expect(signerUnderlyingBalanceAfterN).is.greaterThanOrEqual(signerBalanceExpected, "signer should have more underlying");
 
-    if (!this.allowLittleDustInStrategyAfterFullExit) {
+    if (this.allowLittleDustInStrategyAfterFullExit.isZero()) {
       expect(await this.strategy.investedUnderlyingBalance()).is.eq(0);
     } else {
-      expect((await this.strategy.investedUnderlyingBalance()).toNumber()).is.below(10_000);
+      expect((await this.strategy.investedUnderlyingBalance())).is.below(this.allowLittleDustInStrategyAfterFullExit);
     }
   }
 

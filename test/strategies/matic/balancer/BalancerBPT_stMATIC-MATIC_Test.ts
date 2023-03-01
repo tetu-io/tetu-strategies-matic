@@ -87,7 +87,7 @@ describe('BalancerBPT_stMATIC-MATIC_Test', async () => {
     _strategy: IStrategy,
     _balanceTolerance: number
   ) => {
-    return new BalancerBPTstMaticSpecificHardWork(
+    const hw = new BalancerBPTstMaticSpecificHardWork(
       _signer,
       _user,
       _core,
@@ -98,6 +98,8 @@ describe('BalancerBPT_stMATIC-MATIC_Test', async () => {
       _balanceTolerance,
       finalBalanceTolerance,
     );
+    hw.vaultRt = VAULT_BBAMUSD;
+    return hw;
   };
 
   await universalStrategyTest(

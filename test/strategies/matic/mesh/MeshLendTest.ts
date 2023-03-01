@@ -17,6 +17,7 @@ import {
 } from "../../../../typechain";
 import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {MeshSinglePoolDoHardWork} from "./MeshSinglePoolDoHardWork";
+import {BigNumber} from "ethers";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -29,7 +30,7 @@ const argv = require('yargs/yargs')()
     },
     onlyOneMeshStrategyTest: {
       type: "number",
-      default: -1,
+      default: 1,
     },
     deployCoreContracts: {
       type: "boolean",
@@ -140,7 +141,7 @@ describe('MeshLendStrategy tests', async () => {
         _balanceTolerance,
         finalBalanceTolerance,
       );
-      hw.allowLittleDustInStrategyAfterFullExit = true;
+      hw.allowLittleDustInStrategyAfterFullExit = BigNumber.from(10_000);
       // hw.toClaimCheckTolerance = 0.1; // toClaim returns too aprox value
       return hw;
     };

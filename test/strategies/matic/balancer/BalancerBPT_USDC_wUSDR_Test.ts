@@ -11,6 +11,7 @@ import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
 import {ISmartVault, IStrategy, StrategyBalancerBPT__factory} from "../../../../typechain";
+import {Misc} from "../../../../scripts/utils/tools/Misc";
 
 
 const {expect} = chai;
@@ -86,7 +87,7 @@ describe('BalancerBPT_USDC_wUSDR_Test', async () => {
     _strategy: IStrategy,
     _balanceTolerance: number
   ) => {
-    return new BalancerBPTSpecificHardWork(
+    const hw = new BalancerBPTSpecificHardWork(
       _signer,
       _user,
       _core,
@@ -97,6 +98,8 @@ describe('BalancerBPT_USDC_wUSDR_Test', async () => {
       _balanceTolerance,
       finalBalanceTolerance,
     );
+    hw.vaultRt = Misc.ZERO_ADDRESS;
+    return hw;
   };
 
   await universalStrategyTest(

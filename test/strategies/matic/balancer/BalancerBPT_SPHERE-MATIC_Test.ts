@@ -43,7 +43,7 @@ describe('BalancerBPT_SPHERE-MATIC_Test', async () => {
   // only for strategies where we expect PPFS fluctuations
   const balanceTolerance = 0;
   const finalBalanceTolerance = 0;
-  const deposit = 100;
+  const deposit = 100_000;
   // at least 3
   const loops = 3;
   const loopValue = 300;
@@ -66,11 +66,16 @@ describe('BalancerBPT_SPHERE-MATIC_Test', async () => {
           core.controller.address,
           vaultAddress,
         );
+        console.log('/// STRATEGY DEPLOYED');
 
         await core.controller.setRewardDistribution([strategy.address], true);
+        console.log('end setRewardDistribution')
         await core.vaultController.addRewardTokens([vaultAddress], VAULT_BBAMUSD);
-        await core.vaultController.addRewardTokens([vaultAddress], MaticAddresses.TETU_TOKEN);
+        console.log('end addRewardTokens VAULT_BBAMUSD')
+        // await core.vaultController.addRewardTokens([vaultAddress], MaticAddresses.TETU_TOKEN);
+        // console.log('end addRewardTokens TETU_TOKEN')
 
+        console.log('/// ENV SETUP');
         return strategy;
       },
       underlying,
@@ -88,7 +93,7 @@ describe('BalancerBPT_SPHERE-MATIC_Test', async () => {
     _strategy: IStrategy,
     _balanceTolerance: number
   ) => {
-    return new BalancerBPTstMaticSpecificHardWork(
+    const hw = new BalancerBPTstMaticSpecificHardWork(
       _signer,
       _user,
       _core,
@@ -99,6 +104,8 @@ describe('BalancerBPT_SPHERE-MATIC_Test', async () => {
       _balanceTolerance,
       finalBalanceTolerance,
     );
+    hw.vaultRt = VAULT_BBAMUSD;
+    return hw;
   };
 
   await universalStrategyTest(

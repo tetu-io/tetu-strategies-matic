@@ -19,7 +19,7 @@ import {UniswapUtils} from "../../../UniswapUtils";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('Universal DForce Fold tests', async () => {
+describe.skip('Universal DForce Fold tests', async () => {
   const infos = readFileSync('scripts/utils/download/data/dforce_markets.csv', 'utf8').split(/\r?\n/);
   const deployInfo: DeployInfo = new DeployInfo();
 

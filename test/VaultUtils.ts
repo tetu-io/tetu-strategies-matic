@@ -27,6 +27,7 @@ export const XTETU_NO_INCREASE = new Set<string>([
   'PenroseStrategyBase',
   'BalancerBPTstMaticStrategyBase',
   'BalancerBPTStrategyBase',
+  'BalancerBPTSphereWmaticStrategyBase',
 ])
 export const VAULT_SHARE_NO_INCREASE = new Set<string>([
   'QiStakingStrategyBase',
@@ -35,6 +36,7 @@ export const VAULT_SHARE_NO_INCREASE = new Set<string>([
   'BalancerBPTstMaticStrategyBase',
   'PenroseStrategyBase',
   'BalancerBPTTetuUsdcStrategyBase',
+  'BalancerBPTSphereWmaticStrategyBase',
 ])
 
 export class VaultUtils {
@@ -135,7 +137,13 @@ export class VaultUtils {
     const ppfs = +utils.formatUnits(await vault.getPricePerFullShare(), undDec);
     const undBal = +utils.formatUnits(await vault.underlyingBalanceWithInvestment(), undDec);
     const veDistBalanceBefore = +formatUnits(await IERC20__factory.connect(MaticAddresses.TETU_TOKEN, vault.signer).balanceOf(MaticAddresses.TETU_VE_DIST_ADDRESS));
-    const rtBal = +utils.formatUnits(await TokenUtils.balanceOf(rt, vault.address));
+    let rtBal: number = 0;
+    if (rt) {
+      rtBal = +utils.formatUnits(await TokenUtils.balanceOf(rt, vault.address));
+    } else {
+      rtBal = 0;
+    }
+
 
     const strategyPlatform = (await strategyCtr.platform());
     if (strategyPlatform === 24) {
@@ -154,8 +162,13 @@ export class VaultUtils {
     const ppfsAfter = +utils.formatUnits(await vault.getPricePerFullShare(), undDec);
     const undBalAfter = +utils.formatUnits(await vault.underlyingBalanceWithInvestment(), undDec);
     const veDistBalanceAfter = +formatUnits(await IERC20__factory.connect(MaticAddresses.TETU_TOKEN, vault.signer).balanceOf(MaticAddresses.TETU_VE_DIST_ADDRESS));
-    const rtBalAfter = +utils.formatUnits(await TokenUtils.balanceOf(rt, vault.address));
     const bbRatio = (await strategyCtr.buyBackRatio()).toNumber();
+
+    let rtBalAfter: number = 0;
+    if (rt) {
+      rtBalAfter = +utils.formatUnits(await TokenUtils.balanceOf(rt, vault.address));
+    }
+
 
     console.log('-------- HARDWORK --------');
     console.log('- BB ratio:', bbRatio);

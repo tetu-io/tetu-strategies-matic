@@ -82,9 +82,9 @@ export class TokenUtils {
     [MaticAddresses.BALANCER_tetuQi_QI, MaticAddresses.BALANCER_tetuQi_QI_GAUGE.toLowerCase()], // gauge
     [MaticAddresses.BALANCER_USDC_wUSDR, MaticAddresses.BALANCER_USDC_wUSDR_GAUGE.toLowerCase()], // gauge
     // [MaticAddresses.BALANCER_TETU_USDC, MaticAddresses.BALANCER_TETU_USDC_GAUGE.toLowerCase()], // gauge
-    [MaticAddresses.BALANCER_TETU_USDC, '0x7ad5935ea295c4e743e4f2f5b4cda951f41223c2'.toLowerCase()], // gauge
+    [MaticAddresses.BALANCER_TETU_USDC, '0x9fb2eb86ae9dbebf276a7a67df1f2d48a49b95ec'.toLowerCase()], // gauge
     [MaticAddresses.TETU_SWAP_USDC_BTC, MaticAddresses.GOV_ADDRESS.toLowerCase()], // should be preminted in strategy
-    [MaticAddresses.BALANCER_SPHERE_MATIC, '0x1a2ce410a034424b784d4b228f167a061b94cff4'.toLowerCase()], //
+    [MaticAddresses.BALANCER_SPHERE_MATIC, '0xfb0243ffdc5309a4ec13b9de9111da02294b2571'.toLowerCase()], //
     [MaticAddresses.stMATIC, '0xb975364bf0368726075a80da76d1bf260244a25d'.toLowerCase()], //
     [MaticAddresses.MATIC_X, '0xba12222222228d8ba445958a75a0704d566bf2c8'.toLowerCase()], //
   ]);

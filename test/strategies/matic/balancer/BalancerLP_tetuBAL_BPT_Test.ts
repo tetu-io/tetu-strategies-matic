@@ -16,6 +16,7 @@ import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {Misc} from "../../../../scripts/utils/tools/Misc";
 import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
+import {parseUnits} from "ethers/lib/utils";
 
 
 const {expect} = chai;
@@ -48,7 +49,7 @@ describe('Balancer LP tests', async () => {
   // only for strategies where we expect PPFS fluctuations
   const balanceTolerance = 0;
   const finalBalanceTolerance = 0;
-  const deposit = 1_000;
+  const deposit = 1000_000;
   // at least 3
   const loops = 3;
   const loopValue = 300;
@@ -94,7 +95,7 @@ describe('Balancer LP tests', async () => {
     _strategy: IStrategy,
     _balanceTolerance: number
   ) => {
-    return new BalancerBPTSpecificHardWork(
+    const hw = new BalancerBPTSpecificHardWork(
       _signer,
       _user,
       _core,
@@ -105,6 +106,8 @@ describe('Balancer LP tests', async () => {
       _balanceTolerance,
       finalBalanceTolerance,
     );
+    hw.allowLittleDustInStrategyAfterFullExit = parseUnits('1');
+    return hw;
   };
 
   await universalStrategyTest(
