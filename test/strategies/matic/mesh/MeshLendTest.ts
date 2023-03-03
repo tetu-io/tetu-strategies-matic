@@ -18,6 +18,7 @@ import {
 import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {MeshSinglePoolDoHardWork} from "./MeshSinglePoolDoHardWork";
 import {BigNumber} from "ethers";
+import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -110,7 +111,7 @@ describe('MeshLendStrategy tests', async () => {
             underlying,
             vaultAddress,
             50_00,
-            [],
+            [MaticAddresses.USDC_TOKEN],
             meshSinglePoolAddress
           );
           return strategy;
@@ -142,6 +143,7 @@ describe('MeshLendStrategy tests', async () => {
         finalBalanceTolerance,
       );
       hw.allowLittleDustInStrategyAfterFullExit = BigNumber.from(10_000);
+      hw.toClaimCheckTolerance = 0;
       // hw.toClaimCheckTolerance = 0.1; // toClaim returns too aprox value
       return hw;
     };

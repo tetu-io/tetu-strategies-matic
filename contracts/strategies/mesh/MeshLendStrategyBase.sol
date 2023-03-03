@@ -30,6 +30,9 @@ abstract contract MeshLendStrategyBase is UniversalLendStrategy {
 
   /// @notice Strategy type for statistical purposes
   string public constant override STRATEGY_NAME = "MeshLendStrategyBase";
+  address internal constant _USDC = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
+  address internal constant _MESH = 0x82362Ec182Db3Cf7829014Bc61E9BE8a2E82868a;
+  IUniswapV2Router02 internal constant MESH_ROUTER = IUniswapV2Router02(0x10f4A785F458Bc144e3706575924889954946639);
 
   ISinglePool public pool;
 
@@ -131,6 +134,30 @@ abstract contract MeshLendStrategyBase is UniversalLendStrategy {
   /// @dev Claim all possible rewards to the current contract
   function _claimReward() internal override {
     pool.claimReward();
+    _swapMESHtoUSDC();
+  }
+
+  function _swapMESHtoUSDC() internal {
+    uint256 meshBalance = IERC20(_MESH).balanceOf(address(this));
+    if (meshBalance != 0) {
+      address[] memory route = new address[](2);
+      route[0] = _MESH;
+      route[1] = _USDC;
+      _meshSwap(meshBalance, route);
+    }
+  }
+
+  /// @dev helper function for meshswap router
+  function _meshSwap(uint256 amount, address[] memory _route) internal {
+    require(IERC20(_route[0]).balanceOf(address(this)) >= amount, "Not enough balance");
+    _approveIfNeeds(_route[0], amount, address(MESH_ROUTER));
+    MESH_ROUTER.swapExactTokensForTokens(
+      amount,
+      0,
+      _route,
+      address(this),
+      block.timestamp
+    );
   }
 
   //slither-disable-next-line unused-state

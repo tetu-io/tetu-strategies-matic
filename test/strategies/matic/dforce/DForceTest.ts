@@ -46,7 +46,7 @@ describe('DForce tests', async () => {
     const collateralFactor = strat[5];
     const borrowTarget = strat[6];
 
-    if (!idx || idx === 'idx') {
+    if (!idx || idx === 'idx' || +idx === -1) {
       console.log('skip', idx);
       return;
     }
@@ -93,7 +93,7 @@ describe('DForce tests', async () => {
             underlying,
             vaultAddress,
             50_00,
-            [],
+            [MaticAddresses.DF_TOKEN],
             rTokenAddress
           );
 
