@@ -387,7 +387,7 @@ export class DoHardWorkLoopBase {
     }
 
     // check reward for user
-    if (this.vaultRt !== Misc.ZERO_ADDRESS) {
+    if (this.vaultRt !== Misc.ZERO_ADDRESS && this.bbRatio !== 0) {
       const rewardBalanceAfter = await TokenUtils.balanceOf(this.vaultRt, this.user.address);
       expect(rewardBalanceAfter.sub(this.userRTBal).toString())
         .is.not.eq("0", "should have earned xTETU rewards");

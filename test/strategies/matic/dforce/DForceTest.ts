@@ -92,7 +92,7 @@ describe('DForce tests', async () => {
             core.controller.address,
             underlying,
             vaultAddress,
-            50_00,
+            0,
             [MaticAddresses.DF_TOKEN],
             rTokenAddress
           );

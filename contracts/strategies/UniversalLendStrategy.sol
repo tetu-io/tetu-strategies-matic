@@ -146,12 +146,12 @@ abstract contract UniversalLendStrategy is ProxyStrategyBase {
         amount = amount - underlyingBalance;
       }
       if (amount > _DUST) {
+        _approveIfNeeds(rt, amount, forwarder);
 
         uint toBuyBacks = _calcToBuyback(amount, localBalance);
         uint toCompound = amount - toBuyBacks;
 
         if (toBuyBacks != 0) {
-          _approveIfNeeds(rt, toBuyBacks, forwarder);
           if (silent) {
             try IFeeRewardForwarder(forwarder).distribute(toBuyBacks, rt, targetVault) returns (uint r) {
               targetTokenEarned += r;
