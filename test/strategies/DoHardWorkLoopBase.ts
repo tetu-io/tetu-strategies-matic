@@ -375,7 +375,7 @@ export class DoHardWorkLoopBase {
     }
 
     // check vault balance
-    if (this.vaultRt !== Misc.ZERO_ADDRESS) {
+    if (this.vaultRt !== Misc.ZERO_ADDRESS && this.bbRatio !== 0) {
       const vaultBalanceAfter = await TokenUtils.balanceOf(this.vaultRt, this.vault.address);
       expect(vaultBalanceAfter.sub(this.vaultRTBal)).is.not.eq("0", "vault reward should increase");
     }

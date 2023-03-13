@@ -27,7 +27,7 @@ abstract contract Aave3StrategyBaseV2 is UniversalLendStrategy {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.2";
+  string public constant VERSION = "1.0.3";
 
   IStrategy.Platform public constant override platform = IStrategy.Platform.AAVE_LEND; // same as for AAVEv2
 

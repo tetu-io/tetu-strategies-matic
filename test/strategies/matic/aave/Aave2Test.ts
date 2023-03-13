@@ -7,16 +7,9 @@ import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal"
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
-import {
-  IStrategy,
-  ISmartVault,
-  Aave3Strategy__factory,
-  Aave2Strategy__factory
-} from "../../../../typechain";
+import {Aave2Strategy__factory, ISmartVault, IStrategy} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {FoldingProfitabilityTest} from "../../FoldingProfitabilityTest";
-import {FoldingDoHardWork} from "../../FoldingDoHardWork";
 import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
 
 dotEnvConfig();

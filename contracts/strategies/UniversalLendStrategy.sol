@@ -204,11 +204,11 @@ abstract contract UniversalLendStrategy is ProxyStrategyBase {
 
       uint toBuybacks = _calcToBuyback(profit, _localBalance);
       uint remaining = profit - toBuybacks;
+      if (remaining != 0) {
+        localBalance += remaining;
+      }
 
       if (toBuybacks > _DUST) {
-        if (remaining != 0) {
-          localBalance += remaining;
-        }
 
         // if no users, withdraw all and send to controller for remove dust from this contract
         if (toBuybacks == poolBalance) {
