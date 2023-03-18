@@ -3,15 +3,14 @@ import chaiAsPromised from "chai-as-promised";
 import {readFileSync} from "fs";
 import {config as dotEnvConfig} from "dotenv";
 import {DeployInfo} from "../../DeployInfo";
-import {StrategyTestUtils} from "../../StrategyTestUtils";
-import {SpecificStrategyTest} from "../../SpecificStrategyTest";
+import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
+import {Aave2Strategy__factory, ISmartVault, IStrategy} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {ISmartVault, IStrategy, StrategyMeshSinglePool__factory} from "../../../../typechain";
-import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
-import {MeshSinglePoolDoHardWork} from "./MeshSinglePoolDoHardWork";
+import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -22,13 +21,13 @@ const argv = require('yargs/yargs')()
       type: "boolean",
       default: false,
     },
-    onlyOneMeshStrategyTest: {
+    onlyOneAave2StrategyTest: {
       type: "number",
       default: 1,
     },
     deployCoreContracts: {
       type: "boolean",
-      default: true,
+      default: false,
     },
     hardhatChainId: {
       type: "number",
@@ -36,83 +35,90 @@ const argv = require('yargs/yargs')()
     },
   }).argv;
 
+const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe.skip('Universal Mesh tests', async () => {
+describe('Aave2Test', async () => {
+
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
-  const infos = readFileSync('scripts/utils/download/data/mesh_pools.csv', 'utf8').split(/\r?\n/);
+  const infos = readFileSync('scripts/utils/download/data/aave_markets.csv', 'utf8').split(/\r?\n/);
+
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, argv.deployCoreContracts);
   });
 
   infos.forEach(info => {
-    const strat = info.split(',');
-    const idx = strat[0];
-    const meshVaultName = strat[1];
-    const meshSinglePoolAddress = strat[2];
-    const underlyingName = strat[3];
-    const underlyingAddress = strat[4];
-    const proxyRewardAddress = strat[5];
+    const start = info.split(',');
 
-    if (idx === 'idx') {
-      console.log('skip', idx);
+    const idx = start[0];
+    const tokenName = start[1];
+    const token = start[2];
+    const aTokenName = start[3];
+    const aTokenAddress = start[4];
+    const ltv = start[7];
+    const usageAsCollateralEnabled = start[9];
+    const borrowingEnabled = start[10];
+    const ltvNum = Number(ltv);
+    const collateralFactor = (ltvNum).toFixed(0);
+    const borrowTarget = (ltvNum * 0.99).toFixed(0);
+
+    if (!idx || idx === 'idx') {
+      console.log('skip ', tokenName);
       return;
     }
-    if (argv.onlyOneMeshStrategyTest !== -1 && +strat[0] !== argv.onlyOneMeshStrategyTest) {
+
+    if (argv.onlyOneAave2StrategyTest !== -1 && parseFloat(idx) !== argv.onlyOneAave2StrategyTest) {
       return;
     }
-
-    console.log('strat', idx, meshVaultName);
-    /* tslint:disable:no-floating-promises */
+    console.log('Start test strategy', idx, aTokenName);
     // **********************************************
     // ************** CONFIG*************************
     // **********************************************
-    const strategyContractName = "StrategyMeshSinglePool";
-    const vaultName = "Mesh" + " " + underlyingName;
-    const underlying = underlyingAddress;
-    const deposit = 100_000;
-    const loopValue = 60 * 60 * 24;
-    const advanceBlocks = true;
-
+    const strategyContractName = 'Aave2Strategy';
+    const underlying = token;
+    // add custom liquidation path if necessary
     const forwarderConfigurator = null;
     // only for strategies where we expect PPFS fluctuations
-    const ppfsDecreaseAllowed = false;
+    const ppfsDecreaseAllowed = true;
+    // only for strategies where we expect PPFS fluctuations
     const balanceTolerance = 0;
     const finalBalanceTolerance = 0;
+    const deposit = 100_000;
     // at least 3
     const loops = 3;
-    const specificTests: SpecificStrategyTest[] = [];
+    // number of blocks or timestamp value
+    const loopValue = 60 * 60 * 24 * 7;
+    // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
+    const advanceBlocks = false;
+    const specificTests = null;
     // **********************************************
 
-
-    const deployer = async (signer: SignerWithAddress) => {
+    const deployer = (signer: SignerWithAddress) => {
       const core = deployInfo.core as CoreContractsWrapper;
-      const data = await StrategyTestUtils.deploy(
+      return StrategyTestUtils.deploy(
         signer,
         core,
-        vaultName,
+        tokenName,
         async vaultAddress => {
           const strategy = await DeployerUtilsLocal.deployStrategyProxy(
             signer,
             strategyContractName,
           );
-          await StrategyMeshSinglePool__factory.connect(strategy.address, signer).initialize(
+          await Aave2Strategy__factory.connect(strategy.address, signer).initialize(
             core.controller.address,
-            vaultAddress,
             underlying,
-            proxyRewardAddress,
-            meshSinglePoolAddress
+            vaultAddress,
+            50_00,
+            []
           );
           return strategy;
         },
         underlying
       );
-      return data;
     };
-
     const hwInitiator = (
       _signer: SignerWithAddress,
       _user: SignerWithAddress,
@@ -123,7 +129,7 @@ describe.skip('Universal Mesh tests', async () => {
       _strategy: IStrategy,
       _balanceTolerance: number
     ) => {
-      const hw = new MeshSinglePoolDoHardWork(
+      return new DoHardWorkLoopBase(
         _signer,
         _user,
         _core,
@@ -134,12 +140,10 @@ describe.skip('Universal Mesh tests', async () => {
         _balanceTolerance,
         finalBalanceTolerance,
       );
-      hw.toClaimCheckTolerance = 0.1; // toClaim returns too aprox value
-      return hw;
     };
 
     universalStrategyTest(
-      strategyContractName + '_' + vaultName,
+      'Aave2Test_' + aTokenName,
       deployInfo,
       deployer,
       hwInitiator,

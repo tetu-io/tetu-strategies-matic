@@ -40,8 +40,8 @@ export class TokenUtils {
     [MaticAddresses.ICE_TOKEN, '0xb1bf26c7b43d2485fa07694583d2f17df0dde010'.toLowerCase()], // blueIce
     [MaticAddresses.IRON_TOKEN, '0xCaEb732167aF742032D13A9e76881026f91Cd087'.toLowerCase()], // ironSwap
     // [MaticAddresses.DAI_TOKEN, '0x9b17bAADf0f21F03e35249e0e59723F34994F806'.toLowerCase()], // anyswap
-    [MaticAddresses.DAI_TOKEN, '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase()], // balancer
-    [MaticAddresses.LINK_TOKEN, '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase()], // balancer
+    [MaticAddresses.DAI_TOKEN, '0xe7804c37c13166ff0b37f5ae0bb07a3aebb6e245'.toLowerCase()], //
+    [MaticAddresses.LINK_TOKEN, '0x61167073E31b1DAd85a3E531211c7B8F1E5cAE72'.toLowerCase()], //
     [MaticAddresses.CRV_TOKEN, '0x98B5F32dd9670191568b661a3e847Ed764943875'.toLowerCase()], // qi
     [MaticAddresses.DINO_TOKEN, '0x000000000000000000000000000000000000dead'.toLowerCase()], //
     [MaticAddresses.FXS_TOKEN, '0x1a3acf6d19267e2d3e7f898f42803e90c9219062'.toLowerCase()], // itself
@@ -82,10 +82,12 @@ export class TokenUtils {
     [MaticAddresses.BALANCER_tetuQi_QI, MaticAddresses.BALANCER_tetuQi_QI_GAUGE.toLowerCase()], // gauge
     [MaticAddresses.BALANCER_USDC_wUSDR, MaticAddresses.BALANCER_USDC_wUSDR_GAUGE.toLowerCase()], // gauge
     // [MaticAddresses.BALANCER_TETU_USDC, MaticAddresses.BALANCER_TETU_USDC_GAUGE.toLowerCase()], // gauge
-    [MaticAddresses.BALANCER_TETU_USDC, '0x7ad5935ea295c4e743e4f2f5b4cda951f41223c2'.toLowerCase()], // gauge
+    [MaticAddresses.BALANCER_TETU_USDC, '0x9fb2eb86ae9dbebf276a7a67df1f2d48a49b95ec'.toLowerCase()], // gauge
     [MaticAddresses.TETU_SWAP_USDC_BTC, MaticAddresses.GOV_ADDRESS.toLowerCase()], // should be preminted in strategy
-    [MaticAddresses.BALANCER_SPHERE_MATIC, '0x1a2ce410a034424b784d4b228f167a061b94cff4'.toLowerCase()], //
+    [MaticAddresses.BALANCER_SPHERE_MATIC, '0xfb0243ffdc5309a4ec13b9de9111da02294b2571'.toLowerCase()], //
     [MaticAddresses.stMATIC, '0xb975364bf0368726075a80da76d1bf260244a25d'.toLowerCase()], //
+    [MaticAddresses.MATIC_X, '0xba12222222228d8ba445958a75a0704d566bf2c8'.toLowerCase()], //
+    [MaticAddresses.USX_TOKEN, '0x88dcdc47d2f83a99cf0000fdf667a468bb958a78'.toLowerCase()], //
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {

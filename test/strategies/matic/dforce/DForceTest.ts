@@ -4,7 +4,12 @@ import {readFileSync} from "fs";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
-import {IFeeRewardForwarder, ISmartVault, IStrategy} from "../../../../typechain";
+import {
+  Aave2Strategy__factory, DForceStrategy__factory,
+  IFeeRewardForwarder,
+  ISmartVault, ISmartVault__factory,
+  IStrategy, IVaultController__factory
+} from "../../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
@@ -15,11 +20,14 @@ import {TokenUtils} from "../../../TokenUtils";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {parseUnits} from "ethers/lib/utils";
 import {UniswapUtils} from "../../../UniswapUtils";
+import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
+import {DForceChangePriceUtils} from "./DForceChangePriceUtils";
+import {HardWorkForDForce} from "./HardWorkForDForce";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe.skip('Universal DForce Fold tests', async () => {
+describe('DForce tests', async () => {
   const infos = readFileSync('scripts/utils/download/data/dforce_markets.csv', 'utf8').split(/\r?\n/);
   const deployInfo: DeployInfo = new DeployInfo();
 
@@ -38,7 +46,7 @@ describe.skip('Universal DForce Fold tests', async () => {
     const collateralFactor = strat[5];
     const borrowTarget = strat[6];
 
-    if (!idx || idx === 'idx') {
+    if (!idx || idx === 'idx' || +idx === -1) {
       console.log('skip', idx);
       return;
     }
@@ -51,22 +59,22 @@ describe.skip('Universal DForce Fold tests', async () => {
     // **********************************************
     // ************** CONFIG*************************
     // **********************************************
-    const strategyContractName = 'StrategyDForceFold';
+    const strategyContractName = 'DForceStrategy';
     const underlying = token;
     const forwarderConfigurator = null;
     // only for strategies where we expect PPFS fluctuations
     const ppfsDecreaseAllowed = true;
     // only for strategies where we expect PPFS fluctuations
-    const balanceTolerance = 0.00001;
-    const finalBalanceTolerance = 0.00001;
-    const deposit = 100_000;
+    const balanceTolerance = 0;
+    const finalBalanceTolerance = 0;
+    const deposit = 1000_000;
     // at least 3
-    const loops = 15;
+    const loops = 3;
     // number of blocks or timestamp value
     const loopValue = 3000;
     // use 'true' if farmable platform values depends on blocks, instead you can use timestamp
     const advanceBlocks = true;
-    const specificTests = [new FoldingProfitabilityTest()];
+    const specificTests = null;
     // **********************************************
 
     const deployer = (signer: SignerWithAddress) => {
@@ -76,19 +84,20 @@ describe.skip('Universal DForce Fold tests', async () => {
         core,
         tokenName,
         async vaultAddress => {
-          const strategyArgs = [
-            core.controller.address,
-            vaultAddress,
-            underlying,
-            rTokenAddress,
-            borrowTarget,
-            collateralFactor
-          ];
-          return DeployerUtilsLocal.deployContract(
+          const strategy = await DeployerUtilsLocal.deployStrategyProxy(
             signer,
             strategyContractName,
-            ...strategyArgs
-          ) as Promise<IStrategy>
+          );
+          await DForceStrategy__factory.connect(strategy.address, signer).initialize(
+            core.controller.address,
+            underlying,
+            vaultAddress,
+            0,
+            [MaticAddresses.DF_TOKEN],
+            rTokenAddress
+          );
+
+          return strategy;
         },
         underlying
       );
@@ -103,7 +112,7 @@ describe.skip('Universal DForce Fold tests', async () => {
       _strategy: IStrategy,
       _balanceTolerance: number
     ) => {
-      return new FoldingDoHardWork(
+      const hw = new HardWorkForDForce(
         _signer,
         _user,
         _core,
@@ -114,6 +123,8 @@ describe.skip('Universal DForce Fold tests', async () => {
         _balanceTolerance,
         finalBalanceTolerance
       );
+      hw.rTokenAddress = rTokenAddress;
+      return hw;
     };
 
     universalStrategyTest(

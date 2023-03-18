@@ -9,9 +9,16 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {ISmartVault, IStrategy, StrategyMeshSinglePool__factory} from "../../../../typechain";
+import {
+  ISmartVault,
+  IStrategy,
+  MeshLendStrategy__factory,
+  StrategyMeshSinglePool__factory
+} from "../../../../typechain";
 import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {MeshSinglePoolDoHardWork} from "./MeshSinglePoolDoHardWork";
+import {BigNumber} from "ethers";
+import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 
 dotEnvConfig();
 // tslint:disable-next-line:no-var-requires
@@ -38,7 +45,7 @@ const argv = require('yargs/yargs')()
 
 chai.use(chaiAsPromised);
 
-describe.skip('Universal Mesh tests', async () => {
+describe('MeshLendStrategy tests', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
@@ -70,11 +77,11 @@ describe.skip('Universal Mesh tests', async () => {
     // **********************************************
     // ************** CONFIG*************************
     // **********************************************
-    const strategyContractName = "StrategyMeshSinglePool";
+    const strategyContractName = "MeshLendStrategy";
     const vaultName = "Mesh" + " " + underlyingName;
     const underlying = underlyingAddress;
     const deposit = 100_000;
-    const loopValue = 60 * 60 * 24;
+    const loopValue = 3000;
     const advanceBlocks = true;
 
     const forwarderConfigurator = null;
@@ -99,11 +106,12 @@ describe.skip('Universal Mesh tests', async () => {
             signer,
             strategyContractName,
           );
-          await StrategyMeshSinglePool__factory.connect(strategy.address, signer).initialize(
+          await MeshLendStrategy__factory.connect(strategy.address, signer).initialize(
             core.controller.address,
-            vaultAddress,
             underlying,
-            proxyRewardAddress,
+            vaultAddress,
+            50_00,
+            [MaticAddresses.USDC_TOKEN],
             meshSinglePoolAddress
           );
           return strategy;
@@ -134,7 +142,9 @@ describe.skip('Universal Mesh tests', async () => {
         _balanceTolerance,
         finalBalanceTolerance,
       );
-      hw.toClaimCheckTolerance = 0.1; // toClaim returns too aprox value
+      hw.allowLittleDustInStrategyAfterFullExit = BigNumber.from(10_000);
+      hw.toClaimCheckTolerance = 0;
+      // hw.toClaimCheckTolerance = 0.1; // toClaim returns too aprox value
       return hw;
     };
 

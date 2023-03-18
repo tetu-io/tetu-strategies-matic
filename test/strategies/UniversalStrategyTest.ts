@@ -74,7 +74,7 @@ async function universalStrategyTest(
         await core.vaultController.changePpfsDecreasePermissions([vault.address], true);
       }
       const firstRt = (await vault.rewardTokens())[0];
-      if (firstRt.toLowerCase() === core.psVault.address.toLowerCase()) {
+      if (firstRt && firstRt.toLowerCase() === core.psVault.address.toLowerCase()) {
         await VaultUtils.addRewardsXTetu(signer, vault, core, 1);
       }
 

@@ -16,6 +16,7 @@ import {
 } from "../../../../typechain";
 import {BalancerBPTstMaticSpecificHardWork} from "./BalancerBPTstMaticSpecificHardWork";
 import {BalancerBPTUsdcTetuSpecificHardWork} from "./BalancerBPTUsdcTetuSpecificHardWork";
+import {Misc} from "../../../../scripts/utils/tools/Misc";
 
 
 const {expect} = chai;
@@ -91,7 +92,7 @@ describe('BalancerBPT_TETU-USDC_Test', async () => {
     _strategy: IStrategy,
     _balanceTolerance: number
   ) => {
-    return new BalancerBPTUsdcTetuSpecificHardWork(
+    const hw =  new BalancerBPTUsdcTetuSpecificHardWork(
       _signer,
       _user,
       _core,
@@ -102,6 +103,8 @@ describe('BalancerBPT_TETU-USDC_Test', async () => {
       _balanceTolerance,
       finalBalanceTolerance,
     );
+    hw.vaultRt = Misc.ZERO_ADDRESS;
+    return hw;
   };
 
   await universalStrategyTest(

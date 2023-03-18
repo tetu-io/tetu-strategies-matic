@@ -86,6 +86,8 @@ export class MaticAddresses {
   public static SD_TOKEN = '0x1d734A02eF1e1f5886e66b0673b71Af5B53ffA94'.toLowerCase();
   public static wUSDR_TOKEN = '0xAF0D9D65fC54de245cdA37af3d18cbEc860A4D4b'.toLowerCase();
   public static stMATIC = '0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4'.toLowerCase();
+  public static MATIC_X = '0xfa68FB4628DFF1028CFEc22b4162FCcd0d45efb6'.toLowerCase();
+  public static USX_TOKEN = '0xCf66EB3D546F0415b368d98A95EAF56DeD7aA752'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -318,6 +320,18 @@ export class MaticAddresses {
   public static DYSTOPIA_ROUTER = '0xbE75Dd16D029c6B32B7aD57A0FD9C1c20Dd2862e'.toLowerCase();
   public static DYSTOPIA_tetuQI_QI = '0x42c0cc5f1827c5d908392654389e5d93da426378'.toLowerCase();
   public static DYSTOPIA_TETU_USDPlus = '0x5A272ad79cBd3C874879E3FEc5753C2127f77583'.toLowerCase();
+
+  public static dForce_iUSDC = "0x5268b3c4afb0860D365a093C184985FCFcb65234";
+  public static dForce_iUSDT = "0xb3ab7148cCCAf66686AD6C1bE24D83e58E6a504e";
+  public static dForce_iUSX = "0xc171EBE1A2873F042F1dDdd9327D00527CA29882";
+  public static dForce_iDAI = "0xec85F77104Ffa35a5411750d70eDFf8f1496d95b";
+  public static dForce_iWETH = "0x0c92617dF0753Af1CaB2d9Cc6A56173970d81740";
+  public static dForce_iWBTC = "0x94a14Ba6E59f4BE36a77041Ef5590Fe24445876A";
+  public static dForce_iEUX = "0x15962427A9795005c640A6BF7f99c2BA1531aD6d";
+  public static dForce_iAAVE = "0x38D0c498698A35fc52a6EB943E47e4A5471Cd6f9";
+  public static dForce_iCRV = "0x7D86eE431fbAf60E86b5D3133233E478aF691B68";
+  public static dForce_iDF = "0xcB5D9b6A9BA8eA6FA82660fAA9cC130586F939B2";
+  public static dForce_iMATIC = "0x6A3fE5342a4Bd09efcd44AC5B9387475A0678c74";
 
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,

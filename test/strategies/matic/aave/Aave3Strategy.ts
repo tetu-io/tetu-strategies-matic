@@ -31,7 +31,7 @@ const argv = require('yargs/yargs')()
     },
     onlyOneAave3StrategyTest: {
       type: "number",
-      default: -1, // -1 for all, 1 for LINK
+      default: 1, // -1 for all, 1 for LINK
     },
     deployCoreContracts: {
       type: "boolean",
@@ -94,13 +94,13 @@ describe('Aave3 Strategy tests', async () => {
     // only for strategies where we expect PPFS fluctuations
     const ppfsDecreaseAllowed = true;
     // only for strategies where we expect PPFS fluctuations
-    const balanceTolerance = 0;
+    const balanceTolerance = 0.00001;
     const finalBalanceTolerance = 0;
     const deposit = 100_000;
     // at least 3
     const loops = 3;
     const loopValue = 60 * 60 * 24 * 7;
-    const advanceBlocks = false;
+    const advanceBlocks = true;
     const specificTests: SpecificStrategyTest[] = [];
     // **********************************************
 

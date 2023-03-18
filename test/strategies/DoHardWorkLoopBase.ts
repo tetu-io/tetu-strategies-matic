@@ -10,6 +10,7 @@ import {TimeUtils} from "../TimeUtils";
 import {expect} from "chai";
 import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
 import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
+import {formatUnits} from "ethers/lib/utils";
 
 
 export class DoHardWorkLoopBase {
@@ -23,7 +24,7 @@ export class DoHardWorkLoopBase {
   public readonly strategy: IStrategy;
   public readonly balanceTolerance: number;
   public readonly finalBalanceTolerance: number;
-  protected vaultRt: string;
+  public vaultRt: string;
   vaultForUser: ISmartVault;
   undDec = 0;
   userDeposited = BigNumber.from(0);
@@ -44,6 +45,7 @@ export class DoHardWorkLoopBase {
   priceCache = new Map<string, BigNumber>();
   totalToClaimInTetuN = 0;
   toClaimCheckTolerance = 0.3;
+  allowLittleDustInStrategyAfterFullExit = BigNumber.from(0)
 
   constructor(
     signer: SignerWithAddress,
@@ -85,17 +87,22 @@ export class DoHardWorkLoopBase {
 
   protected async init() {
     this.undDec = await TokenUtils.decimals(this.underlying);
-    this.vaultRt = (await this.vault.rewardTokens())[0].toLowerCase()
+    // this.vaultRt = (await this.vault.rewardTokens())[0].toLowerCase()
   }
 
   protected async initialCheckVault() {
-    expect((await this.vault.rewardTokens())[0].toLowerCase()).eq(this.vaultRt.toLowerCase());
+    if (this.vaultRt !== Misc.ZERO_ADDRESS) {
+      const rt = (await this.vault.rewardTokens())[0];
+      expect(rt.toLowerCase()).eq(this.vaultRt.toLowerCase());
+    }
   }
 
   protected async initialSnapshot() {
     console.log('>>>initialSnapshot start')
-    this.userRTBal = await TokenUtils.balanceOf(this.vaultRt, this.user.address);
-    this.vaultRTBal = await TokenUtils.balanceOf(this.vaultRt, this.vault.address);
+    if (this.vaultRt !== Misc.ZERO_ADDRESS) {
+      this.userRTBal = await TokenUtils.balanceOf(this.vaultRt, this.user.address);
+      this.vaultRTBal = await TokenUtils.balanceOf(this.vaultRt, this.vault.address);
+    }
     this.veDistBal = await IERC20__factory.connect(this.core.rewardToken.address, this.signer).balanceOf(MaticAddresses.TETU_VE_DIST_ADDRESS);
     this.startTs = await Misc.getBlockTsFromChain();
     this.bbRatio = (await this.strategy.buyBackRatio()).toNumber();
@@ -180,22 +187,43 @@ export class DoHardWorkLoopBase {
       'User has not enough balance');
   }
 
-  protected async withdraw(exit: boolean, amount: BigNumber) {
+  protected async withdraw(exit: boolean, amount: BigNumber, check = true) {
     // no actions if zero balance
     if ((await TokenUtils.balanceOf(this.vault.address, this.user.address)).isZero()) {
       return;
     }
     console.log('PPFS before withdraw', (await this.vault.getPricePerFullShare()).toString());
     await this.userCheckBalanceInVault();
+    const balBefore = await TokenUtils.balanceOf(this.underlying, this.user.address);
     if (exit) {
-      console.log('exit');
-      await this.vaultForUser.exit();
+      console.log('Full Exit from vault for user');
+      const expectedOutput = await this.vaultForUser.underlyingBalanceWithInvestmentForHolder(this.user.address);
+
+      await this.vaultForUser.exit({gasLimit: 10_000_000});
+
+      const balAfter = await TokenUtils.balanceOf(this.underlying, this.user.address);
+      console.log('Withdrew expected', formatUnits(expectedOutput, this.undDec))
+      console.log('Withdrew actual', formatUnits(balAfter.sub(balBefore), this.undDec))
+      if (check) expect(expectedOutput.sub(balAfter.sub(balBefore)).toNumber()).below(10, 'withdrew lower than expected');
+
       await this.userCheckBalance(this.userDeposited);
       this.userWithdrew = this.userDeposited;
     } else {
       const userUndBal = await TokenUtils.balanceOf(this.underlying, this.user.address);
-      console.log('withdraw', amount.toString());
-      await this.vaultForUser.withdraw(amount);
+
+      this.vaultForUser.underlyingBalanceWithInvestmentForHolder(this.user.address)
+      const totalDeposited = await this.vaultForUser.underlyingBalanceWithInvestmentForHolder(this.user.address);
+      const totalShares = await TokenUtils.balanceOf(this.vault.address, this.user.address);
+      const expectedOutput = amount.mul(totalDeposited).div(totalShares);
+
+      console.log('Withdraw for user, amount', amount.toString());
+      await this.vaultForUser.withdraw(amount, {gasLimit: 10_000_000});
+
+      const balAfter = await TokenUtils.balanceOf(this.underlying, this.user.address);
+      console.log('Withdrew expected', formatUnits(expectedOutput, this.undDec))
+      console.log('Withdrew actual', formatUnits(balAfter.sub(balBefore), this.undDec))
+      if (check) expect(expectedOutput.sub(balAfter.sub(balBefore)).toNumber()).below(10, 'withdrew lower than expected');
+
       await this.userCheckBalance(this.userWithdrew.add(amount));
       const userUndBalAfter = await TokenUtils.balanceOf(this.underlying, this.user.address);
       this.userWithdrew = this.userWithdrew.add(userUndBalAfter.sub(userUndBal));
@@ -322,19 +350,18 @@ export class DoHardWorkLoopBase {
   }
 
   protected async postLoopCheck() {
+    console.log('/// LOOPS ENDED, check statuses...')
     // wait enough time for get rewards for liquidation
     // we need to have strategy without rewards tokens in the end
-    await TimeUtils.advanceNBlocks(3000);
-    await this.withdraw(true, BigNumber.from(0));
-    // exit for signer
-    await this.vault.connect(this.signer).exit();
-    await this.strategy.withdrawAllToVault();
+    await TimeUtils.advanceNBlocks(300);
 
-    expect(await this.strategy.investedUnderlyingBalance()).is.eq(0);
+    await this.withdraw(true, BigNumber.from(0), false);
+    // exit for signer
+    await this.vault.connect(this.signer).exit({gasLimit: 10_000_000});
+    await this.strategy.withdrawAllToVault({gasLimit: 10_000_000});
 
     // need to call hard work for sell a little excess rewards
-    await this.strategy.doHardWork();
-
+    await this.strategy.doHardWork({gasLimit: 10_000_000});
 
     // strategy should not contain any tokens in the end
     const rts = await this.strategy.rewardTokens();
@@ -348,8 +375,10 @@ export class DoHardWorkLoopBase {
     }
 
     // check vault balance
-    const vaultBalanceAfter = await TokenUtils.balanceOf(this.vaultRt, this.vault.address);
-    expect(vaultBalanceAfter.sub(this.vaultRTBal)).is.not.eq("0", "vault reward should increase");
+    if (this.vaultRt !== Misc.ZERO_ADDRESS && this.bbRatio !== 0) {
+      const vaultBalanceAfter = await TokenUtils.balanceOf(this.vaultRt, this.vault.address);
+      expect(vaultBalanceAfter.sub(this.vaultRTBal)).is.not.eq("0", "vault reward should increase");
+    }
 
     if (this.bbRatio !== 0 && !XTETU_NO_INCREASE.has(await this.strategy.STRATEGY_NAME())) {
       // check ps balance
@@ -358,9 +387,12 @@ export class DoHardWorkLoopBase {
     }
 
     // check reward for user
-    const rewardBalanceAfter = await TokenUtils.balanceOf(this.vaultRt, this.user.address);
-    expect(rewardBalanceAfter.sub(this.userRTBal).toString())
-      .is.not.eq("0", "should have earned xTETU rewards");
+    if (this.vaultRt !== Misc.ZERO_ADDRESS && this.bbRatio !== 0) {
+      const rewardBalanceAfter = await TokenUtils.balanceOf(this.vaultRt, this.user.address);
+      expect(rewardBalanceAfter.sub(this.userRTBal).toString())
+        .is.not.eq("0", "should have earned xTETU rewards");
+    }
+
 
     const userDepositedN = +utils.formatUnits(this.userDeposited, this.undDec);
     // some pools have auto compounding so user balance can increase
@@ -376,6 +408,12 @@ export class DoHardWorkLoopBase {
     const signerBalanceExpected = signerDepositedN - (signerDepositedN * this.finalBalanceTolerance);
     console.log('Signer final balance +-: ', DoHardWorkLoopBase.toPercent(signerUnderlyingBalanceAfterN, signerDepositedN));
     expect(signerUnderlyingBalanceAfterN).is.greaterThanOrEqual(signerBalanceExpected, "signer should have more underlying");
+
+    if (this.allowLittleDustInStrategyAfterFullExit.isZero()) {
+      expect(await this.strategy.investedUnderlyingBalance()).is.eq(0);
+    } else {
+      expect((await this.strategy.investedUnderlyingBalance())).is.below(this.allowLittleDustInStrategyAfterFullExit);
+    }
   }
 
   private async getPrice(token: string): Promise<BigNumber> {

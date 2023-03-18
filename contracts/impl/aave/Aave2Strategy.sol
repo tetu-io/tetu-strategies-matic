@@ -11,22 +11,25 @@
 */
 pragma solidity 0.8.4;
 
-import "../../strategies/aave/Aave3StrategyBase.sol";
+import "../../strategies/aave/Aave2StrategyBase.sol";
 
-contract Aave3Strategy is Aave3StrategyBase {
-  using SafeERC20 for IERC20;
-
-  address constant public AAVE_V3_POOL_MATIC = 0x794a61358D6845594F94dc1DB02A252b5b4814aD;
-  uint256 private constant _BUY_BACK_RATIO = 100_00;
-
+contract Aave2Strategy is Aave2StrategyBase {
 
   function initialize(
     address controller_,
     address underlying_,
-    address vault_
+    address vault_,
+    uint buybackRatio_,
+    address[] memory __rewardTokens
   ) external initializer {
     require(ISmartVault(vault_).underlying() == underlying_, "!underlying");
-    Aave3StrategyBase.initializeStrategy(controller_, underlying_, vault_, AAVE_V3_POOL_MATIC, _BUY_BACK_RATIO);
+    Aave2StrategyBase.initializeStrategy(
+      controller_,
+      underlying_,
+      vault_,
+      buybackRatio_,
+      __rewardTokens
+    );
   }
 
 

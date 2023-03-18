@@ -11,6 +11,7 @@ import {TokenUtils} from "../../../test/TokenUtils";
 import {mkdir, writeFileSync} from "fs";
 import {utils} from "ethers";
 import {VaultUtils} from "../../../test/VaultUtils";
+import {Misc} from "../tools/Misc";
 
 
 async function main() {
@@ -48,7 +49,7 @@ async function main() {
   let infos: string = 'idx, iToken_name, iToken_address, token, tokenName, collateralFactor, borrowTarget, tvl, apr, vault, current rewards \n';
   for (let i = 0; i < markets.length; i++) {
     console.log('id', i);
-    if(i === 6) {
+    if (i === 6) {
       continue;
     }
 
@@ -57,7 +58,10 @@ async function main() {
     console.log('rTokenName', iTokenName, iTokenAdr)
     const iTokenCtr = IiToken__factory.connect(iTokenAdr, signer);
     const token = await iTokenCtr.underlying();
-
+    console.log('token', token)
+    if (token === Misc.ZERO_ADDRESS) {
+      continue;
+    }
     const tokenName = await TokenUtils.tokenSymbol(token);
 
     const collateralFactor = +utils.formatUnits((await controller.markets(iTokenAdr)).collateralFactorMantissa) * 10000;
