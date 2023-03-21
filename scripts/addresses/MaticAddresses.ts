@@ -333,6 +333,10 @@ export class MaticAddresses {
   public static dForce_iDF = "0xcB5D9b6A9BA8eA6FA82660fAA9cC130586F939B2";
   public static dForce_iMATIC = "0x6A3fE5342a4Bd09efcd44AC5B9387475A0678c74";
 
+  // COMPOUND
+
+  public static COMPOUND3_COMET_USDC = "0xF25212E676D1F7F89Cd72fFEe66158f541246445";
+
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,
     MaticAddresses.USDT_TOKEN,
