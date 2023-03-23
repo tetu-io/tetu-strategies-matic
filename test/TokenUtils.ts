@@ -23,17 +23,15 @@ export class TokenUtils {
 
   // use the most neutral place, some contracts (like swap pairs) can be used in tests and direct transfer ruin internal logic
   public static TOKEN_HOLDERS = new Map<string, string>([
-    [MaticAddresses.WMATIC_TOKEN, '0x8df3aad3a84da6b69a4da8aec3ea40d9091b2ac4'.toLowerCase()], // aave
-    [MaticAddresses.WETH_TOKEN, '0x28424507fefb6f7f8e9d3860f56504e4e5f5f390'.toLowerCase()], // aave
-    [MaticAddresses.WBTC_TOKEN, '0x5c2ed810328349100a66b82b78a1791b101c9d61'.toLowerCase()], // aave v2
-    // [MaticAddresses.WBTC_TOKEN, '0xba12222222228d8ba445958a75a0704d566bf2c8'.toLowerCase()], // bal
-    // [MaticAddresses.USDC_TOKEN, '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase()], // bal
+    [MaticAddresses.WMATIC_TOKEN, MaticAddresses.amWMATIC_TOKEN],
+    [MaticAddresses.WETH_TOKEN, MaticAddresses.amETH_TOKEN],
+    [MaticAddresses.WBTC_TOKEN, MaticAddresses.amBTC_TOKEN],
     [MaticAddresses.USDC_TOKEN, '0x1a13f4ca1d028320a707d99520abfefca3998b7f'.toLowerCase()], // aave
     [MaticAddresses.USDT_TOKEN, '0x0D0707963952f2fBA59dD06f2b425ace40b492Fe'.toLowerCase()], // adr
     [MaticAddresses.QUICK_TOKEN, '0xdB74C5D4F154BBD0B8e0a28195C68ab2721327e5'.toLowerCase()], // dquick
     [MaticAddresses.FRAX_TOKEN, '0x45c32fa6df82ead1e2ef74d17b76547eddfaff89'.toLowerCase()], // frax
     [MaticAddresses.TETU_TOKEN, '0x7ad5935ea295c4e743e4f2f5b4cda951f41223c2'.toLowerCase()], // fund keeper
-    [MaticAddresses.AAVE_TOKEN, '0x1d2a0e5ec8e5bbdca5cb219e649b565d8e5c3360'.toLowerCase()], // aave
+    [MaticAddresses.AAVE_TOKEN, MaticAddresses.amAAVE_TOKEN],
     [MaticAddresses.SUSHI_TOKEN, '0x0f0c716b007c289c0011e470cc7f14de4fe9fc80'.toLowerCase()], // peggy
     [MaticAddresses.pBREW_TOKEN, '0x000000000000000000000000000000000000dead'.toLowerCase()], // burned
     [MaticAddresses.DINO_TOKEN, '0x000000000000000000000000000000000000dead'.toLowerCase()], // burned
@@ -50,7 +48,7 @@ export class TokenUtils {
     [MaticAddresses.BTCCRV_TOKEN, '0xffbACcE0CC7C19d46132f1258FC16CF6871D153c'.toLowerCase()], // gauge
     [MaticAddresses.IRON_IS3USD, '0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD'.toLowerCase()], // chef
     [MaticAddresses.IRON_IRON_IS3USD, '0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD'.toLowerCase()], // chef
-    [MaticAddresses.BAL_TOKEN, '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase()], // balancer
+    [MaticAddresses.BAL_TOKEN, MaticAddresses.BALANCER_VAULT],
     [MaticAddresses.miMATIC_TOKEN, '0x25864a712C80d33Ba1ad7c23CffA18b46F2fc00c'.toLowerCase()],
     [MaticAddresses.KLIMA_TOKEN, '0x65A5076C0BA74e5f3e069995dc3DAB9D197d995c'.toLowerCase()], // gnosis
     [MaticAddresses.PSP_TOKEN, '0x2ee05fad3b206a232e985acbda949b215c67f00e'.toLowerCase()], // wallet
@@ -70,23 +68,22 @@ export class TokenUtils {
     [MaticAddresses.xTETU, '0x352f9fa490a86f625f53e581f0ec3bd649fd8bc9'.toLowerCase()],
     [MaticAddresses.SPHEREV3_TOKEN, '0x7754d8b057CC1d2D857d897461DAC6C3235B4aAe'.toLowerCase()], // sphere owner
     [MaticAddresses.MESH_TOKEN, '0x176b29289f66236c65c7ac5db2400abb5955df13'.toLowerCase()], // vMESH
-    [MaticAddresses.BALANCER_POOL_MATIC_USDC_WETH_BAL, '0x068Ff98072d3eB848D012e3390703BB507729ed6'.toLowerCase()], // gauge
-    [MaticAddresses.BALANCER_POOL_tetuBAL_BPT, '0xaa59736b80cf77d1e7d56b7bba5a8050805f5064'.toLowerCase()], // gauge
+    [MaticAddresses.BALANCER_POOL_MATIC_USDC_WETH_BAL, MaticAddresses.BALANCER_GAUGE_MATIC_USDC_WETH_BAL],
+    [MaticAddresses.BALANCER_POOL_tetuBAL_BPT, MaticAddresses.BALANCER_GAUGE_tetuBAL_BPT],
     [MaticAddresses.DF_TOKEN, '0x80ab3817c0026d31e5ecac7675450f510f016efb'.toLowerCase()], // gov
     [MaticAddresses.DYSTOPIA_TETU_USDPlus, '0x17274fa0e56421f620b993596fc34e77c1706885'.toLowerCase()], // dyst gauge
     [MaticAddresses.USDPlus_TOKEN, '0x421a018cc5839c4c0300afb21c725776dc389b1a'.toLowerCase()], // dyst gauge
     [MaticAddresses.oZEMIT_TOKEN, '0x0fbe132a5eb95f287740a7b0affbfc8d14354548'.toLowerCase()],
-    [MaticAddresses.BALANCER_bbamUSD, MaticAddresses.BALANCER_bbamUSD_GAUGE.toLowerCase()], // gauge
-    [MaticAddresses.BALANCER_stMATIC_MATIC, MaticAddresses.BALANCER_stMATIC_MATIC_GAUGE.toLowerCase()], // gauge
-    [MaticAddresses.BALANCER_xMATIC_MATIC, MaticAddresses.BALANCER_xMATIC_MATIC_GAUGE.toLowerCase()], // gauge
-    [MaticAddresses.BALANCER_tetuQi_QI, MaticAddresses.BALANCER_tetuQi_QI_GAUGE.toLowerCase()], // gauge
-    [MaticAddresses.BALANCER_USDC_wUSDR, MaticAddresses.BALANCER_USDC_wUSDR_GAUGE.toLowerCase()], // gauge
-    // [MaticAddresses.BALANCER_TETU_USDC, MaticAddresses.BALANCER_TETU_USDC_GAUGE.toLowerCase()], // gauge
-    [MaticAddresses.BALANCER_TETU_USDC, '0x9fb2eb86ae9dbebf276a7a67df1f2d48a49b95ec'.toLowerCase()], // gauge
-    [MaticAddresses.TETU_SWAP_USDC_BTC, MaticAddresses.GOV_ADDRESS.toLowerCase()], // should be preminted in strategy
+    [MaticAddresses.BALANCER_bbamUSD, MaticAddresses.BALANCER_bbamUSD_GAUGE],
+    [MaticAddresses.BALANCER_stMATIC_MATIC, MaticAddresses.BALANCER_stMATIC_MATIC_GAUGE],
+    [MaticAddresses.BALANCER_xMATIC_MATIC, MaticAddresses.BALANCER_xMATIC_MATIC_GAUGE],
+    [MaticAddresses.BALANCER_tetuQi_QI, MaticAddresses.BALANCER_tetuQi_QI_GAUGE],
+    [MaticAddresses.BALANCER_USDC_wUSDR, MaticAddresses.BALANCER_USDC_wUSDR_GAUGE],
+    [MaticAddresses.BALANCER_TETU_USDC, MaticAddresses.BALANCER_TETU_USDC_GAUGE],
+    [MaticAddresses.TETU_SWAP_USDC_BTC, MaticAddresses.GOV_ADDRESS], // should be preminted in strategy
     [MaticAddresses.BALANCER_SPHERE_MATIC, '0xfb0243ffdc5309a4ec13b9de9111da02294b2571'.toLowerCase()], //
-    [MaticAddresses.stMATIC, '0xb975364bf0368726075a80da76d1bf260244a25d'.toLowerCase()], //
-    [MaticAddresses.MATIC_X, '0xba12222222228d8ba445958a75a0704d566bf2c8'.toLowerCase()], //
+    [MaticAddresses.stMATIC, MaticAddresses.BALANCER_VAULT],
+    [MaticAddresses.MATIC_X, MaticAddresses.BALANCER_VAULT],
     [MaticAddresses.USX_TOKEN, '0x88dcdc47d2f83a99cf0000fdf667a468bb958a78'.toLowerCase()], //
   ]);
 
