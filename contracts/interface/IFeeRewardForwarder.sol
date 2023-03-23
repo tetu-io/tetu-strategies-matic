@@ -164,6 +164,8 @@ interface IFeeRewardForwarder {
     uint256 _feeDenominator
   ) external;
 
+  function setTokenThreshold(address tokenIn, uint value) external;
+
   function slippageNumerator() external view returns (uint256);
 
   function tetu() external view returns (address);
