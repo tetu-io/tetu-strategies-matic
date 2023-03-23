@@ -333,6 +333,14 @@ export class MaticAddresses {
   public static dForce_iDF = "0xcB5D9b6A9BA8eA6FA82660fAA9cC130586F939B2";
   public static dForce_iMATIC = "0x6A3fE5342a4Bd09efcd44AC5B9387475A0678c74";
 
+  // 0vix
+  public static ZEROVIX_oDAI = '0x2175110F2936bf630a278660E9B6E4EFa358490A'.toLowerCase();
+  public static ZEROVIX_oWETH = '0xb2D9646A1394bf784E376612136B3686e74A325F'.toLowerCase();
+  public static ZEROVIX_oUSDC = '0xEBb865Bf286e6eA8aBf5ac97e1b56A76530F3fBe'.toLowerCase();
+  public static ZEROVIX_ostMATIC = '0xDc3C5E5c01817872599e5915999c0dE70722D07f'.toLowerCase();
+  public static ZEROVIX_ORACLE = '0x1c312b14c129EabC4796b0165A2c470b659E5f01'.toLowerCase();
+
+
   public static BLUE_CHIPS = new Set<string>([
     MaticAddresses.USDC_TOKEN,
     MaticAddresses.USDT_TOKEN,
