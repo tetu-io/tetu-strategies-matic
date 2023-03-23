@@ -41,7 +41,7 @@ export async function deployAave3StratV2(underlying: string) {
     core.controller,
     underlying,
     splitter,
-    100_00,
+    20_00,
     []
   ));
 

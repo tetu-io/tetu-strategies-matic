@@ -7,7 +7,8 @@ async function main() {
   // await deployAave3StratV2(MaticAddresses.WBTC_TOKEN)
   // await deployAave3StratV2(MaticAddresses.WETH_TOKEN)
   // await deployAave3StratV2(MaticAddresses.DAI_TOKEN)
-  await deployAave3StratV2(MaticAddresses.WMATIC_TOKEN)
+  // await deployAave3StratV2(MaticAddresses.WMATIC_TOKEN)
+  await deployAave3StratV2(MaticAddresses.stMATIC_TOKEN)
 }
 
 main()
