@@ -10,6 +10,7 @@ import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {TokenUtils} from "../../../TokenUtils";
 import {parseUnits} from "ethers/lib/utils";
 import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
+import {TimeUtils} from "../../../TimeUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -31,11 +32,22 @@ export class BalancerBPTSpecificHardWork extends DoHardWorkLoopBase {
     const strat = StrategyBalancerBPT__factory.connect(this.strategy.address, this.signer);
     const gauge = IBalancerGauge__factory.connect(await strat.gauge(), this.signer);
     const streamerAdr = await gauge.reward_contract();
+    // console.log(">>> streamer adr", streamerAdr);
 
     const owner = await DeployerUtilsLocal.impersonate('0xC128468b7Ce63eA702C1f104D55A2566b13D3ABD');
     const streamer = IChildChainStreamer__factory.connect(streamerAdr, owner);
     await TokenUtils.getToken(MaticAddresses.BAL_TOKEN, streamer.address, parseUnits('100'));
     await streamer.notify_reward_amount(MaticAddresses.BAL_TOKEN)
+
+    const data = await streamer.reward_data(MaticAddresses.BAL_TOKEN)
+    console.log(">>> data", data);
+
+    await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 7)
+
+    await TokenUtils.getToken(MaticAddresses.BAL_TOKEN, streamer.address, parseUnits('100'));
+    await streamer.notify_reward_amount(MaticAddresses.BAL_TOKEN)
+
+    console.log(">>> data", data);
   }
 
 

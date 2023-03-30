@@ -40,7 +40,7 @@ describe('Zerovix stMATIC tests', async () => {
             await liquidator.connect(gov).addLargestPools([{
                 pool: '0x59db5eA66958b19641b6891Fc373B44b567ea15C', // univ3 stMATIC-WMATIC 0.01%
                 swapper: '0x7b505210a0714d2a889E41B59edc260Fa1367fFe',
-                tokenIn: MaticAddresses.stMATIC,
+                tokenIn: MaticAddresses.stMATIC_TOKEN,
                 tokenOut: MaticAddresses.WMATIC_TOKEN,
             }], true)
         }
