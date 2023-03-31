@@ -9,15 +9,18 @@ import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {ISmartVault, IStrategy, StrategyBalancerTetuUsdc__factory} from "../../../../typechain";
-import {BalancerBPTUsdcTetuSpecificHardWork} from "./BalancerBPTUsdcTetuSpecificHardWork";
-import {Misc} from "../../../../scripts/utils/tools/Misc";
+import {
+  ISmartVault,
+  IStrategy,
+  StrategyBalancerStMaticWmatic__factory
+} from "../../../../typechain";
+import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
 
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('BalancerBPT_TETU-USDC_Test', async () => {
+describe('BalancerBPT_Tetu_boosted_stMATIC-MATIC_Test', async () => {
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, true);
@@ -27,9 +30,10 @@ describe('BalancerBPT_TETU-USDC_Test', async () => {
   // **********************************************
   // ************** CONFIG*************************
   // **********************************************
-  const strategyContractName = 'StrategyBalancerTetuUsdc';
-  const vaultName = "bptTetuUsdc";
-  const underlying = MaticAddresses.BALANCER_TETU_USDC;
+  const strategyContractName = 'StrategyBalancerTetuBoostedStMaticWmatic';
+  const vaultName = "StrategyBalancerTetuBoostedStMaticWmatic";
+  const underlying = MaticAddresses.BALANCER_stMATIC_WMATIC_TETU_BOOSTED;
+  const VAULT_BB_T_USD = '0x4028cba3965e8Aea7320e9eA50914861A14dc724'.toLowerCase();
 
   // const underlying = token;
   // add custom liquidation path if necessary
@@ -58,23 +62,19 @@ describe('BalancerBPT_TETU-USDC_Test', async () => {
           signer,
           strategyContractName,
         );
-        const tetuBalHolder = (await DeployerUtilsLocal.deployTetuProxyControlled(signer, 'TetuBalHolder'))[0];
-        await StrategyBalancerTetuUsdc__factory.connect(strategy.address, signer).initialize(
+        await StrategyBalancerStMaticWmatic__factory.connect(strategy.address, signer).initialize(
           core.controller.address,
           vaultAddress,
-          tetuBalHolder.address,
-          core.controller.address
         );
 
-        await StrategyBalancerTetuUsdc__factory.connect(strategy.address, signer).setPolRatio(50)
-
-        await core.controller.changeWhiteListStatus([tetuBalHolder.address], true);
+        await core.controller.setRewardDistribution([strategy.address], true);
+        await core.vaultController.addRewardTokens([vaultAddress], VAULT_BB_T_USD);
 
         return strategy;
       },
       underlying,
       0,
-      true
+      false
     );
   };
   const hwInitiator = (
@@ -87,7 +87,7 @@ describe('BalancerBPT_TETU-USDC_Test', async () => {
     _strategy: IStrategy,
     _balanceTolerance: number
   ) => {
-    const hw = new BalancerBPTUsdcTetuSpecificHardWork(
+    const hw = new BalancerBPTSpecificHardWork(
       _signer,
       _user,
       _core,
@@ -98,7 +98,7 @@ describe('BalancerBPT_TETU-USDC_Test', async () => {
       _balanceTolerance,
       finalBalanceTolerance,
     );
-    hw.vaultRt = Misc.ZERO_ADDRESS;
+    hw.vaultRt = VAULT_BB_T_USD;
     return hw;
   };
 

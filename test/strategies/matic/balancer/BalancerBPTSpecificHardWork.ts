@@ -4,7 +4,8 @@ import chaiAsPromised from "chai-as-promised";
 import {
   IBalancerGauge__factory,
   IChildChainStreamer__factory,
-  StrategyBalancerBPT__factory
+  StrategyBalancerBPT__factory,
+  StrategyBalancerTetuBoostedStMaticWmatic__factory
 } from "../../../../typechain";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {TokenUtils} from "../../../TokenUtils";
@@ -30,7 +31,14 @@ export class BalancerBPTSpecificHardWork extends DoHardWorkLoopBase {
 
   async refuelRewards() {
     const strat = StrategyBalancerBPT__factory.connect(this.strategy.address, this.signer);
-    const gauge = IBalancerGauge__factory.connect(await strat.gauge(), this.signer);
+    let gauge;
+    const stratName = await strat.STRATEGY_NAME();
+    if (stratName === 'BalancerBPTstMaticTetuBoostedStrategyBase' || stratName === 'BalancerBPTstMaticStrategyBase') {
+      gauge = IBalancerGauge__factory.connect(await StrategyBalancerTetuBoostedStMaticWmatic__factory.connect(strat.address, this.signer).GAUGE(), this.signer);
+    } else {
+      gauge = IBalancerGauge__factory.connect(await strat.gauge(), this.signer);
+    }
+
     const streamerAdr = await gauge.reward_contract();
     // console.log(">>> streamer adr", streamerAdr);
 
@@ -39,15 +47,16 @@ export class BalancerBPTSpecificHardWork extends DoHardWorkLoopBase {
     await TokenUtils.getToken(MaticAddresses.BAL_TOKEN, streamer.address, parseUnits('100'));
     await streamer.notify_reward_amount(MaticAddresses.BAL_TOKEN)
 
-    const data = await streamer.reward_data(MaticAddresses.BAL_TOKEN)
-    console.log(">>> data", data);
+    // const data = await streamer.reward_data(MaticAddresses.BAL_TOKEN)
+    // console.log(">>> data", data);
 
+    // need for new gauges
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 7)
 
-    await TokenUtils.getToken(MaticAddresses.BAL_TOKEN, streamer.address, parseUnits('100'));
-    await streamer.notify_reward_amount(MaticAddresses.BAL_TOKEN)
+    // await TokenUtils.getToken(MaticAddresses.BAL_TOKEN, streamer.address, parseUnits('100'));
+    // await streamer.notify_reward_amount(MaticAddresses.BAL_TOKEN)
 
-    console.log(">>> data", data);
+    // console.log(">>> data", data);
   }
 
 

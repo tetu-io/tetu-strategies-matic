@@ -52,7 +52,7 @@ describe('Zerovix stMATIC tests', async () => {
     const strategyContractName = 'ZerovixstMaticStrategy';
     const vaultName = "ZerovixstMaticStrategy_vault";
     const oToken = MaticAddresses.ZEROVIX_ostMATIC
-    const underlying = MaticAddresses.stMATIC;
+    const underlying = MaticAddresses.stMATIC_TOKEN;
     const buyBackRatio = 10_00;
     const forwarderConfigurator = null;
     // only for strategies where we expect PPFS fluctuations
@@ -138,3 +138,4 @@ describe('Zerovix stMATIC tests', async () => {
         specificTests,
     );
 })
+

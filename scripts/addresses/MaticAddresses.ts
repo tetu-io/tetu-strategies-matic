@@ -83,6 +83,7 @@ export class MaticAddresses {
   public static USDPlus_TOKEN = '0x236eeC6359fb44CCe8f97E99387aa7F8cd5cdE1f'.toLowerCase();
   public static oZEMIT_TOKEN = '0xA34E0eaCB7fbB0b0d45da89b083E0f87fcdf6157'.toLowerCase();
   public static bbamUSDC_TOKEN = '0xF93579002DBE8046c43FEfE86ec78b1112247BB8'.toLowerCase();
+  public static bb_t_USDC_TOKEN = '0xae646817e458C0bE890b81e8d880206710E3c44e'.toLowerCase();
   public static bb_TETU_USDC_TOKEN = '0xae646817e458C0bE890b81e8d880206710E3c44e'.toLowerCase();
   public static SD_TOKEN = '0x1d734A02eF1e1f5886e66b0673b71Af5B53ffA94'.toLowerCase();
   public static wUSDR_TOKEN = '0xAF0D9D65fC54de245cdA37af3d18cbEc860A4D4b'.toLowerCase();

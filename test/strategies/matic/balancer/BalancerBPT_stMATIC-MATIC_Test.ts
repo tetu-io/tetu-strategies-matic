@@ -14,7 +14,7 @@ import {
   IStrategy,
   StrategyBalancerStMaticWmatic__factory
 } from "../../../../typechain";
-import {BalancerBPTstMaticSpecificHardWork} from "./BalancerBPTstMaticSpecificHardWork";
+import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
 
 
 const {expect} = chai;
@@ -87,7 +87,7 @@ describe('BalancerBPT_stMATIC-MATIC_Test', async () => {
     _strategy: IStrategy,
     _balanceTolerance: number
   ) => {
-    const hw = new BalancerBPTstMaticSpecificHardWork(
+    const hw = new BalancerBPTSpecificHardWork(
       _signer,
       _user,
       _core,
