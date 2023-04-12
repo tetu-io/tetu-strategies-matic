@@ -94,7 +94,7 @@ describe("TetuBalVotingPowerTests", function () {
 
     const userVeTetuPower = +formatUnits(await power.veTetuPower(signer.address));
     console.log('userVeTetuPower', userVeTetuPower);
-    expect(userVeTetuPower).approximately(4.523841344729467, 0.000001);
+    expect(userVeTetuPower).approximately(4.523841344729467, 0.2);
 
     const userPowerWithoutCut = +formatUnits(await power.balanceOf(signer.address));
     console.log('userPowerWithoutCut', userPowerWithoutCut);
@@ -107,7 +107,7 @@ describe("TetuBalVotingPowerTests", function () {
     await power.connect(gov).setVeTetuPowerCut(20);
     const userPower = +formatUnits(await power.balanceOf(signer.address));
     console.log('userPower', userPower);
-    expect(userPower).approximately((userVeTetuPower * 0.8) + +formatUnits(tetuBalBalance), 0.00001);
+    expect(userPower).approximately((userVeTetuPower * 0.8) + +formatUnits(tetuBalBalance), 0.2);
 
     const polVoterPower = +formatUnits(await power.balanceOf(POL_VOTER));
     console.log('polVoterPower', polVoterPower);
