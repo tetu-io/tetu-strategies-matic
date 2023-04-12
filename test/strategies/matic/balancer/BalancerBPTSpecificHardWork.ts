@@ -33,7 +33,11 @@ export class BalancerBPTSpecificHardWork extends DoHardWorkLoopBase {
     const strat = StrategyBalancerBPT__factory.connect(this.strategy.address, this.signer);
     let gauge;
     const stratName = await strat.STRATEGY_NAME();
-    if (stratName === 'BalancerBPTstMaticTetuBoostedStrategyBase' || stratName === 'BalancerBPTstMaticStrategyBase'|| stratName === 'BalancerBPTSphereWmaticStrategyBase') {
+    if (stratName === 'BalancerBPTstMaticTetuBoostedStrategyBase'
+      || stratName === 'BalancerBPTstMaticStrategyBase'
+      || stratName === 'BalancerBPTSphereWmaticStrategyBase'
+      || stratName === 'BalancerBPTTngblUsdcStrategyBase'
+    ) {
       gauge = IBalancerGauge__factory.connect(await StrategyBalancerTetuBoostedStMaticWmatic__factory.connect(strat.address, this.signer).GAUGE(), this.signer);
     } else {
       gauge = IBalancerGauge__factory.connect(await strat.gauge(), this.signer);

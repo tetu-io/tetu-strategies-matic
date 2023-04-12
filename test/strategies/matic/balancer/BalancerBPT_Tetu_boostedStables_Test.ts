@@ -32,7 +32,7 @@ describe('BalancerBPT_TETU_boostedStables_Test', async () => {
   const underlying = MaticAddresses.BALANCER_USD_TETU_BOOSTED;
   const poolId = MaticAddresses.BALANCER_USD_TETU_BOOSTED_ID;
   const gauge = MaticAddresses.BALANCER_USD_TETU_BOOSTED_GAUGE;
-  const depositToken = MaticAddresses.bb_TETU_USDC_TOKEN;
+  const depositToken = MaticAddresses.bb_t_USDC_TOKEN;
   const buybackRatio = 8_00;
 
   // const underlying = token;

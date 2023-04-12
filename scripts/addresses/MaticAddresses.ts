@@ -84,7 +84,6 @@ export class MaticAddresses {
   public static oZEMIT_TOKEN = '0xA34E0eaCB7fbB0b0d45da89b083E0f87fcdf6157'.toLowerCase();
   public static bbamUSDC_TOKEN = '0xF93579002DBE8046c43FEfE86ec78b1112247BB8'.toLowerCase();
   public static bb_t_USDC_TOKEN = '0xae646817e458C0bE890b81e8d880206710E3c44e'.toLowerCase();
-  public static bb_TETU_USDC_TOKEN = '0xae646817e458C0bE890b81e8d880206710E3c44e'.toLowerCase();
   public static SD_TOKEN = '0x1d734A02eF1e1f5886e66b0673b71Af5B53ffA94'.toLowerCase();
   public static wUSDR_TOKEN = '0xAF0D9D65fC54de245cdA37af3d18cbEc860A4D4b'.toLowerCase();
   public static stMATIC_TOKEN = '0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4'.toLowerCase();
@@ -289,7 +288,7 @@ export class MaticAddresses {
 
   public static BALANCER_TNGBL_USDC = "0x9F9F548354B7C66Dc9a9f3373077D86AAACCF8F2".toLowerCase();
   public static BALANCER_TNGBL_USDC_ID = "0x9f9f548354b7c66dc9a9f3373077d86aaaccf8f2000200000000000000000a4a".toLowerCase();
-  public static BALANCER_TNGBL_USDC_GAUGE = "".toLowerCase();
+  public static BALANCER_TNGBL_USDC_GAUGE = "0x07222E30b751c1AB4A730745aFe19810cFd762c0".toLowerCase();
 
 
   // KLIMA

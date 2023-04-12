@@ -20,7 +20,7 @@ import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe.skip('BalancerBPT_TNGBL_USDC_Test', async () => {
+describe('BalancerBPT_TNGBL_USDC_Test', async () => {
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, true);
@@ -30,11 +30,10 @@ describe.skip('BalancerBPT_TNGBL_USDC_Test', async () => {
   // **********************************************
   // ************** CONFIG*************************
   // **********************************************
-  // TODO!!!!!!!!!!!
-  const strategyContractName = 'StrategyBalancerSphereWmatic';
-  const vaultName = "StrategyBalancerSphereWmatic";
-  const underlying = MaticAddresses.BALANCER_SPHERE_MATIC;
-  const VAULT_BBAMUSD = '0xf2fB1979C4bed7E71E6ac829801E0A8a4eFa8513'.toLowerCase();
+  const strategyContractName = 'StrategyBalancerTngblUsdc';
+  const vaultName = "StrategyBalancerTngblUsdc";
+  const underlying = MaticAddresses.BALANCER_TNGBL_USDC;
+  const VAULT_BB_T_USD = '0x4028cba3965e8Aea7320e9eA50914861A14dc724'.toLowerCase();
 
   // const underlying = token;
   // add custom liquidation path if necessary
@@ -71,17 +70,15 @@ describe.skip('BalancerBPT_TNGBL_USDC_Test', async () => {
 
         await core.controller.setRewardDistribution([strategy.address], true);
         console.log('end setRewardDistribution')
-        await core.vaultController.addRewardTokens([vaultAddress], VAULT_BBAMUSD);
+        await core.vaultController.addRewardTokens([vaultAddress], VAULT_BB_T_USD);
         console.log('end addRewardTokens VAULT_BBAMUSD')
-        // await core.vaultController.addRewardTokens([vaultAddress], MaticAddresses.TETU_TOKEN);
-        // console.log('end addRewardTokens TETU_TOKEN')
 
         console.log('/// ENV SETUP');
         return strategy;
       },
       underlying,
       0,
-      true
+      false
     );
   };
   const hwInitiator = (
@@ -105,7 +102,7 @@ describe.skip('BalancerBPT_TNGBL_USDC_Test', async () => {
       _balanceTolerance,
       finalBalanceTolerance,
     );
-    hw.vaultRt = VAULT_BBAMUSD;
+    hw.vaultRt = VAULT_BB_T_USD;
     return hw;
   };
 
