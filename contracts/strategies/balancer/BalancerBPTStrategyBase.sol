@@ -30,11 +30,12 @@ abstract contract BalancerBPTStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "BalancerBPTStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.3";
+  string public constant VERSION = "1.0.4";
 
   uint private constant PRICE_IMPACT_TOLERANCE = 10_000;
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
   ITetuLiquidator public constant TETU_LIQUIDATOR = ITetuLiquidator(0xC737eaB847Ae6A92028862fE38b828db41314772);
+  address internal constant DEFAULT_PERF_FEE_RECEIVER = 0x9Cc199D4353b5FB3e6C8EEBC99f5139e0d8eA06b;
 
   // *******************************************************
   //                      VARIABLES
@@ -191,7 +192,6 @@ abstract contract BalancerBPTStrategyBase is ProxyStrategyBase {
   function _liquidateRewards(bool silently) internal {
     address _depositToken = depositToken;
     uint bbRatio = _buyBackRatio();
-    address governance = IController(_controller()).governance();
     address[] memory rts = _rewardTokens;
     uint undBalanceBefore = IERC20(_underlying()).balanceOf(address(this));
     for (uint i = 0; i < rts.length; i++) {
@@ -205,7 +205,7 @@ abstract contract BalancerBPTStrategyBase is ProxyStrategyBase {
         }
 
         if (toGov != 0) {
-          IERC20(rt).safeTransfer(governance, toGov);
+          IERC20(rt).safeTransfer(DEFAULT_PERF_FEE_RECEIVER, toGov);
         }
       }
     }

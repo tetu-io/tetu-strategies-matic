@@ -7,16 +7,20 @@ import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
-import {ISmartVault, IStrategy, StrategyTetuMeshLp__factory} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
-import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
+import {
+  ISmartVault,
+  IStrategy,
+  StrategyBalancerStMaticWmatic__factory
+} from "../../../../typechain";
+import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
+
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe.skip('tetuMESH-MESH LP Strategy tests', async () => {
-
+describe.skip('BalancerBPT_TNGBL_USDC_Test', async () => {
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, true);
@@ -26,9 +30,12 @@ describe.skip('tetuMESH-MESH LP Strategy tests', async () => {
   // **********************************************
   // ************** CONFIG*************************
   // **********************************************
-  const strategyContractName = 'StrategyTetuMeshLp';
-  const vaultName = "MESH_tetuMESH_LP";
-  const underlying = MaticAddresses.TETU_MESH_MESH_LP;
+  // TODO!!!!!!!!!!!
+  const strategyContractName = 'StrategyBalancerSphereWmatic';
+  const vaultName = "StrategyBalancerSphereWmatic";
+  const underlying = MaticAddresses.BALANCER_SPHERE_MATIC;
+  const VAULT_BBAMUSD = '0xf2fB1979C4bed7E71E6ac829801E0A8a4eFa8513'.toLowerCase();
+
   // const underlying = token;
   // add custom liquidation path if necessary
   const forwarderConfigurator = null;
@@ -37,7 +44,7 @@ describe.skip('tetuMESH-MESH LP Strategy tests', async () => {
   // only for strategies where we expect PPFS fluctuations
   const balanceTolerance = 0;
   const finalBalanceTolerance = 0;
-  const deposit = 1_000;
+  const deposit = 100_000;
   // at least 3
   const loops = 3;
   const loopValue = 300;
@@ -56,9 +63,20 @@ describe.skip('tetuMESH-MESH LP Strategy tests', async () => {
           signer,
           strategyContractName,
         );
-        await StrategyTetuMeshLp__factory.connect(strategy.address, signer).initialize(core.controller.address, vaultAddress);
+        await StrategyBalancerStMaticWmatic__factory.connect(strategy.address, signer).initialize(
+          core.controller.address,
+          vaultAddress,
+        );
+        console.log('/// STRATEGY DEPLOYED');
 
-        await core.vaultController.addRewardTokens([vaultAddress], MaticAddresses.tetuMESH_TOKEN);
+        await core.controller.setRewardDistribution([strategy.address], true);
+        console.log('end setRewardDistribution')
+        await core.vaultController.addRewardTokens([vaultAddress], VAULT_BBAMUSD);
+        console.log('end addRewardTokens VAULT_BBAMUSD')
+        // await core.vaultController.addRewardTokens([vaultAddress], MaticAddresses.TETU_TOKEN);
+        // console.log('end addRewardTokens TETU_TOKEN')
+
+        console.log('/// ENV SETUP');
         return strategy;
       },
       underlying,
@@ -76,7 +94,7 @@ describe.skip('tetuMESH-MESH LP Strategy tests', async () => {
     _strategy: IStrategy,
     _balanceTolerance: number
   ) => {
-    return new DoHardWorkLoopBase(
+    const hw = new BalancerBPTSpecificHardWork(
       _signer,
       _user,
       _core,
@@ -87,6 +105,8 @@ describe.skip('tetuMESH-MESH LP Strategy tests', async () => {
       _balanceTolerance,
       finalBalanceTolerance,
     );
+    hw.vaultRt = VAULT_BBAMUSD;
+    return hw;
   };
 
   await universalStrategyTest(
@@ -103,6 +123,5 @@ describe.skip('tetuMESH-MESH LP Strategy tests', async () => {
     advanceBlocks,
     specificTests,
   );
-
 
 });

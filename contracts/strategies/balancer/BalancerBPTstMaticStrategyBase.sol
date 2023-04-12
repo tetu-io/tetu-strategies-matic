@@ -43,6 +43,7 @@ abstract contract BalancerBPTstMaticStrategyBase is ProxyStrategyBase {
   /// @dev bbamUSDC_TOKEN
   address public constant DEPOSIT_TOKEN_FOR_REWARDS = 0xF93579002DBE8046c43FEfE86ec78b1112247BB8;
   bytes32 public constant BBAMUSD_POOL_ID = 0x48e6b98ef6329f8f0a30ebb8c7c960330d64808500000000000000000000075b;
+  address internal constant DEFAULT_PERF_FEE_RECEIVER = 0x9Cc199D4353b5FB3e6C8EEBC99f5139e0d8eA06b;
 
   // *******************************************************
   //                      VARIABLES
@@ -187,7 +188,6 @@ abstract contract BalancerBPTstMaticStrategyBase is ProxyStrategyBase {
   function _liquidateRewards(bool silently) internal {
     uint bbRatio = _buyBackRatio();
     address[] memory rts = _rewardTokens;
-    address governance = IController(_controller()).governance();
     for (uint i = 0; i < rts.length; i++) {
       address rt = rts[i];
       uint amount = IERC20(rt).balanceOf(address(this));
@@ -199,7 +199,7 @@ abstract contract BalancerBPTstMaticStrategyBase is ProxyStrategyBase {
         }
 
         if (toGov != 0) {
-          IERC20(rt).safeTransfer(governance, toGov);
+          IERC20(rt).safeTransfer(DEFAULT_PERF_FEE_RECEIVER, toGov);
         }
       }
     }

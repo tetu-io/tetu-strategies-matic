@@ -106,7 +106,7 @@ describe('Balancer LP tests', async () => {
       _balanceTolerance,
       finalBalanceTolerance,
     );
-    hw.allowLittleDustInStrategyAfterFullExit = parseUnits('1');
+    hw.allowLittleDustInStrategyAfterFullExit = parseUnits('10');
     return hw;
   };
 

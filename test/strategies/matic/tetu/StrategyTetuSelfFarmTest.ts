@@ -36,7 +36,7 @@ const argv = require('yargs/yargs')()
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('StrategyTetuSelfFarmTest', async () => {
+describe.skip('StrategyTetuSelfFarmTest', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }

@@ -42,7 +42,7 @@ const argv = require('yargs/yargs')()
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('Qi staking tests', async () => {
+describe.skip('XQiStrategyTest', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }

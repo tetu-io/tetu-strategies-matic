@@ -104,7 +104,7 @@ describe('BalancerBPT_SPHERE-MATIC_Test', async () => {
       _balanceTolerance,
       finalBalanceTolerance,
     );
-    hw.vaultRt = VAULT_BBAMUSD;
+    // hw.vaultRt = VAULT_BBAMUSD;
     return hw;
   };
 

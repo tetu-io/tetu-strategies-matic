@@ -43,6 +43,7 @@ abstract contract BalancerBPTstMaticTetuBoostedStrategyBase is ProxyStrategyBase
   /// @dev bb-t-USDC linear pool BPT
   address public constant DEPOSIT_TOKEN_FOR_REWARDS = 0xae646817e458C0bE890b81e8d880206710E3c44e;
   bytes32 public constant BB_T_USD_POOL_ID = 0xb3d658d5b95bf04e2932370dd1ff976fe18dd66a000000000000000000000ace;
+  address internal constant DEFAULT_PERF_FEE_RECEIVER = 0x9Cc199D4353b5FB3e6C8EEBC99f5139e0d8eA06b;
 
   // *******************************************************
   //                      VARIABLES
@@ -187,7 +188,6 @@ abstract contract BalancerBPTstMaticTetuBoostedStrategyBase is ProxyStrategyBase
   function _liquidateRewards(bool silently) internal {
     uint bbRatio = _buyBackRatio();
     address[] memory rts = _rewardTokens;
-    address governance = IController(_controller()).governance();
     for (uint i = 0; i < rts.length; i++) {
       address rt = rts[i];
       uint amount = IERC20(rt).balanceOf(address(this));
@@ -199,7 +199,7 @@ abstract contract BalancerBPTstMaticTetuBoostedStrategyBase is ProxyStrategyBase
         }
 
         if (toGov != 0) {
-          IERC20(rt).safeTransfer(governance, toGov);
+          IERC20(rt).safeTransfer(DEFAULT_PERF_FEE_RECEIVER, toGov);
         }
       }
     }

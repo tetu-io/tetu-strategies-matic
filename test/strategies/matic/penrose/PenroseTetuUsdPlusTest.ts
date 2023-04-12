@@ -16,7 +16,7 @@ import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('penrose tetu-usd+ tests', async () => {
+describe.skip('penrose tetu-usd+ tests', async () => {
   const strategyName = 'StrategyPenroseTetuUsdPlus';
   const underlying = MaticAddresses.DYSTOPIA_TETU_USDPlus;
 

@@ -74,7 +74,7 @@ describe('BalancerBPT_stMATIC-MATIC_Test', async () => {
       },
       underlying,
       0,
-      true
+      false
     );
   };
   const hwInitiator = (

@@ -287,6 +287,11 @@ export class MaticAddresses {
   public static BALANCER_USD_TETU_BOOSTED_GAUGE = "0xd95e4DfcF7eb4897918dD3750447aFc5a10F9BC0".toLowerCase();
 
 
+  public static BALANCER_TNGBL_USDC = "0x9F9F548354B7C66Dc9a9f3373077D86AAACCF8F2".toLowerCase();
+  public static BALANCER_TNGBL_USDC_ID = "0x9f9f548354b7c66dc9a9f3373077d86aaaccf8f2000200000000000000000a4a".toLowerCase();
+  public static BALANCER_TNGBL_USDC_GAUGE = "".toLowerCase();
+
+
   // KLIMA
   public static KLIMA_STAKING = '0x25d28a24Ceb6F81015bB0b2007D795ACAc411b4d'.toLowerCase();
   public static sKLIMA = '0xb0C22d8D350C67420f06F48936654f567C73E8C8'.toLowerCase();

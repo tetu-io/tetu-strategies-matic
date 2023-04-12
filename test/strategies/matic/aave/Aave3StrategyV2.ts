@@ -31,7 +31,7 @@ const argv = require('yargs/yargs')()
     },
     onlyOneAave3StrategyTest: {
       type: "number",
-      default: 17, // -1 for all, 1 for LINK
+      default: 2, // -1 for all, 2 for USDC
     },
     deployCoreContracts: {
       type: "boolean",
