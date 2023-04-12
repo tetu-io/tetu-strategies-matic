@@ -9,7 +9,12 @@ import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {ISmartVault, IStrategy, StrategyBalancerTetuUsdc__factory} from "../../../../typechain";
+import {
+  IFeeRewardForwarder__factory,
+  ISmartVault,
+  IStrategy,
+  StrategyBalancerTetuUsdc__factory
+} from "../../../../typechain";
 import {BalancerBPTUsdcTetuSpecificHardWork} from "./BalancerBPTUsdcTetuSpecificHardWork";
 import {Misc} from "../../../../scripts/utils/tools/Misc";
 
@@ -69,6 +74,8 @@ describe('BalancerBPT_TETU-USDC_Test', async () => {
         await StrategyBalancerTetuUsdc__factory.connect(strategy.address, signer).setPolRatio(50)
 
         await core.controller.changeWhiteListStatus([tetuBalHolder.address], true);
+
+        await IFeeRewardForwarder__factory.connect(core.feeRewardForwarder.address, signer).setTokenThreshold(MaticAddresses.BAL_TOKEN, 10_000_000);
 
         return strategy;
       },
