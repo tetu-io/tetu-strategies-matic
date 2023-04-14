@@ -1,9 +1,10 @@
-import {ContractFactory, utils} from "ethers";
+import {ContractFactory, providers, utils} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {Libraries} from "hardhat-deploy/dist/types";
 import {Logger} from "tslog";
 import logSettings from "../../log_settings";
-import {formatUnits} from "ethers/lib/utils";
+import {formatUnits, parseUnits} from "ethers/lib/utils";
+import {HardhatRuntimeEnvironment} from "hardhat/types";
 
 const log: Logger = new Logger(logSettings);
 
@@ -19,7 +20,9 @@ export async function deployContract<T extends ContractFactory>(
   // tslint:disable-next-line:no-any
   ...args: any[]
 ) {
-  await hre.run("compile")
+  if (hre.network.name !== 'hardhat') {
+    await hre.run('compile');
+  }
   const web3 = hre.web3;
   const ethers = hre.ethers;
   log.info(`Deploying ${name}`);
@@ -54,7 +57,15 @@ export async function deployContract<T extends ContractFactory>(
   //   gas = 5_000_000;
   // }
   // const instance = await _factory.deploy(...args, {gasLimit: gas, gasPrice: Math.floor(+gasPrice * 1.1)});
-  const instance = await _factory.deploy(...args);
+
+
+  const instance = await _factory.deploy(...args, {
+    // large gas limit is required for npm run coverage
+    // see https://github.com/NomicFoundation/hardhat/issues/3121
+    gasLimit: hre.network.name === 'hardhat' ? 29_000_000 : undefined,
+    ...(await txParams(hre, signer.provider as providers.Provider))
+  });
+
   log.info('Deploy tx:', instance.deployTransaction.hash);
   await instance.deployed();
 
@@ -112,6 +123,33 @@ async function verifyWithArgs(hre: any, address: string, args: any[]) {
   } catch (e) {
     log.info('error verify ' + e);
   }
+}
+
+
+export async function txParams(hre: HardhatRuntimeEnvironment, provider: providers.Provider) {
+
+  const gasPrice = (await provider.getGasPrice()).toNumber();
+  console.log('Gas price:', formatUnits(gasPrice, 9));
+  const maxFee = '0x' + Math.floor(gasPrice * 1.5).toString(16);
+  if (hre.network.name === 'hardhat') {
+    return {
+      maxPriorityFeePerGas: parseUnits('1', 9).toHexString(),
+      maxFeePerGas: maxFee,
+    };
+  } else if (hre.network.config.chainId === 137) {
+    return {
+      maxPriorityFeePerGas: parseUnits('31', 9).toHexString(),
+      maxFeePerGas: maxFee,
+    };
+  } else if (hre.network.config.chainId === 1) {
+    return {
+      maxPriorityFeePerGas: parseUnits('1', 9).toHexString(),
+      maxFeePerGas: maxFee,
+    };
+  }
+  return {
+    gasPrice: '0x' + Math.floor(gasPrice * 1.1).toString(16),
+  };
 }
 
 

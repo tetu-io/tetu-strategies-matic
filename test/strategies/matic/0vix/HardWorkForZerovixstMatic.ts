@@ -5,7 +5,8 @@ import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal"
 import {parseUnits} from "ethers/lib/utils";
 
 export class HardWorkForZerovixstMatic extends DoHardWorkLoopBase {
-    protected async afterBlockAdvance() {
+    protected async loopStartActions(i: number) {
+        console.log("TRY TO SETUP 0VIX rewards", i);
         const strategy = await ethers.getContractAt('ZerovixstMaticStrategy', this.strategy.address) as ZerovixstMaticStrategy
         const oToken = await ethers.getContractAt('IOToken', await strategy.oToken()) as IOToken
         await oToken.accrueInterest()
@@ -27,6 +28,6 @@ export class HardWorkForZerovixstMatic extends DoHardWorkLoopBase {
         await rewardsDistributor.connect(rewardsDistributorOwner).updateEpochParams(newEpoch, parseUnits('100'), parseUnits('100'))
         await rewardsDistributor.connect(rewardsDistributorOwner).updateUsersRewards(users, newEpoch)
 
-        await super.afterBlockAdvance()
+        await super.loopStartActions(i)
     }
 }
