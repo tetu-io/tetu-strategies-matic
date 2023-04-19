@@ -33,7 +33,7 @@ describe('BalancerBPT_stMATIC-MATIC_Test', async () => {
   const strategyContractName = 'StrategyBalancerStMaticWmatic';
   const vaultName = "StrategyBalancerStMaticWmatic";
   const underlying = MaticAddresses.BALANCER_stMATIC_MATIC;
-  const VAULT_BBAMUSD = '0xf2fB1979C4bed7E71E6ac829801E0A8a4eFa8513'.toLowerCase();
+  const VAULT_BB_T_USD = '0x4028cba3965e8Aea7320e9eA50914861A14dc724'.toLowerCase();
 
   // const underlying = token;
   // add custom liquidation path if necessary
@@ -68,7 +68,7 @@ describe('BalancerBPT_stMATIC-MATIC_Test', async () => {
         );
 
         await core.controller.setRewardDistribution([strategy.address], true);
-        await core.vaultController.addRewardTokens([vaultAddress], VAULT_BBAMUSD);
+        await core.vaultController.addRewardTokens([vaultAddress], VAULT_BB_T_USD);
 
         return strategy;
       },
@@ -98,7 +98,7 @@ describe('BalancerBPT_stMATIC-MATIC_Test', async () => {
       _balanceTolerance,
       finalBalanceTolerance,
     );
-    hw.vaultRt = VAULT_BBAMUSD;
+    hw.vaultRt = VAULT_BB_T_USD;
     return hw;
   };
 
