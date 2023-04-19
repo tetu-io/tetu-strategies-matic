@@ -17,7 +17,7 @@ import "../../third_party/balancer/IBalancerGauge.sol";
 import "../../third_party/balancer/IBVault.sol";
 import "../../interface/ITetuLiquidator.sol";
 
-/// @title Base contract for stMatic farming with bbamBPT vault rewards
+/// @title Base contract for stMatic farming with bb-t-BPT vault rewards
 /// @author belbix
 abstract contract BalancerBPTstMaticTetuBoostedStrategyBase is ProxyStrategyBase {
   using SafeERC20 for IERC20;
@@ -37,8 +37,8 @@ abstract contract BalancerBPTstMaticTetuBoostedStrategyBase is ProxyStrategyBase
   ITetuLiquidator public constant TETU_LIQUIDATOR = ITetuLiquidator(0xC737eaB847Ae6A92028862fE38b828db41314772);
 
   /// @dev stMATIC-WMATIC boosted pool id
-  bytes32 public constant POOL_ID = 0xf22a66046b5307842f21b311ecb4c462c24c0635000000000000000000000b15;
-  IBalancerGauge public constant GAUGE = IBalancerGauge(0x975F5CeC0351Ff5A9f49cdBE1C47c9922CED4557);
+  bytes32 public constant POOL_ID = 0x71bd10c2a590b5858f5576550c163976a48af906000000000000000000000b27;
+  IBalancerGauge public constant GAUGE = IBalancerGauge(0xE47d5D46C78951a1BFF986E93bCfAf03789287F2);
   address public constant VAULT_BB_T_USD = 0x4028cba3965e8Aea7320e9eA50914861A14dc724;
   /// @dev bb-t-USDC linear pool BPT
   address public constant DEPOSIT_TOKEN_FOR_REWARDS = 0xae646817e458C0bE890b81e8d880206710E3c44e;
