@@ -1,5 +1,5 @@
 import {DeployerUtilsLocal} from "../../deploy/DeployerUtilsLocal";
-import {Multicall, Multicall__factory} from "../../../typechain";
+import {Multicall__factory} from "../../../typechain";
 import {ethers} from "hardhat";
 import {Logger} from "tslog";
 import Common from "ethereumjs-common";
@@ -24,6 +24,9 @@ const FANTOM_CHAIN = Common.forCustomChain(
   },
   'petersburg'
 );
+
+// tslint:disable-next-line:no-var-requires
+const hre = require("hardhat");
 
 export class Misc {
   public static readonly SECONDS_OF_DAY = 60 * 60 * 24;
@@ -108,6 +111,14 @@ export class Misc {
         return 'SUNFLOWER'
     }
     return n + '';
+  }
+
+  public static getChainId(): number {
+    return hre.network.config.chainId ?? 0;
+  }
+
+  public static getChainName(): string {
+    return hre.network.name;
   }
 
 }
