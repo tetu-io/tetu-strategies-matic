@@ -89,6 +89,7 @@ export class MaticAddresses {
   public static stMATIC_TOKEN = '0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4'.toLowerCase();
   public static MATIC_X = '0xfa68FB4628DFF1028CFEc22b4162FCcd0d45efb6'.toLowerCase();
   public static USX_TOKEN = '0xCf66EB3D546F0415b368d98A95EAF56DeD7aA752'.toLowerCase();
+  public static xtetuBAL_TOKEN = '0x915E49F7CD8B2b5763759c23D9463A74d5b5C1D5'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 

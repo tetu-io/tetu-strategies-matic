@@ -38,6 +38,8 @@ contract XtetuBALDistributor is ControllableV2 {
   mapping(uint => uint) public epochDistributedUSD;
   /// @dev USD value of vault TVL at the block of the snapshot for each epoch.
   mapping(uint => uint) public epochTVLUSD;
+  /// @dev On-chain indicator for off-chain calculation that the user desired receive xtetuBAL instead of USDC airdrop.
+  mapping(address => bool) public useXtetuBal;
 
   // *************************************************************
   //                        INIT
@@ -78,6 +80,11 @@ contract XtetuBALDistributor is ControllableV2 {
     return epochAPR[epochCounter];
   }
 
+  /// @dev Anyone can change the status for himself.
+  function setUseXtetuBal(bool status) external {
+    useXtetuBal[msg.sender] = status;
+  }
+
   /// @notice Manually setup APR in case if something went wrong in distribution.
   /// @param epoch The epoch number
   /// @param _epochTS The epoch timestamp
@@ -109,7 +116,7 @@ contract XtetuBALDistributor is ControllableV2 {
 
     uint epoch = epochCounter + 1;
     uint lastEpochTS = epochTS[epoch - 1];
-    require(block.timestamp > (lastEpochTS + EPOCH_DURATION - 2 days), "Too early");
+    require(block.timestamp > (lastEpochTS + EPOCH_DURATION - 2 days), "!TIME");
 
 
     uint distributedUSD;
@@ -152,7 +159,7 @@ contract XtetuBALDistributor is ControllableV2 {
   ) internal {
     uint duration;
     if (epoch > 1) {
-      uint prevTS = epochTS[epoch];
+      uint prevTS = epochTS[epoch - 1];
       require(prevTS < _epochTS, "Wrong prev epoch TS");
       duration = _epochTS - prevTS;
     } else {
