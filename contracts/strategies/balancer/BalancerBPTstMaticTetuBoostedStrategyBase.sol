@@ -17,9 +17,9 @@ import "../../third_party/balancer/IBalancerGauge.sol";
 import "../../third_party/balancer/IBVault.sol";
 import "../../interface/ITetuLiquidator.sol";
 
-/// @title Base contract for sphere-wmatic farming with bbamBPT/tetu vault rewards
+/// @title Base contract for stMatic farming with bb-t-BPT vault rewards
 /// @author belbix
-abstract contract BalancerBPTSphereWmaticStrategyBase is ProxyStrategyBase {
+abstract contract BalancerBPTstMaticTetuBoostedStrategyBase is ProxyStrategyBase {
   using SafeERC20 for IERC20;
 
   // *******************************************************
@@ -27,7 +27,7 @@ abstract contract BalancerBPTSphereWmaticStrategyBase is ProxyStrategyBase {
   // *******************************************************
 
   /// @notice Strategy type for statistical purposes
-  string public constant override STRATEGY_NAME = "BalancerBPTSphereWmaticStrategyBase";
+  string public constant override STRATEGY_NAME = "BalancerBPTstMaticTetuBoostedStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
   string public constant VERSION = "1.0.0";
@@ -36,14 +36,13 @@ abstract contract BalancerBPTSphereWmaticStrategyBase is ProxyStrategyBase {
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
   ITetuLiquidator public constant TETU_LIQUIDATOR = ITetuLiquidator(0xC737eaB847Ae6A92028862fE38b828db41314772);
 
-  /// @dev sphere-wmatic pool id
-  bytes32 public constant POOL_ID = 0xf3312968c7d768c19107731100ece7d4780b47b2000200000000000000000a50;
-  IBalancerGauge public constant GAUGE = IBalancerGauge(0xFB0243ffDC5309A4ec13b9de9111Da02294b2571);
-  address public constant VAULT_BBAMUSD = 0xf2fB1979C4bed7E71E6ac829801E0A8a4eFa8513;
-  /// @dev bbamUSDC_TOKEN
-  address public constant DEPOSIT_TOKEN_FOR_REWARDS = 0xF93579002DBE8046c43FEfE86ec78b1112247BB8;
-  bytes32 public constant BBAMUSD_POOL_ID = 0x48e6b98ef6329f8f0a30ebb8c7c960330d64808500000000000000000000075b;
-  address public constant TETU_TOKEN = 0x255707B70BF90aa112006E1b07B9AeA6De021424;
+  /// @dev stMATIC-WMATIC boosted pool id
+  bytes32 public constant POOL_ID = 0x71bd10c2a590b5858f5576550c163976a48af906000000000000000000000b27;
+  IBalancerGauge public constant GAUGE = IBalancerGauge(0xE47d5D46C78951a1BFF986E93bCfAf03789287F2);
+  address public constant VAULT_BB_T_USD = 0x4028cba3965e8Aea7320e9eA50914861A14dc724;
+  /// @dev bb-t-USDC linear pool BPT
+  address public constant DEPOSIT_TOKEN_FOR_REWARDS = 0xae646817e458C0bE890b81e8d880206710E3c44e;
+  bytes32 public constant BB_T_USD_POOL_ID = 0xb3d658d5b95bf04e2932370dd1ff976fe18dd66a000000000000000000000ace;
   address internal constant DEFAULT_PERF_FEE_RECEIVER = 0x9Cc199D4353b5FB3e6C8EEBC99f5139e0d8eA06b;
 
   // *******************************************************
@@ -89,28 +88,20 @@ abstract contract BalancerBPTSphereWmaticStrategyBase is ProxyStrategyBase {
       _getPoolAddress(POOL_ID),
       vault_,
       rewardTokens_,
-      2_00 // 2% by default
+      8_00 // 8% by default
     );
   }
 
-  /// @dev Update reward tokens according to the gauge
-  function updateRewardTokensFromGauge() public {
+  // *******************************************************
+  //                      GOV ACTIONS
+  // *******************************************************
+
+  /// @dev Set new reward tokens
+  function setRewardTokens(address[] memory rts) external restricted {
     delete _rewardTokens;
-
-    address[] memory rewardTokensTmp = new address[](100);
-    uint rtsLength;
-    for (uint i = 0; i < 100; ++i) {
-      address rt = GAUGE.reward_tokens(i);
-      if (rt == address(0)) {
-        break;
-      }
-      rewardTokensTmp[i] = rt;
-      rtsLength++;
-    }
-
-    for (uint i = 0; i < rtsLength; ++i) {
-      _rewardTokens.push(rewardTokensTmp[i]);
-      _unsalvageableTokens[rewardTokensTmp[i]] = true;
+    for (uint i = 0; i < rts.length; i++) {
+      _rewardTokens.push(rts[i]);
+      _unsalvageableTokens[rts[i]] = true;
     }
   }
 
@@ -204,9 +195,7 @@ abstract contract BalancerBPTSphereWmaticStrategyBase is ProxyStrategyBase {
         uint toRewards = amount * (_BUY_BACK_DENOMINATOR - bbRatio) / _BUY_BACK_DENOMINATOR;
         uint toGov = amount - toRewards;
         if (toRewards != 0) {
-          uint toTETU = toRewards / 2;
-          _liquidate(rt, TETU_TOKEN, toTETU, silently);
-          _liquidate(rt, DEPOSIT_TOKEN_FOR_REWARDS, toRewards - toTETU, silently);
+          _liquidate(rt, DEPOSIT_TOKEN_FOR_REWARDS, toRewards, silently);
         }
 
         if (toGov != 0) {
@@ -215,33 +204,24 @@ abstract contract BalancerBPTSphereWmaticStrategyBase is ProxyStrategyBase {
       }
     }
 
-    address __vault = _vault();
-
-    // NOTIFY TETU PART
-    uint tetuBalance = IERC20(TETU_TOKEN).balanceOf(address(this));
-    if (tetuBalance != 0) {
-      _approveIfNeeds(TETU_TOKEN, tetuBalance, __vault);
-      ISmartVault(__vault).notifyTargetRewardAmount(TETU_TOKEN, tetuBalance);
-    }
-
-    // NOTIFY USD PART
     uint toPool = IERC20(DEPOSIT_TOKEN_FOR_REWARDS).balanceOf(address(this));
     if (toPool != 0) {
-      (IERC20[] memory tokens,,) = BALANCER_VAULT.getPoolTokens(BBAMUSD_POOL_ID);
+      (IERC20[] memory tokens,,) = BALANCER_VAULT.getPoolTokens(BB_T_USD_POOL_ID);
       IAsset[] memory tokenAssets = new IAsset[](tokens.length);
       for (uint i = 0; i < tokens.length; i++) {
         tokenAssets[i] = IAsset(address(tokens[i]));
       }
-      _balancerJoin(tokenAssets, BBAMUSD_POOL_ID, DEPOSIT_TOKEN_FOR_REWARDS, toPool);
+      _balancerJoin(tokenAssets, BB_T_USD_POOL_ID, DEPOSIT_TOKEN_FOR_REWARDS, toPool);
     }
-    uint bbamUSDBalance = IERC20(_getPoolAddress(BBAMUSD_POOL_ID)).balanceOf(address(this));
+    uint bbamUSDBalance = IERC20(_getPoolAddress(BB_T_USD_POOL_ID)).balanceOf(address(this));
     if (bbamUSDBalance != 0) {
       // deposit to baamVAULT
-      _approveIfNeeds(_getPoolAddress(BBAMUSD_POOL_ID), bbamUSDBalance, VAULT_BBAMUSD);
-      ISmartVault(VAULT_BBAMUSD).deposit(bbamUSDBalance);
-      uint rewardBalance = IERC20(VAULT_BBAMUSD).balanceOf(address(this));
-      _approveIfNeeds(VAULT_BBAMUSD, rewardBalance, __vault);
-      ISmartVault(__vault).notifyTargetRewardAmount(VAULT_BBAMUSD, rewardBalance);
+      _approveIfNeeds(_getPoolAddress(BB_T_USD_POOL_ID), bbamUSDBalance, VAULT_BB_T_USD);
+      ISmartVault(VAULT_BB_T_USD).deposit(bbamUSDBalance);
+      uint rewardBalance = IERC20(VAULT_BB_T_USD).balanceOf(address(this));
+      address __vault = _vault();
+      _approveIfNeeds(VAULT_BB_T_USD, rewardBalance, __vault);
+      ISmartVault(__vault).notifyTargetRewardAmount(VAULT_BB_T_USD, rewardBalance);
     }
 
     IBookkeeper(IController(_controller()).bookkeeper()).registerStrategyEarned(0);
@@ -307,20 +287,28 @@ abstract contract BalancerBPTSphereWmaticStrategyBase is ProxyStrategyBase {
       // USDC
       return 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
     }
+    if (token == 0xae646817e458C0bE890b81e8d880206710E3c44e /*bb-t-USDC*/) {
+      // USDC
+      return 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
+    }
     return token;
   }
 
   /// @dev It is a temporally logic until liquidator doesn't have swapper for LinearPool
   function _swapLinearUSDC(address tokenIn, address tokenOut) internal {
-    uint amount = IERC20(tokenIn).balanceOf(address(this));
-    if (amount != 0) {
-      _balancerSwap(
-        0xf93579002dbe8046c43fefe86ec78b1112247bb8000000000000000000000759,
-        tokenIn,
-        tokenOut,
-        amount
-      );
+    bytes32 linearPoolId;
+    if (tokenOut == 0xF93579002DBE8046c43FEfE86ec78b1112247BB8 /*bbamUSDC*/) {
+      linearPoolId = 0xf93579002dbe8046c43fefe86ec78b1112247bb8000000000000000000000759;
     }
+    if (tokenOut == 0xae646817e458C0bE890b81e8d880206710E3c44e /*bb-t-USDC*/) {
+      linearPoolId = 0xae646817e458c0be890b81e8d880206710e3c44e000000000000000000000acb;
+    }
+    _balancerSwap(
+      linearPoolId,
+      tokenIn,
+      tokenOut,
+      IERC20(tokenIn).balanceOf(address(this))
+    );
   }
 
   /// @dev Swap _tokenIn to _tokenOut using pool identified by _poolId

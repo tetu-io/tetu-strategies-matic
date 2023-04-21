@@ -20,7 +20,7 @@ import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('BalancerBPT_stMATIC-MATIC_Test', async () => {
+describe('BalancerBPT_TNGBL_USDC_Test', async () => {
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, true);
@@ -30,9 +30,9 @@ describe('BalancerBPT_stMATIC-MATIC_Test', async () => {
   // **********************************************
   // ************** CONFIG*************************
   // **********************************************
-  const strategyContractName = 'StrategyBalancerStMaticWmatic';
-  const vaultName = "StrategyBalancerStMaticWmatic";
-  const underlying = MaticAddresses.BALANCER_stMATIC_MATIC;
+  const strategyContractName = 'StrategyBalancerTngblUsdc';
+  const vaultName = "StrategyBalancerTngblUsdc";
+  const underlying = MaticAddresses.BALANCER_TNGBL_USDC;
   const VAULT_BB_T_USD = '0x4028cba3965e8Aea7320e9eA50914861A14dc724'.toLowerCase();
 
   // const underlying = token;
@@ -66,10 +66,14 @@ describe('BalancerBPT_stMATIC-MATIC_Test', async () => {
           core.controller.address,
           vaultAddress,
         );
+        console.log('/// STRATEGY DEPLOYED');
 
         await core.controller.setRewardDistribution([strategy.address], true);
+        console.log('end setRewardDistribution')
         await core.vaultController.addRewardTokens([vaultAddress], VAULT_BB_T_USD);
+        console.log('end addRewardTokens VAULT_BBAMUSD')
 
+        console.log('/// ENV SETUP');
         return strategy;
       },
       underlying,

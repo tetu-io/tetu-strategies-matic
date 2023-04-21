@@ -9,18 +9,15 @@ import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
-import {
-  ISmartVault,
-  IStrategy,
-  StrategyBalancerStMaticWmatic__factory
-} from "../../../../typechain";
 import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
+import {ISmartVault, IStrategy, StrategyBalancerBPT__factory} from "../../../../typechain";
+import {Misc} from "../../../../scripts/utils/tools/Misc";
 
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('BalancerBPT_stMATIC-MATIC_Test', async () => {
+describe('BalancerBPT_TETU_boostedStables_Test', async () => {
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, true);
@@ -30,10 +27,13 @@ describe('BalancerBPT_stMATIC-MATIC_Test', async () => {
   // **********************************************
   // ************** CONFIG*************************
   // **********************************************
-  const strategyContractName = 'StrategyBalancerStMaticWmatic';
-  const vaultName = "StrategyBalancerStMaticWmatic";
-  const underlying = MaticAddresses.BALANCER_stMATIC_MATIC;
-  const VAULT_BB_T_USD = '0x4028cba3965e8Aea7320e9eA50914861A14dc724'.toLowerCase();
+  const strategyContractName = 'StrategyBalancerBPT';
+  const vaultName = "TetuBoostedStables";
+  const underlying = MaticAddresses.BALANCER_USD_TETU_BOOSTED;
+  const poolId = MaticAddresses.BALANCER_USD_TETU_BOOSTED_ID;
+  const gauge = MaticAddresses.BALANCER_USD_TETU_BOOSTED_GAUGE;
+  const depositToken = MaticAddresses.bb_t_USDC_TOKEN;
+  const buybackRatio = 8_00;
 
   // const underlying = token;
   // add custom liquidation path if necessary
@@ -62,19 +62,19 @@ describe('BalancerBPT_stMATIC-MATIC_Test', async () => {
           signer,
           strategyContractName,
         );
-        await StrategyBalancerStMaticWmatic__factory.connect(strategy.address, signer).initialize(
+        await StrategyBalancerBPT__factory.connect(strategy.address, signer).initialize(
           core.controller.address,
           vaultAddress,
+          depositToken,
+          poolId,
+          gauge,
+          buybackRatio
         );
-
-        await core.controller.setRewardDistribution([strategy.address], true);
-        await core.vaultController.addRewardTokens([vaultAddress], VAULT_BB_T_USD);
-
         return strategy;
       },
       underlying,
       0,
-      false
+      true
     );
   };
   const hwInitiator = (
@@ -98,7 +98,7 @@ describe('BalancerBPT_stMATIC-MATIC_Test', async () => {
       _balanceTolerance,
       finalBalanceTolerance,
     );
-    hw.vaultRt = VAULT_BB_T_USD;
+    hw.vaultRt = Misc.ZERO_ADDRESS;
     return hw;
   };
 

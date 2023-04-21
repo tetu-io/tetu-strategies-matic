@@ -1,21 +1,21 @@
 import {ethers} from "hardhat";
 import {DeployerUtilsLocal} from "../../DeployerUtilsLocal";
-import {ISmartVault__factory, StrategyBalancerBPT__factory,} from "../../../../typechain";
+import {ISmartVault__factory,} from "../../../../typechain";
 import {writeFileSync} from "fs";
 import {RunHelper} from "../../../utils/tools/RunHelper";
 import {TokenUtils} from "../../../../test/TokenUtils";
-import {BalancerConstants} from "./BalancerConstants";
 import {MaticAddresses} from "../../../addresses/MaticAddresses";
 
 // tslint:disable-next-line:no-var-requires
 const hre = require("hardhat");
 
-export async function deployBalancerVaultAndStrategy(pool: string, poolId: string, gauge: string, depositToken: string, bbRatio: number, strategyLogic: string) {
+export async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtilsLocal.getCoreAddresses();
-  const undSymbol = await TokenUtils.tokenSymbol(pool)
+  const underlying = MaticAddresses.tetuBAL;
+  const undSymbol = await TokenUtils.tokenSymbol(underlying)
 
-  if (await DeployerUtilsLocal.findVaultUnderlyingInBookkeeper(signer, pool)) {
+  if (await DeployerUtilsLocal.findVaultUnderlyingInBookkeeper(signer, underlying)) {
     console.error("VAULT WITH THIS UNDERLYING EXIST! skip");
     return;
   }
@@ -25,24 +25,30 @@ export async function deployBalancerVaultAndStrategy(pool: string, poolId: strin
     "Tetu Vault " + undSymbol,
     "x" + undSymbol,
     core.controller,
-    pool,
-    60 * 60 * 24 * 7,
+    underlying,
+    60 * 60 * 24 * 28,
     false,
-    MaticAddresses.TETU_TOKEN,
+    MaticAddresses.USDC_TOKEN,
     0
   ));
-  const strategyProxy = await DeployerUtilsLocal.deployContract(signer, "TetuProxyControlled", strategyLogic);
-  await RunHelper.runAndWait(() => StrategyBalancerBPT__factory.connect(strategyProxy.address, signer).initialize(
+  const strategy = await DeployerUtilsLocal.deployContract(signer, "NoopStrategy", ...[
     core.controller,
+    underlying,
     vaultProxy.address,
-    depositToken,
-    poolId,
-    gauge,
-    bbRatio
-  ));
+    [],
+    [underlying],
+    36 // balancer
+  ]);
 
   if (hre.network.name !== 'hardhat') {
-    const txt = `vault: ${vaultProxy.address}\nstrategy: ${strategyProxy.address}`;
-    writeFileSync(`tmp/deployed/balancer_${undSymbol.replace('/', '-')}.txt`, txt, 'utf8');
+    const txt = `vault: ${vaultProxy.address}\nstrategy: ${strategy.address}`;
+    writeFileSync(`tmp/deployed/x${undSymbol.replace('/', '-')}.txt`, txt, 'utf8');
   }
 }
+
+main()
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error(error);
+    process.exit(1);
+  });

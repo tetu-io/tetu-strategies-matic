@@ -61,7 +61,7 @@ export class TokenUtils {
     [MaticAddresses.cxADA_TOKEN, '0x41318419cfa25396b47a94896ffa2c77c6434040'.toLowerCase()],
     [MaticAddresses.cxETH_TOKEN, '0x4f6742badb049791cd9a37ea913f2bac38d01279'.toLowerCase()],
     [MaticAddresses.SPHERE_TOKEN, '0x20d61737f972eecb0af5f0a85ab358cd083dd56a'.toLowerCase()],
-    [MaticAddresses.BALANCER_BAL_ETH_POOL, '0xBA12222222228d8Ba445958a75a0704d566BF2C8'.toLowerCase()],// balancer vault
+    [MaticAddresses.BALANCER_BAL_ETH_POOL, '0x36cc7B13029B5DEe4034745FB4F24034f3F2ffc6'.toLowerCase()],
     [MaticAddresses.SPHEREV2_TOKEN, '0x7754d8b057CC1d2D857d897461DAC6C3235B4aAe'.toLowerCase()], // sphere owner
     [MaticAddresses.UMA_TOKEN, '0x1b72bac3772050fdcaf468cce7e20deb3cb02d89'.toLowerCase()],
     [MaticAddresses.CLAM2_TOKEN, '0x820f92c1b3ad8e962e6c6d9d7caf2a550aec46fb'.toLowerCase()],
@@ -82,9 +82,12 @@ export class TokenUtils {
     [MaticAddresses.BALANCER_TETU_USDC, MaticAddresses.BALANCER_TETU_USDC_GAUGE],
     [MaticAddresses.TETU_SWAP_USDC_BTC, MaticAddresses.GOV_ADDRESS], // should be preminted in strategy
     [MaticAddresses.BALANCER_SPHERE_MATIC, '0xfb0243ffdc5309a4ec13b9de9111da02294b2571'.toLowerCase()], //
-    [MaticAddresses.stMATIC, MaticAddresses.BALANCER_VAULT],
+    [MaticAddresses.stMATIC_TOKEN, MaticAddresses.BALANCER_VAULT],
     [MaticAddresses.MATIC_X, MaticAddresses.BALANCER_VAULT],
     [MaticAddresses.USX_TOKEN, '0x88dcdc47d2f83a99cf0000fdf667a468bb958a78'.toLowerCase()], //
+    [MaticAddresses.BALANCER_USD_TETU_BOOSTED, MaticAddresses.BALANCER_VAULT.toLowerCase()], //
+    [MaticAddresses.BALANCER_stMATIC_WMATIC_TETU_BOOSTED, MaticAddresses.BALANCER_VAULT.toLowerCase()], //
+    [MaticAddresses.BALANCER_TNGBL_USDC, '0xD1758fbABAE91c805BE76D56548A584EF68B81f0'.toLowerCase()], //
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {

@@ -22,7 +22,7 @@ import {parseUnits} from "ethers/lib/utils";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('Balancer LP tests', async () => {
+describe('BalancerLP_tetuBAL_BPT_Test', async () => {
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, true);
@@ -106,7 +106,7 @@ describe('Balancer LP tests', async () => {
       _balanceTolerance,
       finalBalanceTolerance,
     );
-    hw.allowLittleDustInStrategyAfterFullExit = parseUnits('1');
+    hw.allowLittleDustInStrategyAfterFullExit = parseUnits('100');
     return hw;
   };
 

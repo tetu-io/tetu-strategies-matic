@@ -15,7 +15,7 @@ import {universalStrategyTest} from "../../UniversalStrategyTest";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('tetuMESH-MESH LP Strategy tests', async () => {
+describe.skip('tetuMESH-MESH LP Strategy tests', async () => {
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {

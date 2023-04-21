@@ -20,7 +20,7 @@ import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('BalancerBPT_stMATIC-MATIC_Test', async () => {
+describe('BalancerBPT_Tetu_boosted_stMATIC-MATIC_Test', async () => {
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, true);
@@ -30,9 +30,9 @@ describe('BalancerBPT_stMATIC-MATIC_Test', async () => {
   // **********************************************
   // ************** CONFIG*************************
   // **********************************************
-  const strategyContractName = 'StrategyBalancerStMaticWmatic';
-  const vaultName = "StrategyBalancerStMaticWmatic";
-  const underlying = MaticAddresses.BALANCER_stMATIC_MATIC;
+  const strategyContractName = 'StrategyBalancerTetuBoostedStMaticWmatic';
+  const vaultName = "StrategyBalancerTetuBoostedStMaticWmatic";
+  const underlying = MaticAddresses.BALANCER_stMATIC_WMATIC_TETU_BOOSTED;
   const VAULT_BB_T_USD = '0x4028cba3965e8Aea7320e9eA50914861A14dc724'.toLowerCase();
 
   // const underlying = token;

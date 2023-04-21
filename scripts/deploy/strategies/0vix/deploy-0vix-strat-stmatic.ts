@@ -1,20 +1,22 @@
 import {ethers} from "hardhat";
 import {DeployerUtilsLocal} from "../../DeployerUtilsLocal";
 import {
-  Aave3Strategy__factory, Aave3StrategyV2__factory, IBookkeeper__factory,
-  ISmartVault__factory, IStrategy__factory, IStrategySplitter__factory,
-  StrategyTetuMeshLp__factory
+  IBookkeeper__factory,
+  ISmartVault__factory,
+  IStrategySplitter__factory,
+  ZerovixstMaticStrategy__factory
 } from "../../../../typechain";
 import {writeFileSync} from "fs";
 import {MaticAddresses} from "../../../addresses/MaticAddresses";
 import {RunHelper} from "../../../utils/tools/RunHelper";
 import {TokenUtils} from "../../../../test/TokenUtils";
 
-const strategyContractName = 'Aave3StrategyV2';
+const strategyContractName = 'ZerovixstMaticStrategy';
 
-export async function deployAave3StratV2(underlying: string) {
+export async function deployZerovixstMaticStrategy() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtilsLocal.getCoreAddresses();
+  const underlying = MaticAddresses.stMATIC_TOKEN;
 
   const undSymbol = await TokenUtils.tokenSymbol(underlying)
 
@@ -37,12 +39,10 @@ export async function deployAave3StratV2(underlying: string) {
 
 
   const [proxy, logic] = await DeployerUtilsLocal.deployTetuProxyControlled(signer, strategyContractName);
-  await RunHelper.runAndWait(() => Aave3StrategyV2__factory.connect(proxy.address, signer).initialize(
+  await RunHelper.runAndWait(() => ZerovixstMaticStrategy__factory.connect(proxy.address, signer).initialize(
     core.controller,
-    underlying,
     splitter,
     20_00,
-    []
   ));
 
   const txt = `

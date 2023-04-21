@@ -31,11 +31,19 @@ contract TetuBalVotingPower is IERC20, IERC20Metadata, ControllableV2 {
   //                        CONSTANTS
   // *************************************************************
 
-  address public constant DX_TETU = 0xAcEE7Bd17E7B04F7e48b29c0C91aF67758394f0f;
   address public constant TETU_BAL = 0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33;
   bytes32 public constant TETU_BAL_BPT_ID = 0xb797adfb7b268faeaa90cadbfed464c76ee599cd0002000000000000000005ba;
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
   address public constant VE_TETU = 0x6FB29DD17fa6E27BD112Bc3A2D0b8dae597AeDA4;
+  address public constant POL_VOTER = 0x6672A074B98A7585A8549356F97dB02f9416849E;
+  uint internal constant CUT_DENOMINATOR = 100;
+
+  // *************************************************************
+  //                        VARIABLES
+  // *************************************************************
+
+  /// @dev Percent of voting power that will be delegated to POL_VOTER
+  uint public veTetuPowerCut;
 
   // *************************************************************
   //                        INIT
@@ -43,6 +51,17 @@ contract TetuBalVotingPower is IERC20, IERC20Metadata, ControllableV2 {
 
   function initialize(address _controller) external initializer {
     initializeControllable(_controller);
+  }
+
+  // *************************************************************
+  //                        GOV
+  // *************************************************************
+
+  /// @notice Set percent of delegation to POL
+  function setVeTetuPowerCut(uint value) external {
+    require(_isGovernance(msg.sender), "Not governance");
+    require(value <= CUT_DENOMINATOR, "Too high");
+    veTetuPowerCut = value;
   }
 
   // *************************************************************
@@ -72,7 +91,13 @@ contract TetuBalVotingPower is IERC20, IERC20Metadata, ControllableV2 {
 
   /// @dev Sum of powers for given account
   function balanceOf(address account) external view override returns (uint) {
-    return tetuBalPower(account) + veTetuPower(account);
+    uint extra;
+
+    if (account == POL_VOTER) {
+      extra = tetuBalInPool() * veTetuPowerCut / CUT_DENOMINATOR;
+    }
+
+    return tetuBalPower(account) + veTetuPower(account) + extra;
   }
 
   // --- tetuBAL
@@ -83,19 +108,14 @@ contract TetuBalVotingPower is IERC20, IERC20Metadata, ControllableV2 {
 
   // --- BPT tetuBAL-ETH/BAL
 
-  function dxTetuPower(address account) public view returns (uint) {
-    uint dxTetuBalance = IERC20(DX_TETU).balanceOf(account);
-    uint dxTetuTotalSupply = IERC20(DX_TETU).totalSupply();
-
-    (,uint[] memory balances,) = BALANCER_VAULT.getPoolTokens(TETU_BAL_BPT_ID);
-    uint tetuBalBalance = balances[1];
-
-    return tetuBalBalance * dxTetuBalance / dxTetuTotalSupply;
+  function veTetuPower(address account) public view returns (uint) {
+    uint power = veTetuPowerWithoutCut(account);
+    power -= power * veTetuPowerCut / CUT_DENOMINATOR;
+    return power;
   }
 
-  function veTetuPower(address account) public view returns (uint) {
-    (,uint[] memory balances,) = BALANCER_VAULT.getPoolTokens(TETU_BAL_BPT_ID);
-    uint tetuBalBalance = balances[1];
+  function veTetuPowerWithoutCut(address account) public view returns (uint) {
+    uint tetuBalBalance = tetuBalInPool();
 
     uint veTetuTotalPower = IERC20(VE_TETU).totalSupply();
 
@@ -110,6 +130,11 @@ contract TetuBalVotingPower is IERC20, IERC20Metadata, ControllableV2 {
       power += IVeTetu(VE_TETU).balanceOfNFT(veId);
     }
     return tetuBalBalance * power / veTetuTotalPower;
+  }
+
+  function tetuBalInPool() public view returns (uint) {
+    (,uint[] memory balances,) = BALANCER_VAULT.getPoolTokens(TETU_BAL_BPT_ID);
+    return balances[1];
   }
 
   // **********************************************

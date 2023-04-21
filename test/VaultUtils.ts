@@ -28,6 +28,8 @@ export const XTETU_NO_INCREASE = new Set<string>([
   'BalancerBPTstMaticStrategyBase',
   'BalancerBPTStrategyBase',
   'BalancerBPTSphereWmaticStrategyBase',
+  'BalancerBPTstMaticTetuBoostedStrategyBase',
+  'BalancerBPTTngblUsdcStrategyBase',
 ])
 export const VAULT_SHARE_NO_INCREASE = new Set<string>([
   'QiStakingStrategyBase',
@@ -37,6 +39,8 @@ export const VAULT_SHARE_NO_INCREASE = new Set<string>([
   'PenroseStrategyBase',
   'BalancerBPTTetuUsdcStrategyBase',
   'BalancerBPTSphereWmaticStrategyBase',
+  'BalancerBPTstMaticTetuBoostedStrategyBase',
+  'BalancerBPTTngblUsdcStrategyBase',
 ])
 
 export class VaultUtils {
