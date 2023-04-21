@@ -121,4 +121,28 @@ export class Misc {
     return hre.network.name;
   }
 
+  public static async getAverageBlockTime(): Promise<number> {
+    const currentBlock = await ethers.provider.getBlockNumber() ?? 0;
+    const step = 10000;
+    const block1 = await ethers.provider.getBlock(currentBlock);
+    const block2 = await ethers.provider.getBlock(currentBlock - step);
+    console.log('getAverageBlockTime', block1.timestamp, block2.timestamp, step, (block1.timestamp - block2.timestamp) / step)
+    return (block1.timestamp - block2.timestamp) / step;
+  }
+
+  public static async findBlockByDate(timestamp: number, startFromBlock: number, step = 100): Promise<number> {
+    console.log('Start search block for date', new Date(timestamp * 1000));
+    while (true) {
+      const block = await ethers.provider.getBlock(startFromBlock);
+      // console.log('findBlockByDate', new Date(block.timestamp * 1000))
+      if (block.timestamp <= timestamp) {
+        const diff = Math.abs(block.timestamp - timestamp);
+        if (diff > (step * 2)) {
+          throw new Error('findBlockByDate: startFromBlock is too far from date, diff ' + diff);
+        }
+        return startFromBlock;
+      }
+      startFromBlock -= step;
+    }
+  }
 }
