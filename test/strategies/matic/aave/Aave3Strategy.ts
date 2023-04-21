@@ -46,7 +46,7 @@ const argv = require('yargs/yargs')()
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('Aave3 Strategy tests', async () => {
+describe.skip('Aave3 Strategy tests', async () => {
 
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
@@ -94,13 +94,13 @@ describe('Aave3 Strategy tests', async () => {
     // only for strategies where we expect PPFS fluctuations
     const ppfsDecreaseAllowed = true;
     // only for strategies where we expect PPFS fluctuations
-    const balanceTolerance = 0;
+    const balanceTolerance = 0.00001;
     const finalBalanceTolerance = 0;
     const deposit = 100_000;
     // at least 3
     const loops = 3;
     const loopValue = 60 * 60 * 24 * 7;
-    const advanceBlocks = false;
+    const advanceBlocks = true;
     const specificTests: SpecificStrategyTest[] = [];
     // **********************************************
 

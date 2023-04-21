@@ -35,5 +35,7 @@ interface ITetuLiquidator {
     uint priceImpactTolerance
   ) external;
 
+  function addLargestPools(PoolData[] memory _pools, bool rewrite) external;
 
+  function controller() external view returns (address);
 }

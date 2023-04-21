@@ -51,7 +51,7 @@ const argv = require('yargs/yargs')()
     },
     vaultLogic: {
       type: "string",
-      default: "0x0B573B9f55D4CdF3D3C1f2dd39C9828289b8A938"
+      default: "0x28F32AF48F6C33268F437aACDa0Ddf22ef28ADba"
     },
     splitterLogic: {
       type: "string",
@@ -79,7 +79,7 @@ export class DeployerUtilsLocal {
 
   public static getSplitterLogic(signer: SignerWithAddress) {
     console.log('argv.splitterLogic', argv.splitterLogic);
-    let logic = '0xC4c776e6D2bbae93Ed5acac6cFF35a5980F81845';
+    let logic = '';
     if (!!argv.splitterLogic) {
       logic = argv.splitterLogic;
     }

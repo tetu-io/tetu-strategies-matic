@@ -14,7 +14,7 @@ import {
   IStrategy,
   StrategyBalancerStMaticWmatic__factory
 } from "../../../../typechain";
-import {BalancerBPTstMaticSpecificHardWork} from "./BalancerBPTstMaticSpecificHardWork";
+import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
 
 
 const {expect} = chai;
@@ -33,7 +33,7 @@ describe('BalancerBPT_stMATIC-MATIC_Test', async () => {
   const strategyContractName = 'StrategyBalancerStMaticWmatic';
   const vaultName = "StrategyBalancerStMaticWmatic";
   const underlying = MaticAddresses.BALANCER_stMATIC_MATIC;
-  const VAULT_BBAMUSD = '0xf2fB1979C4bed7E71E6ac829801E0A8a4eFa8513'.toLowerCase();
+  const VAULT_BB_T_USD = '0x4028cba3965e8Aea7320e9eA50914861A14dc724'.toLowerCase();
 
   // const underlying = token;
   // add custom liquidation path if necessary
@@ -68,13 +68,13 @@ describe('BalancerBPT_stMATIC-MATIC_Test', async () => {
         );
 
         await core.controller.setRewardDistribution([strategy.address], true);
-        await core.vaultController.addRewardTokens([vaultAddress], VAULT_BBAMUSD);
+        await core.vaultController.addRewardTokens([vaultAddress], VAULT_BB_T_USD);
 
         return strategy;
       },
       underlying,
       0,
-      true
+      false
     );
   };
   const hwInitiator = (
@@ -87,7 +87,7 @@ describe('BalancerBPT_stMATIC-MATIC_Test', async () => {
     _strategy: IStrategy,
     _balanceTolerance: number
   ) => {
-    return new BalancerBPTstMaticSpecificHardWork(
+    const hw = new BalancerBPTSpecificHardWork(
       _signer,
       _user,
       _core,
@@ -98,6 +98,8 @@ describe('BalancerBPT_stMATIC-MATIC_Test', async () => {
       _balanceTolerance,
       finalBalanceTolerance,
     );
+    hw.vaultRt = VAULT_BB_T_USD;
+    return hw;
   };
 
   await universalStrategyTest(

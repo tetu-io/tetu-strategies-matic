@@ -10,7 +10,7 @@ import {MaticAddresses} from "../../../addresses/MaticAddresses";
 // tslint:disable-next-line:no-var-requires
 const hre = require("hardhat");
 
-export async function deployBalancerVaultAndStrategy(pool: string, poolId: string, gauge: string, depositToken: string, bbRatio: number) {
+export async function deployBalancerVaultAndStrategy(pool: string, poolId: string, gauge: string, depositToken: string, bbRatio: number, strategyLogic: string) {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtilsLocal.getCoreAddresses();
   const undSymbol = await TokenUtils.tokenSymbol(pool)
@@ -28,10 +28,10 @@ export async function deployBalancerVaultAndStrategy(pool: string, poolId: strin
     pool,
     60 * 60 * 24 * 7,
     false,
-    MaticAddresses.xTETU,
+    MaticAddresses.TETU_TOKEN,
     0
   ));
-  const strategyProxy = await DeployerUtilsLocal.deployContract(signer, "TetuProxyControlled", BalancerConstants.STRATEGY_BALANCER_BPT_LOGIC);
+  const strategyProxy = await DeployerUtilsLocal.deployContract(signer, "TetuProxyControlled", strategyLogic);
   await RunHelper.runAndWait(() => StrategyBalancerBPT__factory.connect(strategyProxy.address, signer).initialize(
     core.controller,
     vaultProxy.address,

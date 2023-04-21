@@ -14,6 +14,7 @@ pragma solidity 0.8.4;
 import "../../third_party/aave3/IAave3Pool.sol";
 import "../../third_party/aave3/IAave3Token.sol";
 import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
+import "../../third_party/aave/IRewardsController.sol";
 
 /// @title Contract for AAVEv3 strategy implementation
 /// @dev AAVE3 doesn't support rewards on Polygon, so this strategy doesn't support rewards
@@ -27,12 +28,13 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.0.2";
 
   IStrategy.Platform private constant _PLATFORM = IStrategy.Platform.AAVE_LEND; // same as for AAVEv2
 
   /// @notice Strategy type for statistical purposes
   string public constant override STRATEGY_NAME = "Aave3StrategyBase";
+  IRewardsController internal constant _AAVE_INCENTIVES = IRewardsController(0x929EC64c34a17401F460460D4B9390518E5B473e);
 
   /// @notice AAVE3 pool, see https://docs.aave.com/developers/core-contracts/pool
   IAave3Pool internal _pool;
@@ -97,7 +99,8 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
   /// @dev Only for statistic
   /// @return Pool TVL
   function poolTotalAmount() external view override returns (uint256) {
-    return _aToken().totalSupply(); // scaled total supply
+    // scaled total supply
+    return _aToken().totalSupply();
   }
 
   /// ******************************************************
@@ -105,7 +108,7 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
   /// ******************************************************
 
   function doHardWork() external onlyNotPausedInvesting override hardWorkers {
-    _forwardBuybacks();
+    _forwardBuybacks(false);
   }
 
   /// ******************************************************
@@ -115,11 +118,11 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
   /// @dev Deposit underlying to AAVE3 pool
   /// @param amount Deposit amount
   function depositToPool(uint256 amount) internal override {
-    amount = Math.min(IERC20(_underlying()).balanceOf(address(this)), amount);
+    address u = _underlying();
+    amount = Math.min(IERC20(u).balanceOf(address(this)), amount);
     if (amount > 0) {
-      IERC20(_underlying()).safeApprove(address(_pool), 0);
-      IERC20(_underlying()).safeApprove(address(_pool), amount);
-      _pool.supply(_underlying(), amount, address(this), 0);
+      _approveIfNeeds(u, amount, address(_pool));
+      _pool.supply(u, amount, address(this), 0);
 
       _totalDeposited += amount;
     }
@@ -128,7 +131,7 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
   /// @dev Withdraw underlying from AAVE3 pool
   function withdrawAndClaimFromPool(uint256 amount_) internal override {
     // take buybacks..
-    _forwardBuybacks();
+    _forwardBuybacks(true);
 
     // ..and withdraw remaining amount
     uint amountToWithdraw = Math.min(_rewardPoolBalance(), amount_);
@@ -138,12 +141,14 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
 
   /// @dev Exit from external project without caring about rewards, for emergency cases only
   function emergencyWithdrawFromPool() internal override {
-    uint balanceBefore = IERC20(_underlying()).balanceOf(address(this));
-    _pool.withdraw(_underlying()
-      , type(uint256).max // withdraw all, see https://docs.aave.com/developers/core-contracts/pool#withdraw
-      , address(this)
+    address u = _underlying();
+    uint balanceBefore = IERC20(u).balanceOf(address(this));
+    _pool.withdraw(
+      u,
+      type(uint256).max, // withdraw all, see https://docs.aave.com/developers/core-contracts/pool#withdraw
+      address(this)
     );
-    _totalWithdrawn += balanceBefore - IERC20(_underlying()).balanceOf(address(this));
+    _totalWithdrawn += balanceBefore - IERC20(u).balanceOf(address(this));
   }
 
   function liquidateReward() internal override {
@@ -159,6 +164,31 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
     address[] memory arr = new address[](1);
     arr[0] = _underlying();
     return arr;
+  }
+
+  function _claimAndLiquidate(bool silent) internal returns (uint){
+    address[] memory _assets = new address[](1);
+    _assets[0] = address(_aToken());
+    (address[] memory rts, uint[] memory unclaimedAmounts) = _AAVE_INCENTIVES.claimAllRewardsToSelf(_assets);
+    address targetVault = _vault();
+    address forwarder = IController(_controller()).feeRewardForwarder();
+    uint targetTokenEarned;
+    for (uint i; i < rts.length; ++i) {
+      address rt = rts[i];
+      uint amount = unclaimedAmounts[i];
+      if (amount != 0) {
+        _approveIfNeeds(rt, amount, forwarder);
+        if (silent) {
+          try IFeeRewardForwarder(forwarder).distribute(amount, rt, targetVault) returns (uint r) {
+            targetTokenEarned += r;
+          } catch {}
+        } else {
+          targetTokenEarned += IFeeRewardForwarder(forwarder).distribute(amount, rt, targetVault);
+        }
+      }
+    }
+
+    return targetTokenEarned;
   }
 
   /// ******************************************************
@@ -182,9 +212,13 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
   /// ******************************************************
 
   /// @notice calculate and send buyback
-  function _forwardBuybacks() internal {
+  function _forwardBuybacks(bool silent) internal {
+    address u = _underlying();
+    IController c = IController(_controller());
+    uint targetTokenEarned = _claimAndLiquidate(silent);
+
     uint poolBalance = _rewardPoolBalance();
-    if (poolBalance != 0) {
+    if (poolBalance != 0 && (poolBalance + _totalWithdrawn) >= _totalDeposited) {
       uint totalIncome = poolBalance + _totalWithdrawn - _totalDeposited;
 
       // _lastTotalIncome can increase totalIncome a bit after withdrawing toBuybacks-amount from the pool
@@ -192,36 +226,38 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
       ? (totalIncome - _totalIncomeProcessed) * _buyBackRatio() / _BUY_BACK_DENOMINATOR
       : 0;
       if (toBuybacks != 0) {
-        _pool.withdraw(_underlying(), toBuybacks, address(this));
+        _pool.withdraw(u, toBuybacks, address(this));
         uint amountToForward = toBuybacks;
 
-        address forwarder = IController(_controller()).feeRewardForwarder();
-        IERC20(_underlying()).safeApprove(forwarder, 0);
-        IERC20(_underlying()).safeApprove(forwarder, toBuybacks);
+        address forwarder = c.feeRewardForwarder();
+        _approveIfNeeds(u, toBuybacks, forwarder);
 
-        uint targetTokenEarned;
         // small amounts produce 'F2: Zero swap amount' error in distribute, so we need try/catch
-        try IFeeRewardForwarder(forwarder).distribute(toBuybacks, _underlying(), _vault()) returns (uint r) {
-          // buybacks were successfully forwarded
-          targetTokenEarned = r;
-          amountToForward = 0;
+        if (silent) {
+          try IFeeRewardForwarder(forwarder).distribute(toBuybacks, u, _vault()) returns (uint r) {
+            // buybacks were successfully forwarded
+            targetTokenEarned += r;
+            amountToForward = 0;
 
+            // remember total amount from which we have already taken buybacks
+            _totalIncomeProcessed = totalIncome;
+          } catch {}
+        } else {
+          targetTokenEarned += IFeeRewardForwarder(forwarder).distribute(toBuybacks, u, _vault());
+          amountToForward = 0;
           // remember total amount from which we have already taken buybacks
           _totalIncomeProcessed = totalIncome;
-        } catch {}
+        }
 
         if (amountToForward != 0) {
           // buybacks were not forwarded, so let's return taken amount back to the pool
-          IERC20(_underlying()).safeApprove(address(_pool), 0);
-          IERC20(_underlying()).safeApprove(address(_pool), amountToForward);
-          _pool.supply(_underlying(), amountToForward, address(this), 0);
-        }
-
-        if (targetTokenEarned > 0) {
-          IBookkeeper(IController(_controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
+          _approveIfNeeds(u, amountToForward, address(_pool));
+          _pool.supply(u, amountToForward, address(this), 0);
         }
       }
     }
+
+    IBookkeeper(c.bookkeeper()).registerStrategyEarned(targetTokenEarned);
   }
 
   /// ******************************************************
@@ -229,6 +265,13 @@ abstract contract Aave3StrategyBase is ProxyStrategyBase {
   /// ******************************************************
   function _aToken() internal view returns (IAave3Token) {
     return IAave3Token(_pool.getReserveData(_underlying()).aTokenAddress);
+  }
+
+  function _approveIfNeeds(address token, uint amount, address spender) internal {
+    if (IERC20(token).allowance(address(this), spender) < amount) {
+      IERC20(token).safeApprove(spender, 0);
+      IERC20(token).safeApprove(spender, type(uint).max);
+    }
   }
 
 }

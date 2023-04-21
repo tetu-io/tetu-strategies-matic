@@ -84,6 +84,8 @@ interface IFeeRewardForwarder {
 
   function controller() external view returns (address);
 
+  function liquidator() external view returns (address);
+
   function created() external view returns (uint256 ts);
 
   function createdBlock() external view returns (uint256 ts);
@@ -163,6 +165,8 @@ interface IFeeRewardForwarder {
     uint256 _feeNumerator,
     uint256 _feeDenominator
   ) external;
+
+  function setTokenThreshold(address tokenIn, uint value) external;
 
   function slippageNumerator() external view returns (uint256);
 

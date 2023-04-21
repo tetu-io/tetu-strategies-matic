@@ -62,6 +62,13 @@ contract TetuBalHolder is ControllableV2, ITetuBalHolder {
     IDelegation(DELEGATE_REGISTRY).clearDelegate(TETU_BAL_ENS);
   }
 
+  function withdraw(address recipient) external onlyGov {
+    uint amount = IERC20(TETU_BAL_VAULT).balanceOf(address(this));
+    if (amount != 0) {
+      IERC20(TETU_BAL_VAULT).safeTransfer(recipient, amount);
+    }
+  }
+
   // ----- MAIN LOGIC -------
 
   /// @dev Deposit BAL to BAL/ETH pool. Then deposit BPT to tetuBAL vault.

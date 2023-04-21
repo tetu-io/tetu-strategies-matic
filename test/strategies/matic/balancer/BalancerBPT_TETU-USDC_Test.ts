@@ -10,12 +10,13 @@ import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal"
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {
+  IFeeRewardForwarder__factory,
   ISmartVault,
   IStrategy,
-  StrategyBalancerStMaticWmatic__factory, StrategyBalancerTetuUsdc__factory
+  StrategyBalancerTetuUsdc__factory
 } from "../../../../typechain";
-import {BalancerBPTstMaticSpecificHardWork} from "./BalancerBPTstMaticSpecificHardWork";
 import {BalancerBPTUsdcTetuSpecificHardWork} from "./BalancerBPTUsdcTetuSpecificHardWork";
+import {Misc} from "../../../../scripts/utils/tools/Misc";
 
 
 const {expect} = chai;
@@ -74,6 +75,8 @@ describe('BalancerBPT_TETU-USDC_Test', async () => {
 
         await core.controller.changeWhiteListStatus([tetuBalHolder.address], true);
 
+        await IFeeRewardForwarder__factory.connect(core.feeRewardForwarder.address, signer).setTokenThreshold(MaticAddresses.BAL_TOKEN, 10_000_000);
+
         return strategy;
       },
       underlying,
@@ -91,7 +94,7 @@ describe('BalancerBPT_TETU-USDC_Test', async () => {
     _strategy: IStrategy,
     _balanceTolerance: number
   ) => {
-    return new BalancerBPTUsdcTetuSpecificHardWork(
+    const hw = new BalancerBPTUsdcTetuSpecificHardWork(
       _signer,
       _user,
       _core,
@@ -102,6 +105,8 @@ describe('BalancerBPT_TETU-USDC_Test', async () => {
       _balanceTolerance,
       finalBalanceTolerance,
     );
+    hw.vaultRt = Misc.ZERO_ADDRESS;
+    return hw;
   };
 
   await universalStrategyTest(

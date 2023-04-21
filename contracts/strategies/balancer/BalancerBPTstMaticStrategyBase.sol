@@ -30,7 +30,7 @@ abstract contract BalancerBPTstMaticStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "BalancerBPTstMaticStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.1.0";
 
   uint private constant PRICE_IMPACT_TOLERANCE = 10_000;
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
@@ -39,10 +39,11 @@ abstract contract BalancerBPTstMaticStrategyBase is ProxyStrategyBase {
   /// @dev stMATIC-WMATIC pool id
   bytes32 public constant POOL_ID = 0x8159462d255c1d24915cb51ec361f700174cd99400000000000000000000075d;
   IBalancerGauge public constant GAUGE = IBalancerGauge(0x2Aa6fB79EfE19A3fcE71c46AE48EFc16372ED6dD);
-  address public constant VAULT_BBAMUSD = 0xf2fB1979C4bed7E71E6ac829801E0A8a4eFa8513;
-  /// @dev bbamUSDC_TOKEN
-  address public constant DEPOSIT_TOKEN_FOR_REWARDS = 0xF93579002DBE8046c43FEfE86ec78b1112247BB8;
-  bytes32 public constant BBAMUSD_POOL_ID = 0x48e6b98ef6329f8f0a30ebb8c7c960330d64808500000000000000000000075b;
+  address public constant VAULT_BB_T_USD = 0x4028cba3965e8Aea7320e9eA50914861A14dc724;
+  /// @dev bb-t-USDC linear pool BPT
+  address public constant DEPOSIT_TOKEN_FOR_REWARDS = 0xae646817e458C0bE890b81e8d880206710E3c44e;
+  bytes32 public constant BB_T_USD_POOL_ID = 0xb3d658d5b95bf04e2932370dd1ff976fe18dd66a000000000000000000000ace;
+  address internal constant DEFAULT_PERF_FEE_RECEIVER = 0x9Cc199D4353b5FB3e6C8EEBC99f5139e0d8eA06b;
 
   // *******************************************************
   //                      VARIABLES
@@ -187,48 +188,43 @@ abstract contract BalancerBPTstMaticStrategyBase is ProxyStrategyBase {
   function _liquidateRewards(bool silently) internal {
     uint bbRatio = _buyBackRatio();
     address[] memory rts = _rewardTokens;
-    uint targetTokenEarnedTotal;
     for (uint i = 0; i < rts.length; i++) {
       address rt = rts[i];
       uint amount = IERC20(rt).balanceOf(address(this));
       if (amount != 0) {
         uint toRewards = amount * (_BUY_BACK_DENOMINATOR - bbRatio) / _BUY_BACK_DENOMINATOR;
-        uint toForwarder = amount - toRewards;
+        uint toGov = amount - toRewards;
         if (toRewards != 0) {
           _liquidate(rt, DEPOSIT_TOKEN_FOR_REWARDS, toRewards, silently);
         }
 
-        if (toForwarder != 0) {
-          targetTokenEarnedTotal += _toForwarder(
-            rt,
-            toForwarder,
-            silently
-          );
+        if (toGov != 0) {
+          IERC20(rt).safeTransfer(DEFAULT_PERF_FEE_RECEIVER, toGov);
         }
       }
     }
 
     uint toPool = IERC20(DEPOSIT_TOKEN_FOR_REWARDS).balanceOf(address(this));
     if (toPool != 0) {
-      (IERC20[] memory tokens,,) = BALANCER_VAULT.getPoolTokens(BBAMUSD_POOL_ID);
+      (IERC20[] memory tokens,,) = BALANCER_VAULT.getPoolTokens(BB_T_USD_POOL_ID);
       IAsset[] memory tokenAssets = new IAsset[](tokens.length);
       for (uint i = 0; i < tokens.length; i++) {
         tokenAssets[i] = IAsset(address(tokens[i]));
       }
-      _balancerJoin(tokenAssets, BBAMUSD_POOL_ID, DEPOSIT_TOKEN_FOR_REWARDS, toPool);
+      _balancerJoin(tokenAssets, BB_T_USD_POOL_ID, DEPOSIT_TOKEN_FOR_REWARDS, toPool);
     }
-    uint bbamUSDBalance = IERC20(_getPoolAddress(BBAMUSD_POOL_ID)).balanceOf(address(this));
+    uint bbamUSDBalance = IERC20(_getPoolAddress(BB_T_USD_POOL_ID)).balanceOf(address(this));
     if (bbamUSDBalance != 0) {
       // deposit to baamVAULT
-      _approveIfNeeds(_getPoolAddress(BBAMUSD_POOL_ID), bbamUSDBalance, VAULT_BBAMUSD);
-      ISmartVault(VAULT_BBAMUSD).deposit(bbamUSDBalance);
-      uint rewardBalance = IERC20(VAULT_BBAMUSD).balanceOf(address(this));
+      _approveIfNeeds(_getPoolAddress(BB_T_USD_POOL_ID), bbamUSDBalance, VAULT_BB_T_USD);
+      ISmartVault(VAULT_BB_T_USD).deposit(bbamUSDBalance);
+      uint rewardBalance = IERC20(VAULT_BB_T_USD).balanceOf(address(this));
       address __vault = _vault();
-      _approveIfNeeds(VAULT_BBAMUSD, rewardBalance, __vault);
-      ISmartVault(__vault).notifyTargetRewardAmount(VAULT_BBAMUSD, rewardBalance);
+      _approveIfNeeds(VAULT_BB_T_USD, rewardBalance, __vault);
+      ISmartVault(__vault).notifyTargetRewardAmount(VAULT_BB_T_USD, rewardBalance);
     }
 
-    IBookkeeper(IController(_controller()).bookkeeper()).registerStrategyEarned(targetTokenEarnedTotal);
+    IBookkeeper(IController(_controller()).bookkeeper()).registerStrategyEarned(0);
 
   }
 
@@ -291,20 +287,28 @@ abstract contract BalancerBPTstMaticStrategyBase is ProxyStrategyBase {
       // USDC
       return 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
     }
+    if (token == 0xae646817e458C0bE890b81e8d880206710E3c44e /*bb-t-USDC*/) {
+      // USDC
+      return 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
+    }
     return token;
   }
 
   /// @dev It is a temporally logic until liquidator doesn't have swapper for LinearPool
   function _swapLinearUSDC(address tokenIn, address tokenOut) internal {
-    uint amount = IERC20(tokenIn).balanceOf(address(this));
-    if (amount != 0) {
-      _balancerSwap(
-        0xf93579002dbe8046c43fefe86ec78b1112247bb8000000000000000000000759,
-        tokenIn,
-        tokenOut,
-        amount
-      );
+    bytes32 linearPoolId;
+    if (tokenOut == 0xF93579002DBE8046c43FEfE86ec78b1112247BB8 /*bbamUSDC*/) {
+      linearPoolId = 0xf93579002dbe8046c43fefe86ec78b1112247bb8000000000000000000000759;
     }
+    if (tokenOut == 0xae646817e458C0bE890b81e8d880206710E3c44e /*bb-t-USDC*/) {
+      linearPoolId = 0xae646817e458c0be890b81e8d880206710e3c44e000000000000000000000acb;
+    }
+    _balancerSwap(
+      linearPoolId,
+      tokenIn,
+      tokenOut,
+      IERC20(tokenIn).balanceOf(address(this))
+    );
   }
 
   /// @dev Swap _tokenIn to _tokenOut using pool identified by _poolId
@@ -328,28 +332,6 @@ abstract contract BalancerBPTstMaticStrategyBase is ProxyStrategyBase {
 
       _approveIfNeeds(_tokenIn, _amountIn, address(BALANCER_VAULT));
       BALANCER_VAULT.swap(singleSwapData, fundManagementStruct, 1, block.timestamp);
-    }
-  }
-
-  function _toForwarder(
-    address rt,
-    uint amount,
-    bool silently
-  ) internal returns (uint targetTokenEarned){
-    address forwarder = IController(_controller()).feeRewardForwarder();
-    address vault = _vault();
-    targetTokenEarned = 0;
-    if (amount != 0) {
-      _approveIfNeeds(rt, amount, forwarder);
-      // it will sell reward token to Target Token and distribute it to SmartVault and PS
-      if (!silently) {
-        targetTokenEarned = IFeeRewardForwarder(forwarder).distribute(amount, rt, vault);
-      } else {
-        //slither-disable-next-line unused-return,variable-scope,uninitialized-local
-        try IFeeRewardForwarder(forwarder).distribute(amount, rt, vault) returns (uint r) {
-          targetTokenEarned = r;
-        } catch {}
-      }
     }
   }
 

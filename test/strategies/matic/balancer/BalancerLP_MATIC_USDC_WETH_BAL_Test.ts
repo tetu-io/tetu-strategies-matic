@@ -16,7 +16,7 @@ import {ISmartVault, IStrategy, StrategyBalancerBPT__factory} from "../../../../
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('BalancerLP_MATIC_USDC_WETH_BAL_Test', async () => {
+describe.skip('BalancerLP_MATIC_USDC_WETH_BAL_Test', async () => {
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, true);

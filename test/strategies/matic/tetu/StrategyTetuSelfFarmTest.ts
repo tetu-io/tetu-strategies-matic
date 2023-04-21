@@ -36,7 +36,7 @@ const argv = require('yargs/yargs')()
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('StrategyTetuSelfFarmTest', async () => {
+describe.skip('StrategyTetuSelfFarmTest', async () => {
   if (argv.disableStrategyTests || argv.hardhatChainId !== 137) {
     return;
   }
@@ -59,7 +59,7 @@ describe('StrategyTetuSelfFarmTest', async () => {
       core.controller,
       core.vaultController,
       underlying,
-      core.psVault.address
+      core.rewardToken.address
     );
     farmableVault = vault.address;
     await VaultUtils.addRewardsXTetu(

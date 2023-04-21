@@ -5,7 +5,7 @@ import {BigNumber, utils} from "ethers";
 import {TokenUtils} from "../../../TokenUtils";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {VaultUtils} from "../../../VaultUtils";
-import {StrategyMeshStaking__factory} from "../../../../typechain";
+import {IERC20__factory, StrategyMeshStaking__factory} from "../../../../typechain";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {parseUnits} from "ethers/lib/utils";
 
@@ -58,19 +58,15 @@ export class MeshStakingDoHardWork extends DoHardWorkLoopBase {
     }
 
     // check vault balance
-    const vaultBalanceAfter = await TokenUtils.balanceOf(this.core.psVault.address, this.vault.address);
+    const vaultBalanceAfter = await TokenUtils.balanceOf(this.vaultRt, this.vault.address);
     expect(vaultBalanceAfter.sub(this.vaultRTBal)).is.not.eq("0", "vault reward should increase");
 
-    // check ps balance
-    const psBalanceAfter = await TokenUtils.balanceOf(this.core.rewardToken.address, this.core.psVault.address);
-    expect(psBalanceAfter.sub(this.psBal)).is.not.eq("0", "ps balance should increase");
-
-    // check ps PPFS
-    const psSharePriceAfter = await this.core.psVault.getPricePerFullShare();
-    expect(psSharePriceAfter.sub(this.psPPFS)).is.not.eq("0", "ps share price should increase");
+    // check ps vedist
+    const veDistAfter = await IERC20__factory.connect(this.core.rewardToken.address, this.signer).balanceOf(MaticAddresses.TETU_VE_DIST_ADDRESS);
+    expect(veDistAfter.sub(this.veDistBal)).is.not.eq("0", "ps veDist balance should increase");
 
     // check reward for user
-    const rewardBalanceAfter = await TokenUtils.balanceOf(this.core.psVault.address, this.user.address);
+    const rewardBalanceAfter = await TokenUtils.balanceOf(this.vaultRt, this.user.address);
     expect(rewardBalanceAfter.sub(this.userRTBal).toString())
       .is.not.eq("0", "should have earned xTETU rewards");
   }

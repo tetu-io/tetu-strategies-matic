@@ -11,6 +11,8 @@ import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
 import {ISmartVault, IStrategy, StrategyBalancerBPT__factory} from "../../../../typechain";
+import {Misc} from "../../../../scripts/utils/tools/Misc";
+import {parseUnits} from "ethers/lib/utils";
 
 
 const {expect} = chai;
@@ -45,7 +47,7 @@ describe('BalancerBPT_tetuQi_QI_Test', async () => {
   const deposit = 10_000;
   // at least 3
   const loops = 3;
-  const loopValue = 300;
+  const loopValue = 60 * 60 * 24;
   const advanceBlocks = false;
   const specificTests: SpecificStrategyTest[] = [];
   // **********************************************
@@ -73,7 +75,7 @@ describe('BalancerBPT_tetuQi_QI_Test', async () => {
       },
       underlying,
       0,
-      true
+      false
     );
   };
   const hwInitiator = (
@@ -86,7 +88,7 @@ describe('BalancerBPT_tetuQi_QI_Test', async () => {
     _strategy: IStrategy,
     _balanceTolerance: number
   ) => {
-    return new BalancerBPTSpecificHardWork(
+    const hw = new BalancerBPTSpecificHardWork(
       _signer,
       _user,
       _core,
@@ -97,6 +99,9 @@ describe('BalancerBPT_tetuQi_QI_Test', async () => {
       _balanceTolerance,
       finalBalanceTolerance,
     );
+    hw.vaultRt = Misc.ZERO_ADDRESS;
+    hw.allowLittleDustInStrategyAfterFullExit = parseUnits('1');
+    return hw;
   };
 
   await universalStrategyTest(

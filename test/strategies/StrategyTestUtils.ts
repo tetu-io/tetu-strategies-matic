@@ -32,11 +32,11 @@ export class StrategyTestUtils {
     strategyDeployer: (vaultAddress: string) => Promise<IStrategy>,
     underlying: string,
     depositFee = 0,
-    addXTetuReward = true
+    addTetuReward = true
   ): Promise<[ISmartVault, IStrategy, string]> {
     let reward = Misc.ZERO_ADDRESS;
-    if(addXTetuReward) {
-      reward = core.psVault.address;
+    if(addTetuReward) {
+      reward = core.rewardToken.address;
     }
     const start = Date.now();
     log.info("Starting deploy")

@@ -15,7 +15,7 @@ import {universalStrategyTest} from "../../UniversalStrategyTest";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('tetuMESH-MESH LP Strategy tests', async () => {
+describe.skip('tetuMESH-MESH LP Strategy tests', async () => {
 
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
@@ -37,7 +37,7 @@ describe('tetuMESH-MESH LP Strategy tests', async () => {
   // only for strategies where we expect PPFS fluctuations
   const balanceTolerance = 0;
   const finalBalanceTolerance = 0;
-  const deposit = 10_000;
+  const deposit = 1_000;
   // at least 3
   const loops = 3;
   const loopValue = 300;

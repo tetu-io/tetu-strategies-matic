@@ -37,7 +37,7 @@ const argv = require('yargs/yargs')()
     },
     maticForkBlock: {
       type: "number",
-      default: 31243271
+      default: 41694492
     },
   }).argv;
 
@@ -60,6 +60,15 @@ export default {
         url: argv.hardhatChainId === 137 ? argv.maticRpcUrl : undefined,
         blockNumber: argv.hardhatChainId === 137 ? argv.maticForkBlock !== 0 ? argv.maticForkBlock : undefined : undefined
       },
+      chains: {
+        137: {
+          hardforkHistory: {
+            london: 23850000,
+            arrowGlacier: 38149796
+          }
+        },
+      },
+      // hardfork: argv.hardhatChainId === 137 ? 'grayGlacier' : undefined,
       accounts: {
         mnemonic: "test test test test test test test test test test test junk",
         path: "m/44'/60'/0'/0",
@@ -128,6 +137,6 @@ export default {
     path: './artifacts/abi',
     runOnCompile: false,
     spacing: 2,
-    pretty: true,
+    pretty: false,
   }
 };

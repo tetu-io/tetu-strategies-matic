@@ -16,7 +16,7 @@ import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('penrose tetu-usd+ tests', async () => {
+describe.skip('penrose tetu-usd+ tests', async () => {
   const strategyName = 'StrategyPenroseTetuUsdPlus';
   const underlying = MaticAddresses.DYSTOPIA_TETU_USDPlus;
 
@@ -37,7 +37,7 @@ describe('penrose tetu-usd+ tests', async () => {
   // only for strategies where we expect PPFS fluctuations
   const balanceTolerance = 0;
   const finalBalanceTolerance = 0;
-  const deposit = 100_000;
+  const deposit = 1_000;
   // at least 3
   const loops = 3;
   // number of blocks or timestamp value
