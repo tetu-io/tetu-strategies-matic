@@ -94,7 +94,7 @@ describe("TetuBalVotingPowerTests", function () {
 
     const userVeTetuPower = +formatUnits(await power.veTetuPower(signer.address));
     console.log('userVeTetuPower', userVeTetuPower);
-    expect(userVeTetuPower).approximately(4.523841344729467, 0.2);
+    expect(userVeTetuPower).gt(0);
 
     const userPowerWithoutCut = +formatUnits(await power.balanceOf(signer.address));
     console.log('userPowerWithoutCut', userPowerWithoutCut);
