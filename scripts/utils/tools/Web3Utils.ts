@@ -19,7 +19,7 @@ export class Web3Utils {
           "topics": topics
         })));
 
-        console.log('logs', from, to, logs.length);
+        // console.log('logs', from, to, logs.length);
 
         from = to;
         to = Math.min(from + step, end);

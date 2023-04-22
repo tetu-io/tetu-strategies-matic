@@ -49,7 +49,7 @@ describe('BalancerLP_tetuBAL_BPT_Test', async () => {
   // only for strategies where we expect PPFS fluctuations
   const balanceTolerance = 0;
   const finalBalanceTolerance = 0;
-  const deposit = 1000_000;
+  const deposit = 10_000;
   // at least 3
   const loops = 3;
   const loopValue = 300;

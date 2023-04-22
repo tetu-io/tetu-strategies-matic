@@ -1,5 +1,5 @@
 import {DeployerUtilsLocal} from "../../deploy/DeployerUtilsLocal";
-import {Multicall, Multicall__factory} from "../../../typechain";
+import {Multicall__factory} from "../../../typechain";
 import {ethers} from "hardhat";
 import {Logger} from "tslog";
 import Common from "ethereumjs-common";
@@ -24,6 +24,9 @@ const FANTOM_CHAIN = Common.forCustomChain(
   },
   'petersburg'
 );
+
+// tslint:disable-next-line:no-var-requires
+const hre = require("hardhat");
 
 export class Misc {
   public static readonly SECONDS_OF_DAY = 60 * 60 * 24;
@@ -110,4 +113,36 @@ export class Misc {
     return n + '';
   }
 
+  public static getChainId(): number {
+    return hre.network.config.chainId ?? 0;
+  }
+
+  public static getChainName(): string {
+    return hre.network.name;
+  }
+
+  public static async getAverageBlockTime(): Promise<number> {
+    const currentBlock = await ethers.provider.getBlockNumber() ?? 0;
+    const step = 10000;
+    const block1 = await ethers.provider.getBlock(currentBlock);
+    const block2 = await ethers.provider.getBlock(currentBlock - step);
+    console.log('getAverageBlockTime', block1.timestamp, block2.timestamp, step, (block1.timestamp - block2.timestamp) / step)
+    return (block1.timestamp - block2.timestamp) / step;
+  }
+
+  public static async findBlockByDate(timestamp: number, startFromBlock: number, step = 100): Promise<number> {
+    console.log('Start search block for date', new Date(timestamp * 1000));
+    while (true) {
+      const block = await ethers.provider.getBlock(startFromBlock);
+      // console.log('findBlockByDate', new Date(block.timestamp * 1000))
+      if (block.timestamp <= timestamp) {
+        const diff = Math.abs(block.timestamp - timestamp);
+        if (diff > (step * 2)) {
+          throw new Error('findBlockByDate: startFromBlock is too far from date, diff ' + diff);
+        }
+        return startFromBlock;
+      }
+      startFromBlock -= step;
+    }
+  }
 }
