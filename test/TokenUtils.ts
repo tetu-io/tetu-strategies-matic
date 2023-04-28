@@ -88,6 +88,7 @@ export class TokenUtils {
     [MaticAddresses.BALANCER_USD_TETU_BOOSTED, MaticAddresses.BALANCER_VAULT.toLowerCase()], //
     [MaticAddresses.BALANCER_stMATIC_WMATIC_TETU_BOOSTED, MaticAddresses.BALANCER_VAULT.toLowerCase()], //
     [MaticAddresses.BALANCER_TNGBL_USDC, '0xD1758fbABAE91c805BE76D56548A584EF68B81f0'.toLowerCase()], //
+    [MaticAddresses.BALANCER_MATIC_BOOSTED_AAVE3, MaticAddresses.BALANCER_VAULT.toLowerCase()], //
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {
