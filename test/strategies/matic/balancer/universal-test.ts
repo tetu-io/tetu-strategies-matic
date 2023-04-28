@@ -1,4 +1,3 @@
-import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
@@ -9,6 +8,7 @@ import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {DeployInfo} from "../../DeployInfo";
+import {Misc} from "../../../../scripts/utils/tools/Misc";
 
 export async function balancerUniversalTest(
   deployInfo: DeployInfo,
@@ -43,7 +43,6 @@ export async function balancerUniversalTest(
   const advanceBlocks = false;
   const specificTests: SpecificStrategyTest[] = [];
   // **********************************************
-
   const deployer = (signer: SignerWithAddress) => {
     const core = deployInfo.core as CoreContractsWrapper;
     return StrategyTestUtils.deploy(
@@ -102,6 +101,8 @@ export async function balancerUniversalTest(
     );
     if (!isCompound) {
       hw.vaultRt = VAULT_BB_T_USD;
+    } else {
+      hw.vaultRt = Misc.ZERO_ADDRESS;
     }
     return hw;
   };
