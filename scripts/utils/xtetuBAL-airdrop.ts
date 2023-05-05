@@ -15,6 +15,7 @@ import {BigNumber} from "ethers";
 import {RunHelper} from "./tools/RunHelper";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {getSnapshotVoters} from "./tools/voting-utils";
+import {expect} from "chai";
 
 // After airdrop receiving from all sources you need to liquidate all tokens to USDC
 // Then launch this script on hardhat network and make sure that you have enough tokens.
@@ -160,6 +161,13 @@ async function main() {
       usersForXtetuBALAmounts,
       parseUnits(xtetuBalTVLUSD.toFixed(18))
     ));
+
+
+    const apr = formatUnits(await distributor.lastAPR(), 6);
+    console.log('APR', apr);
+    expect(+apr).is.greaterThan(10);
+    expect(+apr).is.lessThan(30);
+
   } else {
     console.error('not enough tokens');
   }
