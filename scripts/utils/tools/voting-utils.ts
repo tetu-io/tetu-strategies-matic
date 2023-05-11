@@ -34,6 +34,47 @@ export async function getSnapshotData(proposalId: string): Promise<any> {
 
   return resp.proposals[0]
 }
+// tslint:disable-next-line:no-any
+export async function getSnapshotVoters(proposalId: string, voter: string): Promise<any> {
+  const resp = await request(
+    SNAPSHOT_GRAPHQL_ENDPOINT,
+    gql`
+        query {
+            votes (
+                first: 1000
+                where: {
+                    proposal: "${proposalId}"
+                    voter: "${voter.toLowerCase()}"
+                }
+            ) {
+                id
+                voter
+                created
+                choice
+                vp
+                vp_by_strategy
+                vp_state
+                ipfs
+                voter
+                metadata
+                reason
+                app
+                space {
+                    id
+                }
+
+                proposal {
+                    title
+                    snapshot
+                }
+
+            }
+        }
+    `
+  )
+
+  return resp.votes[0]
+}
 
 // tslint:disable-next-line:no-any
 export async function getAllGaugesFromSubgraph(): Promise<any> {
