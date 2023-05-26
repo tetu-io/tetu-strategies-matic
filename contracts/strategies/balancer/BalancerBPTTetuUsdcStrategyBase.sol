@@ -31,7 +31,7 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "BalancerBPTTetuUsdcStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
 
   uint private constant PRICE_IMPACT_TOLERANCE = 10_000;
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
@@ -39,7 +39,7 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
 
   /// @dev USDC-TETU pool id
   bytes32 public constant POOL_ID = 0xe2f706ef1f7240b803aae877c9c762644bb808d80002000000000000000008c2;
-  IBalancerGauge public constant GAUGE = IBalancerGauge(0x9FB2Eb86aE9DbEBf276A7A67DF1F2D48A49b95EC);
+  IBalancerGauge public constant GAUGE = IBalancerGauge(0xa86e8e8CfAe8C9847fA9381d4631c13c7b3466bd);
   address public constant BAL_TOKEN = 0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3;
   address public constant TETU_TOKEN = 0x255707B70BF90aa112006E1b07B9AeA6De021424;
 
