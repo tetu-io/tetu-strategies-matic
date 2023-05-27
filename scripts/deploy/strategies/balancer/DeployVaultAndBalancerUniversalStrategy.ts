@@ -66,7 +66,11 @@ export async function deployBalancerUniversalStrategyOnly(
   buyBackRatio: number,
   vault: string,
   strategyLogic: string
-) {
+): Promise<{
+  vault: string,
+  strategy: string,
+  undSymbol: string
+}> {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtilsLocal.getCoreAddresses();
   const undSymbol = await TokenUtils.tokenSymbol(bpt)
@@ -87,8 +91,9 @@ export async function deployBalancerUniversalStrategyOnly(
     depositToken,
   ));
 
-  if (hre.network.name !== 'hardhat') {
-    const txt = `vault: ${vault}\nstrategy: ${strategyProxy.address}`;
-    writeFileSync(`tmp/deployed/balancer_${undSymbol.replace('/', '-')}.txt`, txt, 'utf8');
+  return {
+    vault,
+    strategy: strategyProxy.address,
+    undSymbol
   }
 }

@@ -1,21 +1,23 @@
 import {deployBalancerStrategyOnly} from "../DeployBPTVaultAndStrategy";
 import {MaticAddresses} from "../../../../addresses/MaticAddresses";
 import {BalancerConstants} from "../BalancerConstants";
+import hre from "hardhat";
+import {writeFileSync} from "fs";
+import {
+  deployWUsdrUsdc4
+} from "../../../../../test/strategies/matic/balancer/redeploy-balancer-strategies/4.wUSDR-USDC";
 
 /**
  * npx hardhat run scripts/deploy/strategies/balancer/redeploy-strategies/4.wUSDR-USDC.ts
  * npx hardhat run --network localhost scripts/deploy/strategies/balancer/redeploy-strategies/4.wUSDR-USDC.ts
  */
 async function main() {
-  await deployBalancerStrategyOnly(
-    MaticAddresses.BALANCER_USDC_wUSDR,
-    MaticAddresses.BALANCER_USDC_wUSDR_ID,
-    MaticAddresses.BALANCER_USDC_wUSDR_GAUGE,
-    MaticAddresses.USDC_TOKEN,
-    5_00,
-    BalancerConstants.STRATEGY_BALANCER_BPT_LOGIC_104,
-    BalancerConstants.BALANCER_VAULT_wUSDR_USDC
-  );
+  const {vault, strategy, undSymbol} = await deployWUsdrUsdc4();
+
+  if (hre.network.name !== 'hardhat') {
+    const txt = `vault: ${vault}\nstrategy: ${strategy}`;
+    writeFileSync(`tmp/deployed/balancer_${undSymbol.replace('/', '-')}.txt`, txt, 'utf8');
+  }
 }
 
 main()

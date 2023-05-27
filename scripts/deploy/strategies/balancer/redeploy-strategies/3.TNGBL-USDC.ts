@@ -9,6 +9,10 @@ import {
 } from "../../../../../typechain";
 import {BalancerConstants} from "../BalancerConstants";
 import {writeFileSync} from "fs";
+import {deployUsdcTetu2} from "../../../../../test/strategies/matic/balancer/redeploy-balancer-strategies/2.USDC-TETU";
+import {
+  deployTngblUsdc3
+} from "../../../../../test/strategies/matic/balancer/redeploy-balancer-strategies/3.TNGBL-USDC";
 
 /**
  * npx hardhat run scripts/deploy/strategies/balancer/redeploy-strategies/3.TNGBL-USDC.ts
@@ -16,28 +20,9 @@ import {writeFileSync} from "fs";
  */
 async function main() {
   const signer = (await ethers.getSigners())[0];
-  const core = await DeployerUtilsLocal.getCoreAddresses();
-
-  const vault = BalancerConstants.BALANCER_VAULT_TNGBL_USDC;
-  const UNDERLYING = MaticAddresses.BALANCER_TNGBL_USDC
-
-  const undSymbol = await TokenUtils.tokenSymbol(UNDERLYING)
-
-  const vaultDetected = await DeployerUtilsLocal.findVaultUnderlyingInBookkeeper(signer, UNDERLYING);
-  if (vaultDetected?.toLowerCase() !== vault.toLowerCase()) {
-    throw Error(`Wrong vault ${vaultDetected} !== ${vault}`);
-  }
-
-  const strategy = await DeployerUtilsLocal.deployContract(signer, "StrategyBalancerTngblUsdc");
-
-  const strategyProxy = await DeployerUtilsLocal.deployContract(signer, "TetuProxyControlled", strategy.address);
-  await RunHelper.runAndWait(() => StrategyBalancerSphereWmatic__factory.connect(strategyProxy.address, signer).initialize(
-    core.controller,
-    vault
-  ));
-
+  const {vault, strategy, undSymbol} = await deployTngblUsdc3(signer);
   if (hre.network.name !== 'hardhat') {
-    const txt = `vault: ${vault}\nstrategy: ${strategyProxy.address}`;
+    const txt = `vault: ${vault}\nstrategy: ${strategy}`;
     writeFileSync(`tmp/deployed/balancer_${undSymbol.replace('/', '-')}.txt`, txt, 'utf8');
   }
 }

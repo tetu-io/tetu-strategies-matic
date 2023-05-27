@@ -5,9 +5,8 @@ import {TokenUtils} from "../../../../../test/TokenUtils";
 import {RunHelper} from "../../../../utils/tools/RunHelper";
 import {
   ISmartVault__factory,
-  StrategyBalancerStMaticWmatic__factory, StrategyBalancerTetuUsdc__factory
+  StrategyBalancerTetuUsdc__factory
 } from "../../../../../typechain";
-import {BalancerConstants} from "../BalancerConstants";
 import {writeFileSync} from "fs";
 
 async function main() {

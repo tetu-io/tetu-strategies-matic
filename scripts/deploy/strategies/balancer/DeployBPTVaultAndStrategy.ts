@@ -48,7 +48,11 @@ export async function deployBalancerVaultAndStrategy(pool: string, poolId: strin
 }
 
 
-export async function deployBalancerStrategyOnly(pool: string, poolId: string, gauge: string, depositToken: string, bbRatio: number, strategyLogic: string, vault: string) {
+export async function deployBalancerStrategyOnly(pool: string, poolId: string, gauge: string, depositToken: string, bbRatio: number, strategyLogic: string, vault: string) : Promise<{
+  vault: string,
+  strategy: string,
+  undSymbol: string
+}> {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtilsLocal.getCoreAddresses();
   const undSymbol = await TokenUtils.tokenSymbol(pool)
@@ -68,8 +72,9 @@ export async function deployBalancerStrategyOnly(pool: string, poolId: string, g
     bbRatio
   ));
 
-  if (hre.network.name !== 'hardhat') {
-    const txt = `vault: ${vault}\nstrategy: ${strategyProxy.address}`;
-    writeFileSync(`tmp/deployed/balancer_${undSymbol.replace('/', '-')}.txt`, txt, 'utf8');
+  return {
+    vault,
+    strategy: strategyProxy.address,
+    undSymbol
   }
 }

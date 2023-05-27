@@ -4,6 +4,11 @@ import {
   deployBalancerVaultAndUniversalStrategy
 } from "../DeployVaultAndBalancerUniversalStrategy";
 import {BalancerConstants} from "../BalancerConstants";
+import hre from "hardhat";
+import {writeFileSync} from "fs";
+import {
+  deployStMaticWMaticAave3Boosted7
+} from "../../../../../test/strategies/matic/balancer/redeploy-balancer-strategies/7.stMATIC-WMATIC-aave3-boosted";
 
 /**
  * npx hardhat run scripts/deploy/strategies/balancer/redeploy-strategies/7.stMATIC-WMATIC-aave3-boosted.ts
@@ -11,25 +16,12 @@ import {BalancerConstants} from "../BalancerConstants";
  */
 
 async function main() {
-  const underlying = MaticAddresses.BALANCER_MATIC_BOOSTED_AAVE3;
-  const poolId = MaticAddresses.BALANCER_MATIC_BOOSTED_AAVE3_ID;
-  const gauge = MaticAddresses.BALANCER_MATIC_BOOSTED_AAVE3_GAUGE;
-  const isCompound = false;
-  const depositToken = MaticAddresses.stMATIC_TOKEN;
-  const buyBackRatio = 8_00;
+  const {vault, strategy, undSymbol} = await deployStMaticWMaticAave3Boosted7();
 
-  const vault = "0x2F48C4B3a3D49d1e0F3A176eA8F558823B61a931";
-
-  await deployBalancerUniversalStrategyOnly(
-    underlying,
-    poolId,
-    gauge,
-    isCompound,
-    depositToken,
-    buyBackRatio,
-    BalancerConstants.BALANCER_VAULT_stMATIC_WMATIC_AAVE3_BOOSTED,
-    BalancerConstants.STRATEGY_BALANCER_UNIVERSAL_LOGIC_100
-  );
+  if (hre.network.name !== 'hardhat') {
+    const txt = `vault: ${vault}\nstrategy: ${strategy}`;
+    writeFileSync(`tmp/deployed/balancer_${undSymbol.replace('/', '-')}.txt`, txt, 'utf8');
+  }
 }
 
 main()
