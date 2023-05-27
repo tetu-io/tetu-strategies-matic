@@ -27,15 +27,16 @@ export class BalancerBPTUsdcTetuSpecificHardWork extends DoHardWorkLoopBase {
     this.currentLoop = i;
 
     const strat = StrategyBalancerTetuUsdc__factory.connect(this.strategy.address, this.signer);
-    const gauge = IBalancerGauge__factory.connect(await strat.GAUGE(), this.signer);
-    console.log(`loopStartActions gauge=${gauge}`);
-    const streamerAdr = await gauge.reward_contract();
-    console.log(`loopStartActions gauge.reward_contract done`);
-
-    const owner = await DeployerUtilsLocal.impersonate('0xC128468b7Ce63eA702C1f104D55A2566b13D3ABD');
-    const streamer = IChildChainStreamer__factory.connect(streamerAdr, owner);
-    await TokenUtils.getToken(MaticAddresses.BAL_TOKEN, streamer.address, parseUnits('100'));
-    await streamer.notify_reward_amount(MaticAddresses.BAL_TOKEN);
+    // todo update to IBalancerGauge (v2)
+    // const gauge = IBalancerGauge__factory.connect(await strat.GAUGE(), this.signer);
+    // console.log(`loopStartActions gauge=${gauge}`);
+    // const streamerAdr = await gauge.reward_contract();
+    // console.log(`loopStartActions gauge.reward_contract done`);
+    //
+    // const owner = await DeployerUtilsLocal.impersonate('0xC128468b7Ce63eA702C1f104D55A2566b13D3ABD');
+    // const streamer = IChildChainStreamer__factory.connect(streamerAdr, owner);
+    // await TokenUtils.getToken(MaticAddresses.BAL_TOKEN, streamer.address, parseUnits('100'));
+    // await streamer.notify_reward_amount(MaticAddresses.BAL_TOKEN);
 
     const rewardsRecipient = await strat.rewardsRecipient();
     this.rewardsRecipientLastBalance = await IERC20__factory.connect(MaticAddresses.tetuBAL, this.signer).balanceOf(rewardsRecipient);

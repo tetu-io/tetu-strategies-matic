@@ -13,7 +13,7 @@
 pragma solidity 0.8.4;
 
 import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
-import "../../third_party/balancer/IBalancerGauge.sol";
+import "../../third_party/balancer/IBalancerGaugeV1.sol";
 import "../../third_party/balancer/IBVault.sol";
 
 /// @title Base contract for BPT farming
@@ -45,7 +45,7 @@ abstract contract BalancerPoolStrategyBaseBALETH is ProxyStrategyBase {
   /// @dev Deprecated
   address public pool;
   bytes32 public poolId;
-  IBalancerGauge public gauge;
+  IBalancerGaugeV1 public gauge;
   /// @dev Deprecated
   address public depositToken;
 
@@ -72,7 +72,7 @@ abstract contract BalancerPoolStrategyBaseBALETH is ProxyStrategyBase {
     poolId = poolId_;
     depositToken = depositToken_;
 
-    gauge = IBalancerGauge(gauge_);
+    gauge = IBalancerGaugeV1(gauge_);
     IERC20(underlying_).safeApprove(gauge_, type(uint).max);
 
     ProxyStrategyBase.initializeStrategyBase(
@@ -108,7 +108,7 @@ abstract contract BalancerPoolStrategyBaseBALETH is ProxyStrategyBase {
 
   /// @dev Rewards amount ready to claim
   function readyToClaim() external view override returns (uint256[] memory toClaim) {
-    IBalancerGauge _gauge = gauge;
+    IBalancerGaugeV1 _gauge = gauge;
     toClaim = new uint256[](_rewardTokens.length);
     for (uint i; i < toClaim.length; i++) {
       address rt = _rewardTokens[i];
