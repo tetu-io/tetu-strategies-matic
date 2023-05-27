@@ -1,6 +1,13 @@
 import {MaticAddresses} from "../../../../addresses/MaticAddresses";
-import {deployBalancerVaultAndUniversalStrategy} from "../DeployVaultAndBalancerUniversalStrategy";
+import {
+  deployBalancerUniversalStrategyOnly
+} from "../DeployVaultAndBalancerUniversalStrategy";
+import {BalancerConstants} from "../BalancerConstants";
 
+/**
+ * npx hardhat run scripts/deploy/strategies/balancer/redeploy-strategies/6.MaticX-WMATIC-aave3-boosted.ts
+ * npx hardhat run --network localhost scripts/deploy/strategies/balancer/redeploy-strategies/6.MaticX-WMATIC-aave3-boosted.ts
+ */
 async function main() {
   const underlying = MaticAddresses.BALANCER_MATICX_BOOSTED_AAVE3;
   const poolId = MaticAddresses.BALANCER_MATICX_BOOSTED_AAVE3_ID;
@@ -9,13 +16,15 @@ async function main() {
   const depositToken = MaticAddresses.MATIC_X;
   const buyBackRatio = 5_00;
 
-  await deployBalancerVaultAndUniversalStrategy(
+  await deployBalancerUniversalStrategyOnly(
     underlying,
     poolId,
     gauge,
     isCompound,
     depositToken,
     buyBackRatio,
+    BalancerConstants.BALANCER_VAULT_MATICX_WMATIC_AAVE3_BOOSTED,
+    BalancerConstants.STRATEGY_BALANCER_UNIVERSAL_LOGIC_100
   );
 }
 

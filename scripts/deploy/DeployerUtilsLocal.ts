@@ -602,16 +602,16 @@ export class DeployerUtilsLocal {
     await ethers.provider.send("evm_mine", []); // Just mines to the next block
   }
 
-  public static async findVaultUnderlyingInBookkeeper(signer: SignerWithAddress, underlying: string) {
+  public static async findVaultUnderlyingInBookkeeper(signer: SignerWithAddress, underlying: string): Promise<string | undefined> {
     const core = await DeployerUtilsLocal.getCoreAddresses()
     const vaults = await IBookkeeper__factory.connect(core.bookkeeper, signer).vaults();
     for (const vault of vaults) {
       const vaultUnd = await ISmartVault__factory.connect(vault, signer).underlying();
       if (vaultUnd.toLowerCase() === underlying.toLowerCase()) {
-        return true;
+        return vault;
       }
     }
-    return false;
+    return undefined;
   }
 
   // ****************** WAIT ******************

@@ -10,41 +10,34 @@ import {
 import {BalancerConstants} from "../BalancerConstants";
 import {writeFileSync} from "fs";
 
+/**
+ * npx hardhat run scripts/deploy/strategies/balancer/redeploy-strategies/3.TNGBL-USDC.ts
+ * npx hardhat run --network localhost scripts/deploy/strategies/balancer/redeploy-strategies/3.TNGBL-USDC.ts
+ */
 async function main() {
   const signer = (await ethers.getSigners())[0];
   const core = await DeployerUtilsLocal.getCoreAddresses();
 
+  const vault = BalancerConstants.BALANCER_VAULT_TNGBL_USDC;
   const UNDERLYING = MaticAddresses.BALANCER_TNGBL_USDC
 
   const undSymbol = await TokenUtils.tokenSymbol(UNDERLYING)
 
-  if (await DeployerUtilsLocal.findVaultUnderlyingInBookkeeper(signer, UNDERLYING)) {
-    console.error("VAULT WITH THIS UNDERLYING EXIST! skip");
-    return;
+  const vaultDetected = await DeployerUtilsLocal.findVaultUnderlyingInBookkeeper(signer, UNDERLYING);
+  if (vaultDetected?.toLowerCase() !== vault.toLowerCase()) {
+    throw Error(`Wrong vault ${vaultDetected} !== ${vault}`);
   }
-
-  const vaultProxy = await DeployerUtilsLocal.deployContract(signer, "TetuProxyControlled", DeployerUtilsLocal.getVaultLogic(signer).address);
-  await RunHelper.runAndWait(() => ISmartVault__factory.connect(vaultProxy.address, signer).initializeSmartVault(
-    "Tetu Vault " + undSymbol,
-    "x" + undSymbol,
-    core.controller,
-    UNDERLYING,
-    60 * 60 * 24 * 7,
-    false,
-    '0x4028cba3965e8Aea7320e9eA50914861A14dc724',
-    0
-  ));
 
   const strategy = await DeployerUtilsLocal.deployContract(signer, "StrategyBalancerTngblUsdc");
 
   const strategyProxy = await DeployerUtilsLocal.deployContract(signer, "TetuProxyControlled", strategy.address);
   await RunHelper.runAndWait(() => StrategyBalancerSphereWmatic__factory.connect(strategyProxy.address, signer).initialize(
     core.controller,
-    vaultProxy.address
+    vault
   ));
 
   if (hre.network.name !== 'hardhat') {
-    const txt = `vault: ${vaultProxy.address}\nstrategy: ${strategyProxy.address}`;
+    const txt = `vault: ${vault}\nstrategy: ${strategyProxy.address}`;
     writeFileSync(`tmp/deployed/balancer_${undSymbol.replace('/', '-')}.txt`, txt, 'utf8');
   }
 }
