@@ -27,10 +27,10 @@ import {expect} from "chai";
 // ------------------ CHANGE ME ----------------------------
 
 // MAKE SURE YOUR LOCL SNAPSHOT BLOCK IS ACTUAL!
-// USDC amount received from all bribes
-const USDC_AMOUNT = 4922;
 // the last snapshot https://snapshot.org/#/tetubal.eth
-const PROPOSAL_ID = '0x5f4cd1fd2edff65587af82b23f54e2bf2c4a79f499ccfb09f89272ff121d8088';
+const PROPOSAL_ID = '0x8bbcfa519547de8f5ea6e5f99b914683860a6bf6c736cd9c7b9b2aba1266b400';
+// USDC amount received from all bribes
+const USDC_AMOUNT = 3644;
 
 // ----------------------------------------------
 const xtetuBALPerfFee = 0.85;
@@ -43,7 +43,7 @@ async function main() {
 
   let signer: SignerWithAddress;
   if (Misc.getChainName() === 'hardhat') {
-    signer = await DeployerUtilsLocal.impersonate(POL_OWNER);
+    signer = await DeployerUtilsLocal.impersonate('0xbbbbb8c4364ec2ce52c59d2ed3e56f307e529a94');
 
     const distributorGov = XtetuBALDistributor__factory.connect('0x6DdD4dB035FC15F90D74C1E98ABa967D6b3Ce3Dd', await DeployerUtilsLocal.impersonate());
     await distributorGov.changeOperatorStatus(signer.address, true);
@@ -58,7 +58,7 @@ async function main() {
   const curDate = Math.floor(new Date().getTime() / 1000);
   const sinceProposal = (curDate - +snapshotData.created);
   console.log('sinceProposal days', sinceProposal / 60 / 60 / 24);
-  if (sinceProposal > 7 * 60 * 60 * 24) throw new Error('Wrong proposal');
+  if (sinceProposal > 8 * 60 * 60 * 24) throw new Error('Wrong proposal');
   const votedPower = snapshotData.vp;
   console.log('PROPOSAL votedPower', votedPower);
 
@@ -86,7 +86,7 @@ async function main() {
 
   const power = TetuBalVotingPower__factory.connect(tetuBALPower, signer);
   const xtetuBALStrategyPower = await power.balanceOf(X_TETU_BAL_STRATEGY, {blockTag: BLOCK});
-  console.log('X_TETU_BAL_STRATEGY power', xtetuBALStrategyPower);
+  console.log('X_TETU_BAL_STRATEGY power', formatUnits(xtetuBALStrategyPower));
 
   const veTETUCut = +formatUnits(xtetuBALStrategyPower) / +votedPower
   console.log('veTETUCut', veTETUCut);
@@ -122,7 +122,7 @@ async function main() {
   console.log('>>> USDC to distribute: ', usdcAmountForDistributing);
   console.log('>>> xtetuBal to distribute', xtetuBalAmountForDistributing);
 
-  console.log('Need to buy TetuBal', amountForBuyingTetuBal);
+  console.log(`Need to buy TetuBal on ${amountForBuyingTetuBal}$`);
 
 
   const balanceXtetuBal = await IERC20__factory.connect(MaticAddresses.xtetuBAL_TOKEN, signer).balanceOf(signer.address);
@@ -145,10 +145,23 @@ async function main() {
     );
   }
 
-  if (xtetuBALAllowance.lt(parseUnits(xtetuBalAmountForDistributing.toFixed(18)))) {
+  if (xtetuBALAllowance.lt(parseUnits((xtetuBalAmountForDistributing + 1).toFixed(18)))) {
     console.log('APPROVE xtetuBAL', xtetuBalAmountForDistributing);
-    await RunHelper.runAndWait(() => IERC20__factory.connect(MaticAddresses.xtetuBAL_TOKEN, signer).approve(distributor.address, parseUnits(xtetuBalAmountForDistributing.toFixed(18)).add(1)));
+    await RunHelper.runAndWait(() => IERC20__factory.connect(MaticAddresses.xtetuBAL_TOKEN, signer).approve(
+        distributor.address,
+        parseUnits((xtetuBalAmountForDistributing + 1).toFixed(18)).add(1)
+      )
+    );
   }
+
+  /// remove later
+  // const gov = await DeployerUtilsLocal.impersonate();
+  // const newLogic = await DeployerUtilsLocal.deployContract(gov, 'XtetuBALDistributor')
+  // const core = await DeployerUtilsLocal.getCoreAddressesWrapper(gov);
+  // await core.announcer.announceTetuProxyUpgrade(distributor.address, newLogic.address);
+  // await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
+  // await core.controller.upgradeTetuProxyBatch([distributor.address], [newLogic.address]);
+  //////////////////////
 
   if (
     balanceUSDC.gte(parseUnits(usdcAmountForDistributing.toFixed(6), 6))
@@ -162,8 +175,8 @@ async function main() {
       parseUnits(xtetuBalTVLUSD.toFixed(18))
     ));
 
-
-    const apr = formatUnits(await distributor.lastAPR(), 6);
+    // 1.640059157153047501
+    const apr = formatUnits(await distributor.lastAPR());
     console.log('APR', apr);
     expect(+apr).is.greaterThan(10);
     expect(+apr).is.lessThan(30);

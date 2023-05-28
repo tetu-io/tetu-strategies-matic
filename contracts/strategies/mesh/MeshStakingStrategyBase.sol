@@ -32,7 +32,7 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "MeshStakingStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.3";
+  string public constant VERSION = "1.1.4";
   /// @dev 5% buybacks, 95% of vested Mesh should go to the targetRewardVault as rewards (not autocompound)
   uint256 private constant _BUY_BACK_RATIO = 5_00;
   uint256 private constant _MAX_LOCK_PERIOD = 1555200000;
@@ -203,16 +203,18 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
   }
 
   function _meshSwap(uint256 amount, address[] memory _route) internal {
-    require(IERC20(_route[0]).balanceOf(address(this)) >= amount, "Not enough balance");
-    IERC20(_route[0]).safeApprove(address(MESH_ROUTER), 0);
-    IERC20(_route[0]).safeApprove(address(MESH_ROUTER), amount);
-    MESH_ROUTER.swapExactTokensForTokens(
-      amount,
-      0,
-      _route,
-      address(this),
-      block.timestamp
-    );
+    if (amount != 0) {
+      require(IERC20(_route[0]).balanceOf(address(this)) >= amount, "Not enough balance");
+      IERC20(_route[0]).safeApprove(address(MESH_ROUTER), 0);
+      IERC20(_route[0]).safeApprove(address(MESH_ROUTER), amount);
+      MESH_ROUTER.swapExactTokensForTokens(
+        amount,
+        0,
+        _route,
+        address(this),
+        block.timestamp
+      );
+    }
   }
 
   function _getMeshReserves() internal view returns (uint256 tetuMeshReserves, uint256 meshReserves){
