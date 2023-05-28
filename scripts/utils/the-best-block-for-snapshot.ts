@@ -10,7 +10,7 @@ const BALANCER_VAULT = '0xBA12222222228d8Ba445958a75a0704d566BF2C8';
 const TETU_BAL_BPT_ID = '0xb797adfb7b268faeaa90cadbfed464c76ee599cd0002000000000000000005ba';
 const TETU_BAL = '0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33';
 // check here https://snapshot.org/#/tetubal.eth
-const PREVIOUS_PROPOSAL = '0xbea1a695a085c1f45a7f37cf318fb2ee4dead77e62ea4b12d3315c7deab267c6';
+const PREVIOUS_PROPOSAL = '0x8bbcfa519547de8f5ea6e5f99b914683860a6bf6c736cd9c7b9b2aba1266b400';
 
 async function main() {
   const curBlock = await ethers.provider?.getBlockNumber() || 0;
