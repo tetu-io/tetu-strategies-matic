@@ -3,14 +3,12 @@ import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {
   IBalancerGauge__factory,
-  IChildChainStreamer__factory, IERC20__factory,
-  StrategyBalancerStMaticWmatic__factory, StrategyBalancerTetuUsdc__factory
+  IERC20__factory, StrategyBalancerTetuUsdc__factory
 } from "../../../../typechain";
 import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
-import {TokenUtils} from "../../../TokenUtils";
-import {parseUnits} from "ethers/lib/utils";
-import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 import {BigNumber} from "ethers";
+import {parseUnits} from "ethers/lib/utils";
+import {TokenUtils} from "../../../TokenUtils";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -27,19 +25,26 @@ export class BalancerBPTUsdcTetuSpecificHardWork extends DoHardWorkLoopBase {
     this.currentLoop = i;
 
     const strat = StrategyBalancerTetuUsdc__factory.connect(this.strategy.address, this.signer);
-    // todo update to IBalancerGauge (v2)
-    // const gauge = IBalancerGauge__factory.connect(await strat.GAUGE(), this.signer);
-    // console.log(`loopStartActions gauge=${gauge}`);
-    // const streamerAdr = await gauge.reward_contract();
-    // console.log(`loopStartActions gauge.reward_contract done`);
-    //
-    // const owner = await DeployerUtilsLocal.impersonate('0xC128468b7Ce63eA702C1f104D55A2566b13D3ABD');
-    // const streamer = IChildChainStreamer__factory.connect(streamerAdr, owner);
-    // await TokenUtils.getToken(MaticAddresses.BAL_TOKEN, streamer.address, parseUnits('100'));
-    // await streamer.notify_reward_amount(MaticAddresses.BAL_TOKEN);
 
+    // IBalancerGaugeV1
+            // const gauge = IBalancerGaugeV1__factory.connect(await strat.GAUGE(), this.signer);
+            // console.log(`loopStartActions gauge=${gauge}`);
+            // const streamerAdr = await gauge.reward_contract();
+            // console.log(`loopStartActions gauge.reward_contract done`);
+            //
+            // const owner = await DeployerUtilsLocal.impersonate('0xC128468b7Ce63eA702C1f104D55A2566b13D3ABD');
+            // const streamer = IChildChainStreamer__factory.connect(streamerAdr, owner);
+            // await TokenUtils.getToken(MaticAddresses.BAL_TOKEN, streamer.address, parseUnits('100'));
+            // await streamer.notify_reward_amount(MaticAddresses.BAL_TOKEN);
+
+    // IBalancerGauge:
+            // rewards are added once in BalancerBPT_TETU-USDC_Test
+            // see "register TETU as reward token in the GAUGE" comment
+
+    const gauge = await IBalancerGauge__factory.connect(await strat.GAUGE(), this.signer);
     const rewardsRecipient = await strat.rewardsRecipient();
-    this.rewardsRecipientLastBalance = await IERC20__factory.connect(MaticAddresses.tetuBAL, this.signer).balanceOf(rewardsRecipient);
+    this.rewardsRecipientLastBalance = await gauge.balanceOf(rewardsRecipient);
+    console.log("this.rewardsRecipientLastBalance", this.rewardsRecipientLastBalance);
     this.controllerLastBalance = await IERC20__factory.connect(MaticAddresses.TETU_TOKEN, this.signer).balanceOf(this.core.controller.address);
   }
 
