@@ -9,6 +9,8 @@ import {MaticAddresses} from "../../../../scripts/addresses/MaticAddresses";
 import {BigNumber} from "ethers";
 import {parseUnits} from "ethers/lib/utils";
 import {TokenUtils} from "../../../TokenUtils";
+import {UtilsBalancerGaugeV2} from "../../../baseUtils/balancer/utilsBalancerGaugeV2";
+import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
@@ -24,7 +26,7 @@ export class BalancerBPTUsdcTetuSpecificHardWork extends DoHardWorkLoopBase {
     await super.loopStartActions(i);
     this.currentLoop = i;
 
-    const strat = StrategyBalancerTetuUsdc__factory.connect(this.strategy.address, this.signer);
+    const strategy = StrategyBalancerTetuUsdc__factory.connect(this.strategy.address, this.signer);
 
     // IBalancerGaugeV1
             // const gauge = IBalancerGaugeV1__factory.connect(await strat.GAUGE(), this.signer);
@@ -41,8 +43,8 @@ export class BalancerBPTUsdcTetuSpecificHardWork extends DoHardWorkLoopBase {
             // rewards are added once in BalancerBPT_TETU-USDC_Test
             // see "register TETU as reward token in the GAUGE" comment
 
-    const gauge = await IBalancerGauge__factory.connect(await strat.GAUGE(), this.signer);
-    const rewardsRecipient = await strat.rewardsRecipient();
+    const gauge = await IBalancerGauge__factory.connect(await strategy.GAUGE(), this.signer);
+    const rewardsRecipient = await strategy.rewardsRecipient();
     this.rewardsRecipientLastBalance = await gauge.balanceOf(rewardsRecipient);
     console.log("this.rewardsRecipientLastBalance", this.rewardsRecipientLastBalance);
     this.controllerLastBalance = await IERC20__factory.connect(MaticAddresses.TETU_TOKEN, this.signer).balanceOf(this.core.controller.address);

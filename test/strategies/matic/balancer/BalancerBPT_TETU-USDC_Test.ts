@@ -26,6 +26,7 @@ import {VaultUtils} from "../../../VaultUtils";
 import {TokenUtils} from "../../../TokenUtils";
 import {UniswapUtils} from "../../../UniswapUtils";
 import {parseUnits} from "ethers/lib/utils";
+import {UtilsBalancerGaugeV2} from "../../../baseUtils/balancer/utilsBalancerGaugeV2";
 
 
 const {expect} = chai;
@@ -85,35 +86,11 @@ describe('BalancerBPT_TETU-USDC_Test', async () => {
 
           await IFeeRewardForwarder__factory.connect(core.feeRewardForwarder.address, signer).setTokenThreshold(MaticAddresses.BAL_TOKEN, 10_000_000);
 
-          // Set up BalancerGauge
-          // register TETU as reward token in the GAUGE
+          // Set up BalancerGauge. Register TETU as reward token in the GAUGE and in the strategy
+          await UtilsBalancerGaugeV2.registerRewardTokens(signer, strategy.address, MaticAddresses.TETU_TOKEN);
           const strat = StrategyBalancerTetuUsdc__factory.connect(strategy.address, signer);
-          const gauge = await IBalancerGauge__factory.connect(await strat.GAUGE(), signer);
-          const rewardToken = MaticAddresses.TETU_TOKEN;
-          const rt = IERC20Metadata__factory.connect(rewardToken, signer);
-
-          // register new rewards distributor
-          const rewardsDistributor = ethers.Wallet.createRandom().address;
-          await gauge.connect(
-            await DeployerUtilsLocal.impersonate(await gauge.authorizer_adaptor())
-          ).add_reward(rewardToken, rewardsDistributor);
-          await gauge.connect(
-            await DeployerUtilsLocal.impersonate(await gauge.authorizer_adaptor())
-          ).set_reward_distributor(rewardToken, rewardsDistributor);
-
-          // deposit some amount of the rewards to the gauge
-          const amount = parseUnits('1000', await rt.decimals());
-          await TokenUtils.getToken(rewardToken, rewardsDistributor, amount);
-
-          await IERC20__factory.connect(rewardToken, await DeployerUtilsLocal.impersonate(rewardsDistributor)).approve(gauge.address, Misc.MAX_UINT);
-          await gauge.connect(
-            await DeployerUtilsLocal.impersonate(rewardsDistributor)
-          ).deposit_reward_token(rewardToken, amount);
-
-          // register TETU as reward token in the strategy
-          await strat.connect(
-            await DeployerUtilsLocal.impersonate(await strat.controller())
-          ).setRewardTokens([rewardToken]);
+          await strat.connect(await DeployerUtilsLocal.impersonate(await strat.controller())).setRewardTokens([MaticAddresses.TETU_TOKEN]);
+          await UtilsBalancerGaugeV2.depositRewardTokens(signer, strategy.address);
 
           return strategy;
         },
