@@ -8,6 +8,8 @@
 * extent permissible pursuant to applicable law any and all liability as well
 * as all warranties, including any fitness for a particular purpose with respect
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
+*
+* 1.0.1: fix case for USDC-rewards
 */
 
 pragma solidity 0.8.4;
@@ -30,7 +32,7 @@ abstract contract BalancerUniversalStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "BalancerUniversalStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
 
   uint private constant PRICE_IMPACT_TOLERANCE = 10_000;
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
@@ -310,7 +312,13 @@ abstract contract BalancerUniversalStrategyBase is ProxyStrategyBase {
 
     // assume need to swap rewritten token manually
     if (tokenOut != tokenOutRewrite && amount != 0) {
-      _swapLinearUSDC(tokenOutRewrite, tokenOut);
+      _swapLinearUSDC(
+        tokenOutRewrite,
+        tokenOut,
+        tokenIn == tokenOutRewrite
+          ? amount
+          : IERC20(tokenOutRewrite).balanceOf(address(this))
+      );
     }
   }
 
@@ -328,7 +336,7 @@ abstract contract BalancerUniversalStrategyBase is ProxyStrategyBase {
   }
 
   /// @dev It is a temporally logic until liquidator doesn't have swapper for LinearPool
-  function _swapLinearUSDC(address tokenIn, address tokenOut) internal {
+  function _swapLinearUSDC(address tokenIn, address tokenOut, uint amount) internal {
     bytes32 linearPoolId;
     if (tokenOut == 0xF93579002DBE8046c43FEfE86ec78b1112247BB8 /*bbamUSDC*/) {
       linearPoolId = 0xf93579002dbe8046c43fefe86ec78b1112247bb8000000000000000000000759;
@@ -336,12 +344,7 @@ abstract contract BalancerUniversalStrategyBase is ProxyStrategyBase {
     if (tokenOut == 0xae646817e458C0bE890b81e8d880206710E3c44e /*bb-t-USDC*/) {
       linearPoolId = 0xae646817e458c0be890b81e8d880206710e3c44e000000000000000000000acb;
     }
-    _balancerSwap(
-      linearPoolId,
-      tokenIn,
-      tokenOut,
-      IERC20(tokenIn).balanceOf(address(this))
-    );
+    _balancerSwap(linearPoolId, tokenIn, tokenOut, amount);
   }
 
   /// @dev Swap _tokenIn to _tokenOut using pool identified by _poolId
