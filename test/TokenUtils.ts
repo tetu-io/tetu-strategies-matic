@@ -87,9 +87,10 @@ export class TokenUtils {
     [MaticAddresses.USX_TOKEN, '0x88dcdc47d2f83a99cf0000fdf667a468bb958a78'.toLowerCase()], //
     [MaticAddresses.BALANCER_USD_TETU_BOOSTED, MaticAddresses.BALANCER_VAULT.toLowerCase()], //
     [MaticAddresses.BALANCER_stMATIC_WMATIC_TETU_BOOSTED, MaticAddresses.BALANCER_VAULT.toLowerCase()], //
-    [MaticAddresses.BALANCER_TNGBL_USDC, '0xD1758fbABAE91c805BE76D56548A584EF68B81f0'.toLowerCase()], //
+    [MaticAddresses.BALANCER_TNGBL_USDC, '0x07222e30b751c1ab4a730745afe19810cfd762c0'.toLowerCase()], // see https://polygonscan.com/token/0x9F9F548354B7C66Dc9a9f3373077D86AAACCF8F2#balances
     [MaticAddresses.BALANCER_MATIC_BOOSTED_AAVE3, MaticAddresses.BALANCER_VAULT.toLowerCase()], //
     [MaticAddresses.BALANCER_MATICX_BOOSTED_AAVE3, MaticAddresses.BALANCER_VAULT.toLowerCase()], //
+    [MaticAddresses.STADER_TOKEN, '0x80968391da3654ac4fd5feafaf60c9cb45dc84c0'], //
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {

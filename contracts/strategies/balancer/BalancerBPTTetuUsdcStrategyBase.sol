@@ -8,6 +8,8 @@
 * extent permissible pursuant to applicable law any and all liability as well
 * as all warranties, including any fitness for a particular purpose with respect
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
+*
+* 1.0.2: rewards are sent to receiver, there is no tetuBalHolder anymore
 */
 
 pragma solidity 0.8.4;
@@ -16,7 +18,6 @@ import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol"
 import "../../third_party/balancer/IBalancerGauge.sol";
 import "../../third_party/balancer/IBVault.sol";
 import "../../interface/ITetuLiquidator.sol";
-import "./ITetuBalHolder.sol";
 
 /// @title Base contract for USDC-TETU farming where all rewards will be converted to tetuBAL in POL contract
 /// @author belbix
@@ -31,7 +32,7 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "BalancerBPTTetuUsdcStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.2";
 
   uint private constant PRICE_IMPACT_TOLERANCE = 10_000;
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
@@ -39,7 +40,7 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
 
   /// @dev USDC-TETU pool id
   bytes32 public constant POOL_ID = 0xe2f706ef1f7240b803aae877c9c762644bb808d80002000000000000000008c2;
-  IBalancerGauge public constant GAUGE = IBalancerGauge(0x9FB2Eb86aE9DbEBf276A7A67DF1F2D48A49b95EC);
+  IBalancerGauge public constant GAUGE = IBalancerGauge(0xa86e8e8CfAe8C9847fA9381d4631c13c7b3466bd);
   address public constant BAL_TOKEN = 0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3;
   address public constant TETU_TOKEN = 0x255707B70BF90aa112006E1b07B9AeA6De021424;
 
@@ -48,7 +49,7 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
   // *******************************************************
 
   IAsset[] public poolTokens;
-  address public tetuBalHolder;
+  address public rewardsRecipient;
   address public bribeReceiver;
   uint public polRatio;
 
@@ -56,11 +57,11 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
   function initializeStrategy(
     address controller_,
     address vault_,
-    address tetuBalHolder_,
+    address rewardsRecipient_,
     address bribeReceiver_
   ) public initializer {
-    require(tetuBalHolder_ != address(0) && bribeReceiver_ != address(0), "zero adr");
-    tetuBalHolder = tetuBalHolder_;
+    require(rewardsRecipient_ != address(0) && bribeReceiver_ != address(0), "zero adr");
+    rewardsRecipient = rewardsRecipient_;
     bribeReceiver = bribeReceiver_;
 
     (IERC20[] memory tokens,,) = BALANCER_VAULT.getPoolTokens(POOL_ID);
@@ -100,6 +101,11 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
   /// @dev Set percent (0-100 uint) of generated POL (tetuBAL). Remaining amount will be used for bribes.
   function setPolRatio(uint value) external restricted {
     polRatio = value;
+  }
+
+  function setRewardsRecipient(address rewardsRecipient_) external restricted {
+    require(rewardsRecipient_ != address(0), "zero adr");
+    rewardsRecipient = rewardsRecipient_;
   }
 
   // *******************************************************
@@ -184,9 +190,7 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
     uint toBribes = balAmount - toPol;
 
     if (toPol != 0) {
-      address _tetuBalHolder = tetuBalHolder;
-      IERC20(BAL_TOKEN).safeTransfer(_tetuBalHolder, toPol);
-      ITetuBalHolder(_tetuBalHolder).depositBAL(toPol);
+      IERC20(BAL_TOKEN).safeTransfer(rewardsRecipient, toPol);
     }
 
     uint bb;

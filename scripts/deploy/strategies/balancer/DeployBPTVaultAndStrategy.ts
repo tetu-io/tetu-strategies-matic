@@ -46,3 +46,35 @@ export async function deployBalancerVaultAndStrategy(pool: string, poolId: strin
     writeFileSync(`tmp/deployed/balancer_${undSymbol.replace('/', '-')}.txt`, txt, 'utf8');
   }
 }
+
+
+export async function deployBalancerStrategyOnly(pool: string, poolId: string, gauge: string, depositToken: string, bbRatio: number, strategyLogic: string, vault: string) : Promise<{
+  vault: string,
+  strategy: string,
+  undSymbol: string
+}> {
+  const signer = (await ethers.getSigners())[0];
+  const core = await DeployerUtilsLocal.getCoreAddresses();
+  const undSymbol = await TokenUtils.tokenSymbol(pool)
+
+  const vaultDetected = await DeployerUtilsLocal.findVaultUnderlyingInBookkeeper(signer, pool);
+  if (vaultDetected?.toLowerCase() !== vault.toLowerCase()) {
+    throw Error(`Wrong vault ${vaultDetected} !== ${vault}`);
+  }
+
+  const strategyProxy = await DeployerUtilsLocal.deployContract(signer, "TetuProxyControlled", strategyLogic);
+  await RunHelper.runAndWait(() => StrategyBalancerBPT__factory.connect(strategyProxy.address, signer).initialize(
+    core.controller,
+    vault,
+    depositToken,
+    poolId,
+    gauge,
+    bbRatio
+  ));
+
+  return {
+    vault,
+    strategy: strategyProxy.address,
+    undSymbol
+  }
+}
