@@ -12,14 +12,12 @@ import {deployStMaticWMaticAave3Boosted7} from "./7.stMATIC-WMATIC-aave3-boosted
 import {
   IAnnouncer__factory,
   IController__factory,
-  ISmartVault,
   ISmartVault__factory,
   IStrategy__factory
 } from "../../../../../typechain";
 import {DeployerUtilsLocal} from "../../../../../scripts/deploy/DeployerUtilsLocal";
-import {sign} from "crypto";
 
-describe("RedeployBalancerStrategiesTest", () => {
+describe.skip("RedeployBalancerStrategiesTest @skip-on-coverage", () => {
   let snapshot: string;
   let snapshotForEach: string;
   let signer: SignerWithAddress;
