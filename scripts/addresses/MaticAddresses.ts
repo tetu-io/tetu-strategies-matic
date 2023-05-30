@@ -90,6 +90,7 @@ export class MaticAddresses {
   public static MATIC_X = '0xfa68FB4628DFF1028CFEc22b4162FCcd0d45efb6'.toLowerCase();
   public static USX_TOKEN = '0xCf66EB3D546F0415b368d98A95EAF56DeD7aA752'.toLowerCase();
   public static xtetuBAL_TOKEN = '0x915E49F7CD8B2b5763759c23D9463A74d5b5C1D5'.toLowerCase();
+  public static STADER_TOKEN = '0x1d734A02eF1e1f5886e66b0673b71Af5B53ffA94'.toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -248,7 +249,7 @@ export class MaticAddresses {
 
   public static BALANCER_POOL_tetuBAL_BPT_ID = '0xb797adfb7b268faeaa90cadbfed464c76ee599cd0002000000000000000005ba'.toLowerCase();
   public static BALANCER_POOL_tetuBAL_BPT = '0xb797adfb7b268faeaa90cadbfed464c76ee599cd'.toLowerCase();
-  public static BALANCER_GAUGE_tetuBAL_BPT = '0xAA59736b80cf77d1E7D56B7bbA5A8050805F5064'.toLowerCase();
+  public static BALANCER_GAUGE_tetuBAL_BPT = '0x608f2b6F31C102aD4b956761956e2362e2Ba8941'.toLowerCase();
 
   public static BALANCER_bbamUSD = "0x48e6B98ef6329f8f0A30eBB8c7C960330d648085".toLowerCase();
   public static BALANCER_bbamUSD_ID = "0x48e6b98ef6329f8f0a30ebb8c7c960330d64808500000000000000000000075b".toLowerCase();

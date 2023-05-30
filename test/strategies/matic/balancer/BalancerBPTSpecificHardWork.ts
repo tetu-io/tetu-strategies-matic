@@ -39,9 +39,8 @@ export class BalancerBPTSpecificHardWork extends DoHardWorkLoopBase {
     let gauge;
     const stratName = await strat.STRATEGY_NAME();
     console.log("stratName", stratName);
-    if (stratName === 'BalancerBPTstMaticTetuBoostedStrategyBase'
-      || stratName === 'BalancerBPTstMaticStrategyBase'
-    ) {
+
+    if (stratName === 'BalancerBPTstMaticTetuBoostedStrategyBase' || stratName === 'BalancerBPTstMaticStrategyBase') {
       gauge = IBalancerGaugeV1__factory.connect(await StrategyBalancerTetuBoostedStMaticWmatic__factory.connect(strat.address, this.signer).GAUGE(), this.signer);
       const streamerAdr = await gauge.reward_contract();
       // console.log(">>> streamer adr", streamerAdr);
@@ -61,10 +60,10 @@ export class BalancerBPTSpecificHardWork extends DoHardWorkLoopBase {
 
       // Set up BalancerGauge. Register TETU as reward token in the GAUGE and in the strategy
       if ((await gauge.reward_count()).toNumber() === 0) {
-        await UtilsBalancerGaugeV2.registerRewardTokens(this.signer, strat.address, MaticAddresses.TETU_TOKEN);
+        await UtilsBalancerGaugeV2.registerRewardTokens(this.signer, gauge.address, MaticAddresses.TETU_TOKEN);
         await strat.connect(await DeployerUtilsLocal.impersonate(await strat.controller())).setRewardTokens([MaticAddresses.TETU_TOKEN]);
       }
-      await UtilsBalancerGaugeV2.depositRewardTokens(this.signer, strat.address);
+      await UtilsBalancerGaugeV2.depositRewardTokens(this.signer, gauge.address, await strat.rewardTokens());
     }
 
 

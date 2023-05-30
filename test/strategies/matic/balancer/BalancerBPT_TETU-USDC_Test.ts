@@ -75,7 +75,8 @@ describe('BalancerBPT_TETU-USDC_Test', async () => {
             strategyContractName,
           );
 
-          await StrategyBalancerTetuUsdc__factory.connect(strategy.address, signer).initialize(
+          const strat = StrategyBalancerTetuUsdc__factory.connect(strategy.address, signer);
+          await strat.initialize(
             core.controller.address,
             vaultAddress,
             core.controller.address, // tetuBalHolder.address,
@@ -87,10 +88,9 @@ describe('BalancerBPT_TETU-USDC_Test', async () => {
           await IFeeRewardForwarder__factory.connect(core.feeRewardForwarder.address, signer).setTokenThreshold(MaticAddresses.BAL_TOKEN, 10_000_000);
 
           // Set up BalancerGauge. Register TETU as reward token in the GAUGE and in the strategy
-          await UtilsBalancerGaugeV2.registerRewardTokens(signer, strategy.address, MaticAddresses.TETU_TOKEN);
-          const strat = StrategyBalancerTetuUsdc__factory.connect(strategy.address, signer);
+          await UtilsBalancerGaugeV2.registerRewardTokens(signer, await strat.GAUGE(), MaticAddresses.TETU_TOKEN);
           await strat.connect(await DeployerUtilsLocal.impersonate(await strat.controller())).setRewardTokens([MaticAddresses.TETU_TOKEN]);
-          await UtilsBalancerGaugeV2.depositRewardTokens(signer, strategy.address);
+          await UtilsBalancerGaugeV2.depositRewardTokens(signer, await strat.GAUGE(), await strat.rewardTokens());
 
           return strategy;
         },

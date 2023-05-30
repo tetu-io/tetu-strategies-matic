@@ -12,6 +12,7 @@ import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
 import {ISmartVault, IStrategy, StrategyBalancerBPT__factory} from "../../../../typechain";
 import {Misc} from "../../../../scripts/utils/tools/Misc";
+import {UtilsBalancerGaugeV2} from "../../../baseUtils/balancer/utilsBalancerGaugeV2";
 
 
 const {expect} = chai;
@@ -62,7 +63,8 @@ describe('BalancerBPT_TETU_boostedStables_Test', async () => {
           signer,
           strategyContractName,
         );
-        await StrategyBalancerBPT__factory.connect(strategy.address, signer).initialize(
+        const strat = await StrategyBalancerBPT__factory.connect(strategy.address, signer);
+        await strat.initialize(
           core.controller.address,
           vaultAddress,
           depositToken,
@@ -70,6 +72,12 @@ describe('BalancerBPT_TETU_boostedStables_Test', async () => {
           gauge,
           buybackRatio
         );
+
+        // Set up BalancerGauge. Register TETU as reward token in the GAUGE and in the strategy
+        await UtilsBalancerGaugeV2.registerRewardTokens(signer, await strat.gauge(), MaticAddresses.TETU_TOKEN);
+        await strat.connect(await DeployerUtilsLocal.impersonate(await strat.controller())).setRewardTokens([MaticAddresses.TETU_TOKEN]);
+        await UtilsBalancerGaugeV2.depositRewardTokens(signer, await strat.gauge(), await strat.rewardTokens());
+
         return strategy;
       },
       underlying,

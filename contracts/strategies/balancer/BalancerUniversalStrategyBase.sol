@@ -214,7 +214,6 @@ abstract contract BalancerUniversalStrategyBase is ProxyStrategyBase {
           } else {
             _liquidate(rt, VAULT_BB_T_USD_ENTER_TOKEN, toRewards, silently);
           }
-
         }
 
         if (toGov != 0) {

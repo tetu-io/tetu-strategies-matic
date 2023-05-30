@@ -13,11 +13,10 @@ import {Misc} from "../../../scripts/utils/tools/Misc";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
 export class UtilsBalancerGaugeV2 {
-  static async registerRewardTokens(signer: SignerWithAddress, strategy: string, rewardToken: string) {
+  static async registerRewardTokens(signer: SignerWithAddress, gaugeAddress: string, rewardToken: string) {
     // Set up BalancerGauge
     // register TETU as reward token in the GAUGE
-    const strat = StrategyBalancerTetuUsdc__factory.connect(strategy, signer);
-    const gauge = await IBalancerGauge__factory.connect(await strat.GAUGE(), signer);
+    const gauge = await IBalancerGauge__factory.connect(gaugeAddress, signer);
     const rt = IERC20Metadata__factory.connect(rewardToken, signer);
 
     // register new rewards distributor
@@ -30,11 +29,9 @@ export class UtilsBalancerGaugeV2 {
     ).set_reward_distributor(rewardToken, rewardsDistributor);
   }
 
-  static async depositRewardTokens(signer: SignerWithAddress, strategy: string, amountNum: string = "1000") {
-    const strat = StrategyBalancerTetuUsdc__factory.connect(strategy, signer);
-    const gauge = await IBalancerGauge__factory.connect(await strat.GAUGE(), signer);
+  static async depositRewardTokens(signer: SignerWithAddress, gaugeAddress: string, rts: string[], amountNum: string = "1000") {
+    const gauge = await IBalancerGauge__factory.connect(gaugeAddress, signer);
 
-    const rts = await strat.rewardTokens();
     for (const rt of rts) {
       const rewardData = await gauge.reward_data(rt);
       const rewardToken = IERC20Metadata__factory.connect(rt, signer);
