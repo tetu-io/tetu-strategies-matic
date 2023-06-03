@@ -123,7 +123,7 @@ contract XtetuBALDistributor is ControllableV2 {
 
     for (uint i; i < recipientsUSDC.length; i++) {
       IERC20(USDC).safeTransferFrom(msg.sender, recipientsUSDC[i], amountsUSDC[i]);
-      distributedUSD += amountsUSDC[i];
+      distributedUSD += amountsUSDC[i] * 1e18 / 1e6;
     }
 
     if (recipientsXtetuBAL.length != 0) {
