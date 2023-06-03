@@ -19,7 +19,6 @@ export async function deployMaticXWmaticAave3Boosted6(): Promise<{vault: string,
     isCompound,
     depositToken,
     buyBackRatio,
-    BalancerConstants.BALANCER_VAULT_MATICX_WMATIC_AAVE3_BOOSTED,
-    BalancerConstants.STRATEGY_BALANCER_UNIVERSAL_LOGIC_100
+    BalancerConstants.BALANCER_VAULT_MATICX_WMATIC_AAVE3_BOOSTED
   );
 }

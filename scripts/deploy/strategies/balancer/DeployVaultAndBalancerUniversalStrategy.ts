@@ -65,7 +65,6 @@ export async function deployBalancerUniversalStrategyOnly(
   depositToken: string,
   buyBackRatio: number,
   vault: string,
-  strategyLogic: string
 ): Promise<{
   vault: string,
   strategy: string,
@@ -80,7 +79,9 @@ export async function deployBalancerUniversalStrategyOnly(
     throw Error(`Wrong vault ${vaultDetected} !== ${vault}`);
   }
 
-  const strategyProxy = await DeployerUtilsLocal.deployContract(signer, "TetuProxyControlled", strategyLogic);
+  const strategy = await DeployerUtilsLocal.deployContract(signer, "StrategyBalancerUniversal");
+
+  const strategyProxy = await DeployerUtilsLocal.deployContract(signer, "TetuProxyControlled", strategy.address);
   await RunHelper.runAndWait(() => StrategyBalancerUniversal__factory.connect(strategyProxy.address, signer).initialize(
     core.controller,
     vault,
