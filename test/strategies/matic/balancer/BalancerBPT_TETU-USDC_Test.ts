@@ -89,7 +89,9 @@ describe('BalancerBPT_TETU-USDC_Test', async () => {
 
           // Set up BalancerGauge. Register TETU as reward token in the GAUGE and in the strategy
           await UtilsBalancerGaugeV2.registerRewardTokens(signer, await strat.GAUGE(), MaticAddresses.TETU_TOKEN);
-          await strat.connect(await DeployerUtilsLocal.impersonate(await strat.controller())).setRewardTokens([MaticAddresses.TETU_TOKEN]);
+          await strat.connect(await DeployerUtilsLocal.impersonate(await strat.controller())).setRewardTokens(
+            [MaticAddresses.TETU_TOKEN, MaticAddresses.BAL_TOKEN]
+          );
           await UtilsBalancerGaugeV2.depositRewardTokens(signer, await strat.GAUGE(), await strat.rewardTokens());
 
           return strategy;

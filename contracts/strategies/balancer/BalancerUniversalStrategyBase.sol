@@ -138,18 +138,9 @@ abstract contract BalancerUniversalStrategyBase is ProxyStrategyBase {
     toClaim = new uint256[](_rewardTokens.length);
     for (uint i; i < toClaim.length; i++) {
       address rt = _rewardTokens[i];
-      if (rt == BAL_TOKEN) {
-        console.log("readyToClaim.BAL");
-        uint total = gauge.integrate_fraction(address(this));
-        uint minted = IBalancerMinter(gauge.bal_pseudo_minter()).minted(address(this), address(gauge));
-        console.log("readyToClaim.integrate_fraction", gauge.integrate_fraction(address(this)));
-        console.log("readyToClaim.minted", IBalancerMinter(gauge.bal_pseudo_minter()).minted(address(this), address(gauge)));
-        toClaim[i] = total > minted ? total - minted : 0;
-      } else {
-        console.log("readyToClaim.not-bal");
+      if (rt != BAL_TOKEN) {
         toClaim[i] = gauge.claimable_reward(address(this), rt);
       }
-      console.log("readyToClaim.toClaim", toClaim[i]);
     }
   }
 
@@ -207,12 +198,9 @@ abstract contract BalancerUniversalStrategyBase is ProxyStrategyBase {
     uint _lastHw = lastHw;
     if (push || _lastHw == 0 || block.timestamp - _lastHw > 12 hours) {
       // BAL token is special, it's not registered inside gauge.reward_tokens, we claim it through pseudo-minter
-      console.log("_doHardWork");
-      console.log("_doHardWork.integrate_fraction.0", gauge.integrate_fraction(address(this)));
-      console.log("_doHardWork.minted.0", IBalancerMinter(gauge.bal_pseudo_minter()).minted(address(this), address(gauge)));
+      console.log("doHardWork.BAL_TOKEN.before", IERC20(BAL_TOKEN).balanceOf(address(this)));
       IBalancerMinter(gauge.bal_pseudo_minter()).mint(address(gauge));
-      console.log("_doHardWork.integrate_fraction.1", gauge.integrate_fraction(address(this)));
-      console.log("_doHardWork.minted.1", IBalancerMinter(gauge.bal_pseudo_minter()).minted(address(this), address(gauge)));
+      console.log("doHardWork.BAL_TOKEN.after", IERC20(BAL_TOKEN).balanceOf(address(this)));
       gauge.claim_rewards();
 
       _liquidateRewards(silently);

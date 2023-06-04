@@ -140,9 +140,7 @@ abstract contract BalancerBPTSphereWmaticStrategyBase is ProxyStrategyBase {
     toClaim = new uint256[](_rewardTokens.length);
     for (uint i; i < toClaim.length; i++) {
       address rt = _rewardTokens[i];
-      if (rt == BAL_TOKEN) {
-        // todo
-      } else {
+      if (rt != BAL_TOKEN) {
         toClaim[i] = GAUGE.claimable_reward(address(this), rt);
       }
     }

@@ -130,9 +130,7 @@ abstract contract BalancerBPTStrategyBase is ProxyStrategyBase {
     toClaim = new uint256[](_rewardTokens.length);
     for (uint i; i < toClaim.length; i++) {
       address rt = _rewardTokens[i];
-      if (rt == BAL_TOKEN) {
-        // todo
-      } else {
+      if (rt != BAL_TOKEN) {
         toClaim[i] = _gauge.claimable_reward(address(this), rt);
       }
     }
@@ -189,7 +187,9 @@ abstract contract BalancerBPTStrategyBase is ProxyStrategyBase {
   function _doHardWork(bool silently, bool push) internal {
     uint _lastHw = lastHw;
     if (push || _lastHw == 0 || block.timestamp - _lastHw > 12 hours) {
+      console.log("doHardWork.BAL_TOKEN.before", IERC20(BAL_TOKEN).balanceOf(address(this)));
       IBalancerMinter(gauge.bal_pseudo_minter()).mint(address(gauge));
+      console.log("doHardWork.BAL_TOKEN.after", IERC20(BAL_TOKEN).balanceOf(address(this)));
       gauge.claim_rewards();
       _liquidateRewards(silently);
       lastHw = block.timestamp;

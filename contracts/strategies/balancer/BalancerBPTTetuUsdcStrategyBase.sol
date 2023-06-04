@@ -125,9 +125,7 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
     toClaim = new uint256[](_rewardTokens.length);
     for (uint i; i < toClaim.length; i++) {
       address rt = _rewardTokens[i];
-      if (rt == BAL_TOKEN) {
-        // todo
-      } else {
+      if (rt != BAL_TOKEN) {
         toClaim[i] = GAUGE.claimable_reward(address(this), rt);
       }
     }
@@ -174,20 +172,26 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
 
   /// @dev Make something useful with rewards
   function doHardWork() external onlyNotPausedInvesting override hardWorkers {
+    console.log("doHardWork.BAL_TOKEN.before", IERC20(BAL_TOKEN).balanceOf(address(this)));
     IBalancerMinter(GAUGE.bal_pseudo_minter()).mint(address(GAUGE));
+    console.log("doHardWork.BAL_TOKEN.after", IERC20(BAL_TOKEN).balanceOf(address(this)));
     GAUGE.claim_rewards();
     liquidateReward();
   }
 
   /// @dev Part of rewards will go to bribes, another part will go to POL(tetuBAL)
   function liquidateReward() internal override {
+    console.log("liquidateReward.BAL_TOKEN.before", IERC20(BAL_TOKEN).balanceOf(address(this)));
     address[] memory rts = _rewardTokens;
     for (uint i = 0; i < rts.length; i++) {
       address rt = rts[i];
+      console.log("_liquidateRewards.rt", rt);
+      console.log("_liquidateRewards.rt is BAL", rt == BAL_TOKEN);
       if (rt == BAL_TOKEN) {
         continue;
       }
       uint amount = IERC20(rt).balanceOf(address(this));
+      console.log("_liquidateRewards.amount", amount);
       if (amount != 0) {
         _liquidate(rt, BAL_TOKEN, amount);
       }
@@ -196,6 +200,9 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
     uint balAmount = IERC20(BAL_TOKEN).balanceOf(address(this));
     uint toPol = balAmount * polRatio / 100;
     uint toBribes = balAmount - toPol;
+    console.log("_liquidateRewards.balAmount", balAmount);
+    console.log("_liquidateRewards.toPol", toPol);
+    console.log("_liquidateRewards.toBribes", toBribes);
 
     if (toPol != 0) {
       IERC20(BAL_TOKEN).safeTransfer(rewardsRecipient, toPol);
@@ -208,6 +215,7 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
       IERC20(TETU_TOKEN).safeTransfer(bribeReceiver, bb);
     }
     IBookkeeper(IController(_controller()).bookkeeper()).registerStrategyEarned(bb);
+    console.log("liquidateReward.BAL_TOKEN.after", IERC20(BAL_TOKEN).balanceOf(address(this)));
   }
 
   function _liquidate(address tokenIn, address tokenOut, uint amount) internal {
