@@ -34,6 +34,13 @@ export class UtilsBalancerGaugeV2 {
 
     for (const rt of rts) {
       const rewardData = await gauge.reward_data(rt);
+
+      // BAL is special reward token
+      // It's included to list of strategy rewards tokens,
+      // but it's not included to the list of gauge reward tokens
+      // We claim it is the special way though pseudo-minter
+      if (rewardData.distributor === Misc.ZERO_ADDRESS) continue;
+
       const rewardToken = IERC20Metadata__factory.connect(rt, signer);
 
       // deposit some amount of the rewards to the gauge

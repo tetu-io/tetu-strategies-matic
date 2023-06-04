@@ -8,6 +8,8 @@
 * extent permissible pursuant to applicable law any and all liability as well
 * as all warranties, including any fitness for a particular purpose with respect
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
+*
+* 1.0.2: claim and liquidate BAL
 */
 
 pragma solidity 0.8.4;
@@ -15,7 +17,9 @@ pragma solidity 0.8.4;
 import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
 import "../../third_party/balancer/IBalancerGauge.sol";
 import "../../third_party/balancer/IBVault.sol";
+import "../../third_party/balancer/IBalancerMinter.sol";
 import "../../interface/ITetuLiquidator.sol";
+import "hardhat/console.sol";
 
 /// @title Base contract for TNBGL-USDC farming with bb-t-BPT vault rewards
 /// @author belbix
@@ -30,7 +34,7 @@ abstract contract BalancerBPTTngblUsdcStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "BalancerBPTTngblUsdcStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.0.2";
 
   uint private constant PRICE_IMPACT_TOLERANCE = 10_000;
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
@@ -44,6 +48,7 @@ abstract contract BalancerBPTTngblUsdcStrategyBase is ProxyStrategyBase {
   address public constant DEPOSIT_TOKEN_FOR_REWARDS = 0xae646817e458C0bE890b81e8d880206710E3c44e;
   bytes32 public constant BB_T_USD_POOL_ID = 0xb3d658d5b95bf04e2932370dd1ff976fe18dd66a000000000000000000000ace;
   address internal constant DEFAULT_PERF_FEE_RECEIVER = 0x9Cc199D4353b5FB3e6C8EEBC99f5139e0d8eA06b;
+  address public constant BAL_TOKEN = 0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3;
 
   // *******************************************************
   //                      VARIABLES
@@ -78,10 +83,13 @@ abstract contract BalancerBPTTngblUsdcStrategyBase is ProxyStrategyBase {
       rewardTokensTmp[i] = rt;
       rtsLength++;
     }
-    address[] memory rewardTokens_ = new address[](rtsLength);
+    address[] memory rewardTokens_ = new address[](rtsLength + 1);
     for (uint i = 0; i < rtsLength; ++i) {
       rewardTokens_[i] = rewardTokensTmp[i];
     }
+
+    // BAL token is special, it's not registered inside gauge.reward_tokens, we claim it through pseudo-minter
+    rewardTokens_[rtsLength] = BAL_TOKEN;
 
     ProxyStrategyBase.initializeStrategyBase(
       controller_,
@@ -111,6 +119,10 @@ abstract contract BalancerBPTTngblUsdcStrategyBase is ProxyStrategyBase {
       _rewardTokens.push(rewardTokensTmp[i]);
       _unsalvageableTokens[rewardTokensTmp[i]] = true;
     }
+
+    // BAL token is special, it's not registered inside gauge.reward_tokens, we claim it through pseudo-minter
+    _rewardTokens.push(BAL_TOKEN);
+    _unsalvageableTokens[BAL_TOKEN] = true;
   }
 
   // *******************************************************
@@ -127,7 +139,11 @@ abstract contract BalancerBPTTngblUsdcStrategyBase is ProxyStrategyBase {
     toClaim = new uint256[](_rewardTokens.length);
     for (uint i; i < toClaim.length; i++) {
       address rt = _rewardTokens[i];
-      toClaim[i] = GAUGE.claimable_reward(address(this), rt);
+      if (rt == BAL_TOKEN) {
+        // todo
+      } else {
+        toClaim[i] = GAUGE.claimable_reward(address(this), rt);
+      }
     }
   }
 
@@ -182,6 +198,7 @@ abstract contract BalancerBPTTngblUsdcStrategyBase is ProxyStrategyBase {
   function _doHardWork(bool silently, bool push) internal {
     uint _lastHw = lastHw;
     if (push || _lastHw == 0 || block.timestamp - _lastHw > 12 hours) {
+      IBalancerMinter(GAUGE.bal_pseudo_minter()).mint(address(GAUGE));
       GAUGE.claim_rewards();
       _liquidateRewards(silently);
       lastHw = block.timestamp;
@@ -198,10 +215,15 @@ abstract contract BalancerBPTTngblUsdcStrategyBase is ProxyStrategyBase {
     address[] memory rts = _rewardTokens;
     for (uint i = 0; i < rts.length; i++) {
       address rt = rts[i];
+      console.log("_liquidateRewards.rt", rt);
       uint amount = IERC20(rt).balanceOf(address(this));
+      console.log("_liquidateRewards.amount", amount);
+      console.log("_liquidateRewards.rt is BAL", rt == BAL_TOKEN);
       if (amount != 0) {
         uint toRewards = amount * (_BUY_BACK_DENOMINATOR - bbRatio) / _BUY_BACK_DENOMINATOR;
         uint toGov = amount - toRewards;
+        console.log("_liquidateRewards.toGov", toGov);
+        console.log("_liquidateRewards.toRewards", toRewards);
         if (toRewards != 0) {
           _liquidate(rt, DEPOSIT_TOKEN_FOR_REWARDS, toRewards, silently);
         }

@@ -8,6 +8,8 @@
 * extent permissible pursuant to applicable law any and all liability as well
 * as all warranties, including any fitness for a particular purpose with respect
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
+*
+* 1.0.5: claim and liquidate BAL
 */
 
 pragma solidity 0.8.4;
@@ -15,7 +17,9 @@ pragma solidity 0.8.4;
 import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
 import "../../third_party/balancer/IBalancerGauge.sol";
 import "../../third_party/balancer/IBVault.sol";
+import "../../third_party/balancer/IBalancerMinter.sol";
 import "../../interface/ITetuLiquidator.sol";
+import "hardhat/console.sol";
 
 /// @title Base contract for BPT farming
 /// @author belbix
@@ -30,12 +34,13 @@ abstract contract BalancerBPTStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "BalancerBPTStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.4";
+  string public constant VERSION = "1.0.5";
 
   uint private constant PRICE_IMPACT_TOLERANCE = 10_000;
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
   ITetuLiquidator public constant TETU_LIQUIDATOR = ITetuLiquidator(0xC737eaB847Ae6A92028862fE38b828db41314772);
   address internal constant DEFAULT_PERF_FEE_RECEIVER = 0x9Cc199D4353b5FB3e6C8EEBC99f5139e0d8eA06b;
+  address public constant BAL_TOKEN = 0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3;
 
   // *******************************************************
   //                      VARIABLES
@@ -81,10 +86,12 @@ abstract contract BalancerBPTStrategyBase is ProxyStrategyBase {
       rewardTokensTmp[i] = rt;
       rtsLength++;
     }
-    address[] memory rewardTokens_ = new address[](rtsLength);
+    address[] memory rewardTokens_ = new address[](rtsLength + 1);
     for (uint i = 0; i < rtsLength; ++i) {
       rewardTokens_[i] = rewardTokensTmp[i];
     }
+    // BAL token is special, it's not registered inside gauge.reward_tokens, we claim it through pseudo-minter
+    rewardTokens_[rtsLength] = BAL_TOKEN;
 
     ProxyStrategyBase.initializeStrategyBase(
       controller_,
@@ -123,7 +130,11 @@ abstract contract BalancerBPTStrategyBase is ProxyStrategyBase {
     toClaim = new uint256[](_rewardTokens.length);
     for (uint i; i < toClaim.length; i++) {
       address rt = _rewardTokens[i];
-      toClaim[i] = _gauge.claimable_reward(address(this), rt);
+      if (rt == BAL_TOKEN) {
+        // todo
+      } else {
+        toClaim[i] = _gauge.claimable_reward(address(this), rt);
+      }
     }
   }
 
@@ -178,6 +189,7 @@ abstract contract BalancerBPTStrategyBase is ProxyStrategyBase {
   function _doHardWork(bool silently, bool push) internal {
     uint _lastHw = lastHw;
     if (push || _lastHw == 0 || block.timestamp - _lastHw > 12 hours) {
+      IBalancerMinter(gauge.bal_pseudo_minter()).mint(address(gauge));
       gauge.claim_rewards();
       _liquidateRewards(silently);
       lastHw = block.timestamp;
@@ -196,10 +208,15 @@ abstract contract BalancerBPTStrategyBase is ProxyStrategyBase {
     uint undBalanceBefore = IERC20(_underlying()).balanceOf(address(this));
     for (uint i = 0; i < rts.length; i++) {
       address rt = rts[i];
+      console.log("_liquidateRewards.rt", rt);
       uint amount = IERC20(rt).balanceOf(address(this));
+      console.log("_liquidateRewards.amount", amount);
+      console.log("_liquidateRewards.rt is BAL", rt == BAL_TOKEN);
       if (amount != 0) {
         uint toCompound = amount * (_BUY_BACK_DENOMINATOR - bbRatio) / _BUY_BACK_DENOMINATOR;
         uint toGov = amount - toCompound;
+        console.log("_liquidateRewards.toGov", toGov);
+        console.log("_liquidateRewards.toCompound", toCompound);
         if (toCompound != 0) {
           _liquidate(rt, _depositToken, toCompound, silently);
         }

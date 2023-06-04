@@ -10,6 +10,7 @@
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 *
 * 1.0.2: rewards are sent to receiver, there is no tetuBalHolder anymore
+* 1.0.3: claim and liquidate BAL
 */
 
 pragma solidity 0.8.4;
@@ -17,7 +18,9 @@ pragma solidity 0.8.4;
 import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
 import "../../third_party/balancer/IBalancerGauge.sol";
 import "../../third_party/balancer/IBVault.sol";
+import "../../third_party/balancer/IBalancerMinter.sol";
 import "../../interface/ITetuLiquidator.sol";
+import "hardhat/console.sol";
 
 /// @title Base contract for USDC-TETU farming where all rewards will be converted to tetuBAL in POL contract
 /// @author belbix
@@ -122,7 +125,11 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
     toClaim = new uint256[](_rewardTokens.length);
     for (uint i; i < toClaim.length; i++) {
       address rt = _rewardTokens[i];
-      toClaim[i] = GAUGE.claimable_reward(address(this), rt);
+      if (rt == BAL_TOKEN) {
+        // todo
+      } else {
+        toClaim[i] = GAUGE.claimable_reward(address(this), rt);
+      }
     }
   }
 
@@ -167,6 +174,7 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
 
   /// @dev Make something useful with rewards
   function doHardWork() external onlyNotPausedInvesting override hardWorkers {
+    IBalancerMinter(GAUGE.bal_pseudo_minter()).mint(address(GAUGE));
     GAUGE.claim_rewards();
     liquidateReward();
   }
