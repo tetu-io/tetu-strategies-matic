@@ -1,19 +1,15 @@
-import {deploySphereWmatic1} from "./1.SPHERE-WMATIC";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {TimeUtils} from "../../../../TimeUtils";
 import {ethers} from "hardhat";
-import {expect} from "chai";
-import {deployUsdcTetu2} from "./2.USDC-TETU";
-import {deployTngblUsdc3} from "./3.TNGBL-USDC";
-import {deployWUsdrUsdc4} from "./4.wUSDR-USDC";
-import {deployBoostedTetuStables5} from "./5.boosted_TETU_Stables";
-import {deployMaticXWmaticAave3Boosted6} from "./6.MaticX-WMATIC-aave3-boosted";
-import {deployStMaticWMaticAave3Boosted7} from "./7.stMATIC-WMATIC-aave3-boosted";
 import {
+  BalancerUniversalStrategyBase__factory,
   IAnnouncer__factory,
   IController__factory,
   ISmartVault__factory,
-  IStrategy__factory
+  IStrategy__factory, StrategyBalancerBPT__factory,
+  StrategyBalancerSphereWmatic__factory,
+  StrategyBalancerTetuUsdc__factory,
+  StrategyBalancerTngblUsdc__factory, StrategyBalancerUniversal__factory
 } from "../../../../../typechain";
 import {DeployerUtilsLocal} from "../../../../../scripts/deploy/DeployerUtilsLocal";
 
@@ -79,7 +75,17 @@ describe("UpdateBalancerStrategiesTest @skip-on-coverage", () => {
         await IStrategy__factory.connect(s6, signer).investedUnderlyingBalance(),
         await IStrategy__factory.connect(s7, signer).investedUnderlyingBalance(),
       ];
+      const strategiesVersionsBefore = [
+        await StrategyBalancerSphereWmatic__factory.connect(s1, signer).VERSION(),
+        await StrategyBalancerTetuUsdc__factory.connect(s2, signer).VERSION(),
+        await StrategyBalancerTngblUsdc__factory.connect(s3, signer).VERSION(),
+        await StrategyBalancerBPT__factory.connect(s4, signer).VERSION(),
+        await StrategyBalancerBPT__factory.connect(s5, signer).VERSION(),
+        await StrategyBalancerUniversal__factory.connect(s6, signer).VERSION(),
+        await StrategyBalancerUniversal__factory.connect(s7, signer).VERSION(),
+      ];
       console.log("strategiesStateBefore", strategiesStateBefore);
+      console.log("strategiesVersionsBefore", strategiesVersionsBefore);
 
       // announce strategies upgrades
       await announcer.announceTetuProxyUpgradeBatch(
@@ -105,28 +111,37 @@ describe("UpdateBalancerStrategiesTest @skip-on-coverage", () => {
         await IStrategy__factory.connect(s6, signer).investedUnderlyingBalance(),
         await IStrategy__factory.connect(s7, signer).investedUnderlyingBalance(),
       ];
+      const strategiesVersionsMiddle = [
+        await StrategyBalancerSphereWmatic__factory.connect(s1, signer).VERSION(),
+        await StrategyBalancerTetuUsdc__factory.connect(s2, signer).VERSION(),
+        await StrategyBalancerTngblUsdc__factory.connect(s3, signer).VERSION(),
+        await StrategyBalancerBPT__factory.connect(s4, signer).VERSION(),
+        await StrategyBalancerBPT__factory.connect(s5, signer).VERSION(),
+        await StrategyBalancerUniversal__factory.connect(s6, signer).VERSION(),
+        await StrategyBalancerUniversal__factory.connect(s7, signer).VERSION(),
+      ];
       console.log("strategiesStateMiddle", strategiesStateMiddle);
-      //
-      //
-      // // invest amounts back from vaults to the strategies
-      // await (await ISmartVault__factory.connect(r1.vault, governance)).doHardWork();
-      // await (await ISmartVault__factory.connect(r2.vault, governance)).doHardWork();
-      // await (await ISmartVault__factory.connect(r3.vault, governance)).doHardWork();
-      // await (await ISmartVault__factory.connect(r4.vault, governance)).doHardWork();
-      // await (await ISmartVault__factory.connect(r5.vault, governance)).doHardWork();
-      // await (await ISmartVault__factory.connect(r6.vault, governance)).doHardWork();
-      // await (await ISmartVault__factory.connect(r7.vault, governance)).doHardWork();
-      //
-      // const strategiesStateFinal = [
-      //   await IStrategy__factory.connect(s1, signer).investedUnderlyingBalance(),
-      //   await IStrategy__factory.connect(s2, signer).investedUnderlyingBalance(),
-      //   await IStrategy__factory.connect(s3, signer).investedUnderlyingBalance(),
-      //   await IStrategy__factory.connect(s4, signer).investedUnderlyingBalance(),
-      //   await IStrategy__factory.connect(s5, signer).investedUnderlyingBalance(),
-      //   await IStrategy__factory.connect(s6, signer).investedUnderlyingBalance(),
-      //   await IStrategy__factory.connect(s7, signer).investedUnderlyingBalance(),
-      // ];
-      // console.log("strategiesStateFinal", strategiesStateFinal);
+      console.log("strategiesVersionsMiddle", strategiesVersionsMiddle);
+
+      // run hardwork to check how updated strategies work
+      await (await ISmartVault__factory.connect(await IStrategy__factory.connect(s1, signer).vault(), governance)).doHardWork();
+      await (await ISmartVault__factory.connect(await IStrategy__factory.connect(s2, signer).vault(), governance)).doHardWork();
+      await (await ISmartVault__factory.connect(await IStrategy__factory.connect(s3, signer).vault(), governance)).doHardWork();
+      await (await ISmartVault__factory.connect(await IStrategy__factory.connect(s4, signer).vault(), governance)).doHardWork();
+      await (await ISmartVault__factory.connect(await IStrategy__factory.connect(s5, signer).vault(), governance)).doHardWork();
+      await (await ISmartVault__factory.connect(await IStrategy__factory.connect(s6, signer).vault(), governance)).doHardWork();
+      await (await ISmartVault__factory.connect(await IStrategy__factory.connect(s7, signer).vault(), governance)).doHardWork();
+
+      const strategiesStateFinal = [
+        await IStrategy__factory.connect(s1, signer).investedUnderlyingBalance(),
+        await IStrategy__factory.connect(s2, signer).investedUnderlyingBalance(),
+        await IStrategy__factory.connect(s3, signer).investedUnderlyingBalance(),
+        await IStrategy__factory.connect(s4, signer).investedUnderlyingBalance(),
+        await IStrategy__factory.connect(s5, signer).investedUnderlyingBalance(),
+        await IStrategy__factory.connect(s6, signer).investedUnderlyingBalance(),
+        await IStrategy__factory.connect(s7, signer).investedUnderlyingBalance(),
+      ];
+      console.log("strategiesStateFinal", strategiesStateFinal);
     });
   });
 });

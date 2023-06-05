@@ -16,8 +16,6 @@ import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol"
 import "@tetu_io/tetu-contracts/contracts/base/interface/ISmartVault.sol";
 import "@tetu_io/tetu-contracts/contracts/swap/interfaces/ITetuSwapPair.sol";
 
-import "hardhat/console.sol";
-
 /// @title Abstract contract for Tetu swap strategy implementation
 /// @author belbix
 abstract contract TetuSwapStrategyBase is ProxyStrategyBase {

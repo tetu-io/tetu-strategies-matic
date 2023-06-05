@@ -20,7 +20,6 @@ import "../../third_party/balancer/IBalancerGauge.sol";
 import "../../third_party/balancer/IBVault.sol";
 import "../../third_party/balancer/IBalancerMinter.sol";
 import "../../interface/ITetuLiquidator.sol";
-import "hardhat/console.sol";
 
 /// @title Base contract for farming Balancer boosted pools
 /// @author belbix
@@ -198,9 +197,7 @@ abstract contract BalancerUniversalStrategyBase is ProxyStrategyBase {
     uint _lastHw = lastHw;
     if (push || _lastHw == 0 || block.timestamp - _lastHw > 12 hours) {
       // BAL token is special, it's not registered inside gauge.reward_tokens, we claim it through pseudo-minter
-      console.log("doHardWork.BAL_TOKEN.before", IERC20(BAL_TOKEN).balanceOf(address(this)));
       IBalancerMinter(gauge.bal_pseudo_minter()).mint(address(gauge));
-      console.log("doHardWork.BAL_TOKEN.after", IERC20(BAL_TOKEN).balanceOf(address(this)));
       gauge.claim_rewards();
 
       _liquidateRewards(silently);
@@ -242,16 +239,11 @@ abstract contract BalancerUniversalStrategyBase is ProxyStrategyBase {
     uint undBalanceBefore = IERC20(_underlying()).balanceOf(address(this));
     for (uint i = 0; i < rts.length; i++) {
       address rt = rts[i];
-      console.log("_liquidateRewards.rt", rt);
       uint amount = IERC20(rt).balanceOf(address(this));
-      console.log("_liquidateRewards.amount", amount);
-      console.log("_liquidateRewards.rt is BAL", rt == BAL_TOKEN);
       if (amount != 0) {
         uint toRewards = amount * (_BUY_BACK_DENOMINATOR - bbRatio) / _BUY_BACK_DENOMINATOR;
         uint toGov = amount - toRewards;
 
-        console.log("_liquidateRewards.toGov", toGov);
-        console.log("_liquidateRewards.toRewards", toRewards);
         if (toGov != 0) {
           IERC20(rt).safeTransfer(DEFAULT_PERF_FEE_RECEIVER, toGov);
         }

@@ -19,7 +19,6 @@ import "../../third_party/balancer/IBalancerGauge.sol";
 import "../../third_party/balancer/IBVault.sol";
 import "../../third_party/balancer/IBalancerMinter.sol";
 import "../../interface/ITetuLiquidator.sol";
-import "hardhat/console.sol";
 
 /// @title Base contract for TNBGL-USDC farming with bb-t-BPT vault rewards
 /// @author belbix
@@ -196,9 +195,7 @@ abstract contract BalancerBPTTngblUsdcStrategyBase is ProxyStrategyBase {
   function _doHardWork(bool silently, bool push) internal {
     uint _lastHw = lastHw;
     if (push || _lastHw == 0 || block.timestamp - _lastHw > 12 hours) {
-      console.log("doHardWork.BAL_TOKEN.before", IERC20(BAL_TOKEN).balanceOf(address(this)));
       IBalancerMinter(GAUGE.bal_pseudo_minter()).mint(address(GAUGE));
-      console.log("doHardWork.BAL_TOKEN.after", IERC20(BAL_TOKEN).balanceOf(address(this)));
       GAUGE.claim_rewards();
       _liquidateRewards(silently);
       lastHw = block.timestamp;
@@ -215,15 +212,10 @@ abstract contract BalancerBPTTngblUsdcStrategyBase is ProxyStrategyBase {
     address[] memory rts = _rewardTokens;
     for (uint i = 0; i < rts.length; i++) {
       address rt = rts[i];
-      console.log("_liquidateRewards.rt", rt);
       uint amount = IERC20(rt).balanceOf(address(this));
-      console.log("_liquidateRewards.amount", amount);
-      console.log("_liquidateRewards.rt is BAL", rt == BAL_TOKEN);
       if (amount != 0) {
         uint toRewards = amount * (_BUY_BACK_DENOMINATOR - bbRatio) / _BUY_BACK_DENOMINATOR;
         uint toGov = amount - toRewards;
-        console.log("_liquidateRewards.toGov", toGov);
-        console.log("_liquidateRewards.toRewards", toRewards);
         if (toRewards != 0) {
           _liquidate(rt, DEPOSIT_TOKEN_FOR_REWARDS, toRewards, silently);
         }
