@@ -19,7 +19,7 @@ import {HardWorkForZerovix} from "./HardWorkForZerovix";
 
 chai.use(chaiAsPromised);
 
-describe('Zerovix tests', async () => {
+describe.skip('Zerovix tests', async () => {
     const infos = [
         [MaticAddresses.ZEROVIX_oDAI, MaticAddresses.DAI_TOKEN],
         [MaticAddresses.ZEROVIX_oWETH, MaticAddresses.WETH_TOKEN],

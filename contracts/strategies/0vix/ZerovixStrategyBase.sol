@@ -25,7 +25,7 @@ abstract contract ZerovixStrategyBase is UniversalLendStrategy {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
 
   IStrategy.Platform public constant override platform = IStrategy.Platform.ZEROVIX;
   /// @notice Strategy type for statistical purposes

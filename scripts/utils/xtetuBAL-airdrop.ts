@@ -26,11 +26,11 @@ import {expect} from "chai";
 
 // ------------------ CHANGE ME ----------------------------
 
-// MAKE SURE YOUR LOCL SNAPSHOT BLOCK IS ACTUAL!
+// MAKE SURE YOUR LOCAL SNAPSHOT BLOCK IS ACTUAL!
 // the last snapshot https://snapshot.org/#/tetubal.eth
-const PROPOSAL_ID = '0x8bbcfa519547de8f5ea6e5f99b914683860a6bf6c736cd9c7b9b2aba1266b400';
+const PROPOSAL_ID = '0x274f13b610d1355058b5a5e279f6fa057c904531c6d481afe264d5c17baaffed';
 // USDC amount received from all bribes
-const USDC_AMOUNT = 3644;
+const USDC_AMOUNT = 9187;
 
 // ----------------------------------------------
 const xtetuBALPerfFee = 0.85;
@@ -106,11 +106,11 @@ async function main() {
       usersForXtetuBAL.push(user);
       const a = usdcAmountForUser / +formatUnits(xtetuBalPrice);
       xtetuBalAmountForDistributing += a;
-      console.log('xtetuBAL => ', user, a);
+      // console.log('xtetuBAL => ', user, a);
       usersForXtetuBALAmounts.push(parseUnits(a.toFixed(18)));
       amountForBuyingTetuBal += usdcAmountForUser;
     } else {
-      console.log('USDC => ', user, usdcAmountForUser);
+      // console.log('USDC => ', user, usdcAmountForUser);
       usersForUSDC.push(user);
       usersForUSDCAmounts.push(parseUnits(usdcAmountForUser.toFixed(6), 6));
       usdcAmountForDistributing += usdcAmountForUser;

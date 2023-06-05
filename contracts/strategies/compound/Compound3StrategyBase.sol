@@ -25,7 +25,7 @@ abstract contract Compound3StrategyBase is UniversalLendStrategy {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
 
   IStrategy.Platform public constant override platform = IStrategy.Platform.COMPOUND;
   /// @notice Strategy type for statistical purposes
