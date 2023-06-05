@@ -193,6 +193,8 @@ abstract contract BalancerBPTTngblUsdcStrategyBase is ProxyStrategyBase {
   }
 
   function _doHardWork(bool silently, bool push) internal {
+    updateRewardTokensFromGauge();
+
     uint _lastHw = lastHw;
     if (push || _lastHw == 0 || block.timestamp - _lastHw > 12 hours) {
       IBalancerMinter(GAUGE.bal_pseudo_minter()).mint(address(GAUGE));

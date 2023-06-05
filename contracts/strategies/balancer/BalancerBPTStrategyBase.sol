@@ -184,12 +184,35 @@ abstract contract BalancerBPTStrategyBase is ProxyStrategyBase {
   }
 
   function _doHardWork(bool silently, bool push) internal {
+    _refreshRewardTokens();
+
     uint _lastHw = lastHw;
     if (push || _lastHw == 0 || block.timestamp - _lastHw > 12 hours) {
       IBalancerMinter(gauge.bal_pseudo_minter()).mint(address(gauge));
       gauge.claim_rewards();
       _liquidateRewards(silently);
       lastHw = block.timestamp;
+    }
+  }
+
+  function _refreshRewardTokens() internal {
+    delete _rewardTokens;
+
+    for (uint i = 0; i < 100; ++i) {
+      address rt = gauge.reward_tokens(i);
+      if (rt == address(0)) {
+        break;
+      }
+      _rewardTokens.push(rt);
+      if (!_unsalvageableTokens[rt]) {
+        _unsalvageableTokens[rt] = true;
+      }
+    }
+
+    // BAL token is special, it's not registered inside gauge.reward_tokens, we claim it through pseudo-minter
+    _rewardTokens.push(BAL_TOKEN);
+    if (!_unsalvageableTokens[BAL_TOKEN]) {
+      _unsalvageableTokens[BAL_TOKEN] = true;
     }
   }
 
