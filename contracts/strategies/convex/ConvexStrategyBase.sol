@@ -11,7 +11,7 @@
 */
 pragma solidity 0.8.4;
 
-import "../../third_party/convex/IGauge.sol";
+import "../../third_party/convex/IConvexGauge.sol";
 import "@tetu_io/tetu-contracts/contracts/base/strategies/StrategyBase.sol";
 
 
@@ -45,7 +45,7 @@ abstract contract ConvexStrategyBase is StrategyBase {
     address _gauge
   ) StrategyBase(_controller, _underlying, _vault, __rewardTokens, _BUY_BACK_RATIO) {
     gauge = _gauge;
-    address lpToken = IGauge(gauge).lp_token();
+    address lpToken = IConvexGauge(gauge).lp_token();
     require(lpToken == _underlyingToken, "wrong underlying");
   }
 
@@ -54,7 +54,7 @@ abstract contract ConvexStrategyBase is StrategyBase {
   /// @notice Strategy balance in the Gauge pool
   /// @return bal Balance amount in underlying tokens
   function rewardPoolBalance() public override view returns (uint256 bal) {
-    bal = IGauge(gauge).balanceOf(address(this));
+    bal = IConvexGauge(gauge).balanceOf(address(this));
   }
 
   /// @notice Return approximately amount of reward tokens ready to claim in Gauge pool
@@ -65,7 +65,7 @@ abstract contract ConvexStrategyBase is StrategyBase {
   function readyToClaim() external view override returns (uint256[] memory) {
     uint256[] memory toClaim = new uint256[](_rewardTokens.length);
     for (uint256 i = 0; i < _rewardTokens.length; i++) {
-      toClaim[i] = IGauge(gauge).claimable_reward(address(this), _rewardTokens[i]);
+      toClaim[i] = IConvexGauge(gauge).claimable_reward(address(this), _rewardTokens[i]);
     }
     return toClaim;
   }
@@ -82,8 +82,16 @@ abstract contract ConvexStrategyBase is StrategyBase {
   /// @notice Claim rewards from external project and send them to FeeRewardForwarder
   function doHardWork() external onlyNotPausedInvesting override hardWorkers {
     investAllUnderlying();
-    IGauge(gauge).claim_rewards(address(this));
+    IConvexGauge(gauge).claim_rewards(address(this));
     liquidateReward();
+  }
+
+  function setRewardTokens(address[] memory rts) external restricted {
+    delete _rewardTokens;
+    for (uint i = 0; i < rts.length; i++) {
+      _rewardTokens.push(rts[i]);
+      _unsalvageableTokens[rts[i]] = true;
+    }
   }
 
   // ************ INTERNAL LOGIC IMPLEMENTATION **************************
@@ -93,19 +101,19 @@ abstract contract ConvexStrategyBase is StrategyBase {
   function depositToPool(uint256 amount) internal override {
     IERC20(_underlyingToken).safeApprove(gauge, 0);
     IERC20(_underlyingToken).safeApprove(gauge, amount);
-    IGauge(gauge).deposit(amount);
+    IConvexGauge(gauge).deposit(amount);
   }
 
   /// @dev Withdraw underlying and reward from Gauge pool
   /// @param amount Deposit amount
   function withdrawAndClaimFromPool(uint256 amount) internal override {
-    IGauge(gauge).withdraw(amount, true);
+    IConvexGauge(gauge).withdraw(amount, true);
   }
 
   /// @dev Exit from external project without caring about rewards
   ///      For emergency cases only!
   function emergencyWithdrawFromPool() internal override {
-    IGauge(gauge).withdraw(rewardPoolBalance(), false);
+    IConvexGauge(gauge).withdraw(rewardPoolBalance(), false);
   }
 
   /// @dev Do something useful with farmed rewards

@@ -2,8 +2,8 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {BigNumber, utils} from "ethers";
 import {
   IERC20,
-  IERC20__factory,
-  IConvexPool, ICurveLpToken, IConvexMinter__factory
+  IERC20Metadata__factory, IERC20__factory,
+  IConvexPool, ICurveLpToken, IConvexMinter__factory, IConvexGauge__factory
 } from "../../../../../typechain";
 import {MaticAddresses} from "../../../../../scripts/addresses/MaticAddresses";
 import {ethers} from "hardhat";
@@ -12,6 +12,7 @@ import {UniswapUtils} from "../../../../UniswapUtils";
 import {TokenUtils} from "../../../../TokenUtils";
 import {DeployerUtilsLocal} from "../../../../../scripts/deploy/DeployerUtilsLocal";
 import {parseUnits} from "ethers/lib/utils";
+import {Misc} from "../../../../../scripts/utils/tools/Misc";
 
 export class ConvexUtils {
 
@@ -84,5 +85,35 @@ export class ConvexUtils {
     await TokenUtils.approve(MaticAddresses.AM3CRV_TOKEN, signer, minterAddress, amount.toString());
     const minter = IConvexMinter__factory.connect(minterAddress, signer).exchange(0, 1, amount, 0);
     console.log('swap am3CRV to amWBTC completed')
+  }
+
+  static async registerRewardTokens(signer: SignerWithAddress, gaugeAddress: string, rewardToken: string) {
+    // Set up ConvexGauge
+    // register TETU as reward token in the GAUGE
+    const managerAddress = await IConvexGauge__factory.connect(gaugeAddress, signer).manager();
+    const manager = await DeployerUtilsLocal.impersonate(managerAddress);
+
+    // register new rewards distributor
+    const rewardsDistributor = ethers.Wallet.createRandom().address;
+    const gauge = await IConvexGauge__factory.connect(gaugeAddress, manager);
+    await gauge.add_reward(rewardToken, rewardsDistributor);
+    await gauge.set_reward_distributor(rewardToken, rewardsDistributor);
+  }
+
+  static async depositRewardTokens(signer: SignerWithAddress, gaugeAddress: string, rts: string[], amountNum: string = "1000") {
+    const gauge = await IConvexGauge__factory.connect(gaugeAddress, signer);
+
+    for (const rt of rts) {
+      const rewardData = await gauge.reward_data(rt);
+      const rewardToken = IERC20Metadata__factory.connect(rt, signer);
+      // deposit some amount of the rewards to the gauge
+      const amount = parseUnits(amountNum, await rewardToken.decimals());
+      await TokenUtils.getToken(rt, rewardData.distributor, amount);
+
+      await IERC20__factory.connect(rt, await DeployerUtilsLocal.impersonate(rewardData.distributor)).approve(gauge.address, Misc.MAX_UINT);
+      await gauge.connect(
+          await DeployerUtilsLocal.impersonate(rewardData.distributor)
+      ).deposit_reward_token(rt, amount);
+    }
   }
 }

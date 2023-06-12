@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.4;
 
-interface IGauge {
+interface IConvexGauge {
 
   struct Reward {
     address distributor;
@@ -44,11 +44,15 @@ interface IGauge {
 
   function balanceOf(address) external view returns (uint);
 
+  function manager() external view returns (address);
+
   function lp_token() external view returns (address);
 
   function deposit_reward_token(address reward_token, uint256 amount) external;
 
   function add_reward(address reward_token, address distributor) external;
+
+  function set_reward_distributor(address reward_token, address distributor) external;
 
   function reward_tokens(uint id) external view returns (address);
 
