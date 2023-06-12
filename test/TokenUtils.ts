@@ -44,7 +44,7 @@ export class TokenUtils {
     [MaticAddresses.DINO_TOKEN, '0x000000000000000000000000000000000000dead'.toLowerCase()], //
     [MaticAddresses.FXS_TOKEN, '0x1a3acf6d19267e2d3e7f898f42803e90c9219062'.toLowerCase()], // itself
     [MaticAddresses.AM3CRV_TOKEN, '0xbf3bc2f3d279466686174261bfccd0ac07576e59'.toLowerCase()], // wallet
-    [MaticAddresses.USD_BTC_ETH_CRV_TOKEN, '0x25eeb8ab4e2f369c8f0e171d0701c06fa6a709dd'.toLowerCase()], // wallet
+    [MaticAddresses.USD_BTC_ETH_CRV_TOKEN, '0x6c5384bbae7af65ed1b6784213a81dae18e528b2'.toLowerCase()], // wallet
     [MaticAddresses.BTCCRV_TOKEN, '0xffbACcE0CC7C19d46132f1258FC16CF6871D153c'.toLowerCase()], // gauge
     [MaticAddresses.IRON_IS3USD, '0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD'.toLowerCase()], // chef
     [MaticAddresses.IRON_IRON_IS3USD, '0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD'.toLowerCase()], // chef

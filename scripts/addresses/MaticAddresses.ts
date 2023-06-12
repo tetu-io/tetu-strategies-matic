@@ -86,11 +86,13 @@ export class MaticAddresses {
   public static bb_t_USDC_TOKEN = '0xae646817e458C0bE890b81e8d880206710E3c44e'.toLowerCase();
   public static SD_TOKEN = '0x1d734A02eF1e1f5886e66b0673b71Af5B53ffA94'.toLowerCase();
   public static wUSDR_TOKEN = '0xAF0D9D65fC54de245cdA37af3d18cbEc860A4D4b'.toLowerCase();
+  public static USDR_TOKEN = '0xb5DFABd7fF7F83BAB83995E72A52B97ABb7bcf63'.toLowerCase();
   public static stMATIC_TOKEN = '0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4'.toLowerCase();
   public static MATIC_X = '0xfa68FB4628DFF1028CFEc22b4162FCcd0d45efb6'.toLowerCase();
   public static USX_TOKEN = '0xCf66EB3D546F0415b368d98A95EAF56DeD7aA752'.toLowerCase();
   public static xtetuBAL_TOKEN = '0x915E49F7CD8B2b5763759c23D9463A74d5b5C1D5'.toLowerCase();
   public static STADER_TOKEN = '0x1d734A02eF1e1f5886e66b0673b71Af5B53ffA94'.toLowerCase();
+  public static AM3CRV_AMWBTC_AMWETH_TOKEN = "0xdAD97F7713Ae9437fa9249920eC8507e5FbB23d3".toLowerCase();
 
   // public static dQUICK_TOKEN = "".toLowerCase();
 
@@ -178,6 +180,7 @@ export class MaticAddresses {
   public static CURVE_aTricrypto3_POOL = "0x1d8b86e3d88cdb2d34688e87e72f388cb541b7c8".toLocaleLowerCase();
   public static CURVE_AAVE_GAGUE = "0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c".toLocaleLowerCase();
   public static CURVE_renBTC_GAGUE = "0xffbACcE0CC7C19d46132f1258FC16CF6871D153c".toLocaleLowerCase();
+  public static CURVE_USDR_am3CRV_TOKEN = "0xa138341185a9D0429B0021A11FB717B225e13e1F".toLocaleLowerCase();
 
   // HERMES
   /*
