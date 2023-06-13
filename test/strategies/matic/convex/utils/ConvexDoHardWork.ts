@@ -28,7 +28,8 @@ export class ConvexDoHardWork extends DoHardWorkLoopBase {
     const gauge = IConvexGauge__factory.connect(await strat.gauge(), this.signer);
     if ((await gauge.reward_count()).toNumber() === 0) {
       await ConvexUtils.registerRewardTokens(this.signer, gauge.address, MaticAddresses.TETU_TOKEN);
-      await strat.connect(await DeployerUtilsLocal.impersonate(await strat.controller())).setRewardTokens([MaticAddresses.TETU_TOKEN]);
+      await ConvexUtils.registerRewardTokens(this.signer, gauge.address, MaticAddresses.CRV_TOKEN);
+      await strat.connect(await DeployerUtilsLocal.impersonate(await strat.controller())).setRewardTokens([MaticAddresses.TETU_TOKEN,MaticAddresses.CRV_TOKEN]);
     }
     await ConvexUtils.depositRewardTokens(this.signer, gauge.address, await strat.rewardTokens());
   }

@@ -60,5 +60,5 @@ interface IConvexGauge {
 
   function reward_count() external view returns (uint);
 
-  function initialize(address lp, address manager) external;
+  function initialize(address lp, address manager_) external;
 }
