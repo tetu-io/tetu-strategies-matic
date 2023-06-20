@@ -28,9 +28,9 @@ import {expect} from "chai";
 
 // MAKE SURE YOUR LOCAL SNAPSHOT BLOCK IS ACTUAL!
 // the last snapshot https://snapshot.org/#/tetubal.eth
-const PROPOSAL_ID = '0x274f13b610d1355058b5a5e279f6fa057c904531c6d481afe264d5c17baaffed';
+const PROPOSAL_ID = '0x7e0a1851b24e9d39f4600125b5c04bfad02873dc7fa6398c493bb6e33e51d96f';
 // USDC amount received from all bribes
-const USDC_AMOUNT = 9187;
+const USDC_AMOUNT = 6278;
 
 // ----------------------------------------------
 const xtetuBALPerfFee = 0.85;
