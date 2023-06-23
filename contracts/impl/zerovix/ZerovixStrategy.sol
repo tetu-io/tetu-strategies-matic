@@ -11,17 +11,17 @@
 */
 pragma solidity 0.8.4;
 
-import "../../strategies/tetu/TetuSwapStrategyBase.sol";
+import "../../strategies/zerovix/ZerovixStrategyBase.sol";
 
-contract StrategyTetuSwap is TetuSwapStrategyBase {
-
-  function init(
-    address _controller,
-    address _vault,
-    address _underlying
-  ) external initializer {
-    _initializeStrategy(_controller, _underlying, _vault);
-  }
-
-
+contract ZerovixStrategy is ZerovixStrategyBase {
+    function initialize(
+        address controller_,
+        address underlying_,
+        address vault_,
+        address oToken_,
+        uint buybackRatio_
+    ) external initializer {
+        require(ISmartVault(vault_).underlying() == underlying_, "!underlying");
+        ZerovixStrategyBase.initializeStrategy(controller_, underlying_, vault_, oToken_, buybackRatio_);
+    }
 }

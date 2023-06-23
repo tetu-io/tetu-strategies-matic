@@ -26,6 +26,7 @@ async function main() {
 
 
   const veTetuBal = +formatUnits(await IERC20__factory.connect('0x6922201f0d25Aba8368e7806642625879B35aB84', signer).balanceOf('0x6FB29DD17fa6E27BD112Bc3A2D0b8dae597AeDA4'))
+  console.log('BPT', veTetuBal)
 
   const exitPerc = powerToExit / veTetuBal * 100;
 

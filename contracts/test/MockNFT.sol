@@ -12,7 +12,7 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/token/ERC721/presets/ERC721PresetMinterPauserAutoId.sol";
+import "@tetu_io/tetu-contracts/contracts/openzeppelin/ERC721PresetMinterPauserAutoId.sol";
 
 contract MockNFT is ERC721PresetMinterPauserAutoId {
 

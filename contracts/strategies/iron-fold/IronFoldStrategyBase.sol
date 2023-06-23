@@ -12,8 +12,8 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@tetu_io/tetu-contracts/contracts/base/strategies/FoldingBase.sol";
+import "@tetu_io/tetu-contracts/contracts/openzeppelin/SafeMath.sol";
 import "../../third_party/iron/CompleteRToken.sol";
 import "../../third_party/iron/IRMatic.sol";
 import "../../third_party/iron/IronPriceOracle.sol";

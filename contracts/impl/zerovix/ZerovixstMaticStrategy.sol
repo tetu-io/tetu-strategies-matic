@@ -11,7 +11,7 @@
 */
 pragma solidity 0.8.4;
 
-import "../../strategies/0vix/ZerovixstMaticStrategyBase.sol";
+import "../../strategies/zerovix/ZerovixstMaticStrategyBase.sol";
 
 contract ZerovixstMaticStrategy is ZerovixstMaticStrategyBase {
     function initialize(

@@ -12,12 +12,11 @@
 pragma solidity 0.8.4;
 
 import "../UniversalLendStrategy.sol";
-import "../../third_party/0vix/IOToken.sol";
-import "../../third_party/0vix/ILDORewardsDistribution.sol";
+import "../../third_party/zerovix/IOToken.sol";
 
-/// @title Contract for 0vix stMATIC strategy
+/// @title Contract for 0vix strategy
 /// @author a17
-abstract contract ZerovixstMaticStrategyBase is UniversalLendStrategy {
+abstract contract ZerovixStrategyBase is UniversalLendStrategy {
   using SafeERC20 for IERC20;
 
   /// ******************************************************
@@ -30,10 +29,9 @@ abstract contract ZerovixstMaticStrategyBase is UniversalLendStrategy {
 
   IStrategy.Platform public constant override platform = IStrategy.Platform.ZEROVIX;
   /// @notice Strategy type for statistical purposes
-  string public constant override STRATEGY_NAME = "ZerovixstMaticStrategyBase";
+  string public constant override STRATEGY_NAME = "ZerovixStrategyBase";
 
-  IOToken public constant oToken = IOToken(0xDc3C5E5c01817872599e5915999c0dE70722D07f);
-  ILDORewardsDistribution public constant REWARD_DISTRIBUTOR = ILDORewardsDistribution(0xd1a21676Cb1a781f321f31DB3573757D2cbCc0B2);
+  IOToken public oToken;
 
   /// ******************************************************
   ///                    Initialization
@@ -42,20 +40,21 @@ abstract contract ZerovixstMaticStrategyBase is UniversalLendStrategy {
   /// @notice Initialize contract after setup it as proxy implementation
   function initializeStrategy(
     address controller_,
+    address underlying_,
     address vault_,
+    address oToken_,
     uint buybackRatio_
   ) public initializer {
-    address[] memory rts = new address[](1);
-    rts[0] = REWARD_DISTRIBUTOR.rewardToken();
     UniversalLendStrategy.initializeLendStrategy(
       controller_,
-      oToken.underlying(),
+      underlying_,
       vault_,
       buybackRatio_,
-      rts
+      new address[](0)
     );
 
-    require(ISmartVault(vault_).underlying() == _underlying(), "!underlying");
+    oToken = IOToken(oToken_);
+    require(oToken.underlying() == _underlying(), "Wrong underlying");
   }
 
   /// ******************************************************
@@ -71,10 +70,8 @@ abstract contract ZerovixstMaticStrategyBase is UniversalLendStrategy {
   }
 
   /// @notice Return approximately amount of reward tokens ready to claim
-  function readyToClaim() external view override returns (uint256[] memory) {
-    uint[] memory rewards = new uint[](1);
-    rewards[0] = REWARD_DISTRIBUTOR.userRewardsBalance(address(this));
-    return rewards;
+  function readyToClaim() external pure override returns (uint256[] memory) {
+    return new uint[](0);
   }
 
   /// @notice TVL of the underlying in the pool
@@ -120,11 +117,7 @@ abstract contract ZerovixstMaticStrategyBase is UniversalLendStrategy {
   }
 
   /// @dev Claim distribution rewards
-  function _claimReward() internal override {
-    if (REWARD_DISTRIBUTOR.userRewardsBalance(address(this)) > 0) {
-      REWARD_DISTRIBUTOR.collectRewards();
-    }
-  }
+  function _claimReward() internal override {}
 
   //slither-disable-next-line unused-state
   uint256[48] private ______gap;
