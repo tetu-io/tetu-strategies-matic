@@ -12,7 +12,7 @@
 pragma solidity 0.8.4;
 
 import "../UniversalLendStrategy.sol";
-import "../../third_party/0vix/IOToken.sol";
+import "../../third_party/zerovix/IOToken.sol";
 
 /// @title Contract for 0vix strategy
 /// @author a17
@@ -25,7 +25,7 @@ abstract contract ZerovixStrategyBase is UniversalLendStrategy {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
 
   IStrategy.Platform public constant override platform = IStrategy.Platform.ZEROVIX;
   /// @notice Strategy type for statistical purposes

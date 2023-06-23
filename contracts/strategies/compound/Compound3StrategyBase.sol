@@ -13,6 +13,7 @@ pragma solidity 0.8.4;
 
 import "../UniversalLendStrategy.sol";
 import "../../third_party/compound/IComet.sol";
+import "../../third_party/compound/ICometRewards.sol";
 
 /// @title Contract for Compound V3 strategy
 /// @author a17
@@ -25,11 +26,13 @@ abstract contract Compound3StrategyBase is UniversalLendStrategy {
 
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.1.0";
 
   IStrategy.Platform public constant override platform = IStrategy.Platform.COMPOUND;
   /// @notice Strategy type for statistical purposes
   string public constant override STRATEGY_NAME = "Compound3StrategyBase";
+  ICometRewards public constant COMET_REWARDS = ICometRewards(0x45939657d1CA34A8FA39A924B71D28Fe8431e581);
+  address public constant COMP_TOKEN = 0x8505b9d2254A7Ae468c0E9dd10Ccea3A837aef5c;
 
   IComet public comet;
 
@@ -45,12 +48,15 @@ abstract contract Compound3StrategyBase is UniversalLendStrategy {
     address comet_,
     uint buybackRatio_
   ) public initializer {
+    address[] memory rewards = new address[](1);
+    rewards[0] = COMP_TOKEN;
+
     UniversalLendStrategy.initializeLendStrategy(
       controller_,
       underlying_,
       vault_,
       buybackRatio_,
-      new address[](0)
+      rewards
     );
 
     comet = IComet(comet_);
@@ -81,7 +87,6 @@ abstract contract Compound3StrategyBase is UniversalLendStrategy {
   /// ******************************************************
   ///              Internal logic implementation
   /// ******************************************************
-
 
   /// @dev Refresh rates and return actual deposited balance in underlying tokens
   function _getActualPoolBalance() internal view override returns (uint) {
@@ -114,7 +119,9 @@ abstract contract Compound3StrategyBase is UniversalLendStrategy {
   }
 
   /// @dev Claim distribution rewards
-  function _claimReward() internal override {}
+  function _claimReward() internal override {
+    COMET_REWARDS.claim(address(comet), address(this), true);
+  }
 
   //slither-disable-next-line unused-state
   uint256[48] private ______gap;
