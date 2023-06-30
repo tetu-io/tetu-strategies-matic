@@ -61,7 +61,7 @@ export class TokenUtils {
     [MaticAddresses.cxADA_TOKEN, '0x41318419cfa25396b47a94896ffa2c77c6434040'.toLowerCase()],
     [MaticAddresses.cxETH_TOKEN, '0x4f6742badb049791cd9a37ea913f2bac38d01279'.toLowerCase()],
     [MaticAddresses.SPHERE_TOKEN, '0x20d61737f972eecb0af5f0a85ab358cd083dd56a'.toLowerCase()],
-    [MaticAddresses.BALANCER_BAL_ETH_POOL, '0x36cc7B13029B5DEe4034745FB4F24034f3F2ffc6'.toLowerCase()],
+    [MaticAddresses.BALANCER_BAL_ETH_POOL, '0xfdf1e69202d801a584d620158841DeCF807348EF'.toLowerCase()],
     [MaticAddresses.SPHEREV2_TOKEN, '0x7754d8b057CC1d2D857d897461DAC6C3235B4aAe'.toLowerCase()], // sphere owner
     [MaticAddresses.UMA_TOKEN, '0x1b72bac3772050fdcaf468cce7e20deb3cb02d89'.toLowerCase()],
     [MaticAddresses.CLAM2_TOKEN, '0x820f92c1b3ad8e962e6c6d9d7caf2a550aec46fb'.toLowerCase()],

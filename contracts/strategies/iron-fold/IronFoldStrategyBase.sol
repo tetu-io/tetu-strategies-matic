@@ -18,7 +18,7 @@ import "../../third_party/iron/CompleteRToken.sol";
 import "../../third_party/iron/IRMatic.sol";
 import "../../third_party/iron/IronPriceOracle.sol";
 import "../../third_party/IWmatic.sol";
-import "../../interface/strategies/IIronFoldStrategy.sol";
+import "../../interfaces/strategies/IIronFoldStrategy.sol";
 
 /// @title Abstract contract for Iron lending strategy implementation with folding functionality
 /// @author JasperS13

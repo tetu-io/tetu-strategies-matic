@@ -4,7 +4,7 @@ pragma solidity 0.8.4;
 
 import "@tetu_io/tetu-contracts/contracts/base/governance/ControllableV2.sol";
 import "@tetu_io/tetu-contracts/contracts/openzeppelin/SafeERC20.sol";
-import "../interface/IPriceCalculator.sol";
+import "../interfaces/IPriceCalculator.sol";
 
 /// @title XtetuBALDistributor
 /// @notice This contract is responsible for distributing xTetuBAL rewards to recipients.

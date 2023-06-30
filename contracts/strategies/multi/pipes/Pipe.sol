@@ -15,7 +15,7 @@ pragma solidity 0.8.4;
 import "@tetu_io/tetu-contracts/contracts/openzeppelin/IERC20.sol";
 import "@tetu_io/tetu-contracts/contracts/openzeppelin/SafeERC20.sol";
 import "@tetu_io/tetu-contracts/contracts/openzeppelin/Initializable.sol";
-import "../../../interface/strategies/IPipe.sol";
+import "../../../interfaces/strategies/IPipe.sol";
 import "./PipeLib.sol";
 import "@tetu_io/tetu-contracts/contracts/base/governance/ControllableV2.sol";
 import "@tetu_io/tetu-contracts/contracts/base/SlotsLib.sol";

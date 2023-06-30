@@ -19,7 +19,7 @@ async function main() {
     const formattedDate: string = `${endTime.getFullYear()}-${("0" + (endTime.getMonth() + 1)).slice(-2)}-${("0" + endTime.getDate()).slice(-2)}`;
     console.log(`${nft.veNFTId} ${power}k will end in ${untilEnd} days (${formattedDate})`);
 
-    if (+untilEnd < 90) {
+    if (+untilEnd < 60) {
       powerToExit += +nft.derivedAmount;
     }
   }
