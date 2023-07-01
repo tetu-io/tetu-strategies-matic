@@ -15,10 +15,10 @@ pragma solidity 0.8.4;
 import "@tetu_io/tetu-contracts/contracts/base/governance/ControllableV2.sol";
 import "@tetu_io/tetu-contracts/contracts/openzeppelin/SafeERC20.sol";
 import "../../third_party/balancer/IBVault.sol";
-import "../../interface/ISmartVault.sol";
+import "../../interfaces/ISmartVault.sol";
 import "./ITetuBalHolder.sol";
 import "../../third_party/IDelegation.sol";
-import "../../interface/ITetuLiquidator.sol";
+import "../../interfaces/ITetuLiquidator.sol";
 
 contract TetuBalHolder is ControllableV2, ITetuBalHolder {
   using SafeERC20 for IERC20;

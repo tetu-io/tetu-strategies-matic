@@ -38,7 +38,7 @@ import {deployContract} from "./DeployContract";
 
 // tslint:disable-next-line:no-var-requires
 const hre = require("hardhat");
-const log: Logger = new Logger(logSettings);
+const log: Logger<undefined> = new Logger(logSettings);
 
 
 dotEnvConfig();

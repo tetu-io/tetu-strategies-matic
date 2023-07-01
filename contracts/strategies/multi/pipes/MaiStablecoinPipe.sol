@@ -17,7 +17,7 @@ import "@tetu_io/tetu-contracts/contracts/openzeppelin/SafeERC20.sol";
 import "@tetu_io/tetu-contracts/contracts/openzeppelin/Math.sol";
 import "./Pipe.sol";
 import "./../../../third_party/qidao/IErc20Stablecoin.sol";
-import "../../../interface/strategies/IMaiStablecoinPipe.sol";
+import "../../../interfaces/strategies/IMaiStablecoinPipe.sol";
 import "@tetu_io/tetu-contracts/contracts/base/SlotsLib.sol";
 
 /// @title Mai Stablecoin Pipe Contract

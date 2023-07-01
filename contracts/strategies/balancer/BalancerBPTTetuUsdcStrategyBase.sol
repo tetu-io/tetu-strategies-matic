@@ -17,7 +17,7 @@ pragma solidity 0.8.4;
 import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
 import "../../third_party/balancer/IBalancerGauge.sol";
 import "../../third_party/balancer/IBVault.sol";
-import "../../interface/ITetuLiquidator.sol";
+import "../../interfaces/ITetuLiquidator.sol";
 
 /// @title Base contract for USDC-TETU farming where all rewards will be converted to tetuBAL in POL contract
 /// @author belbix
