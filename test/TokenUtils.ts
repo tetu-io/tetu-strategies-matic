@@ -90,6 +90,8 @@ export class TokenUtils {
     [MaticAddresses.BALANCER_TNGBL_USDC, '0x07222e30b751c1ab4a730745afe19810cfd762c0'.toLowerCase()], // see https://polygonscan.com/token/0x9F9F548354B7C66Dc9a9f3373077D86AAACCF8F2#balances
     [MaticAddresses.BALANCER_MATIC_BOOSTED_AAVE3, MaticAddresses.BALANCER_VAULT.toLowerCase()], //
     [MaticAddresses.BALANCER_MATICX_BOOSTED_AAVE3, MaticAddresses.BALANCER_VAULT.toLowerCase()], //
+    [MaticAddresses.BALANCER_WSTETH_BOOSTED_AAVE3, MaticAddresses.BALANCER_VAULT.toLowerCase()], //
+    [MaticAddresses.BALANCER_GYRO_MATIC_STMATIC, '0x51416C00388bB4644E28546c77AEe768036F17A8'.toLowerCase()], //
     [MaticAddresses.STADER_TOKEN, '0x80968391da3654ac4fd5feafaf60c9cb45dc84c0'], //
   ]);
 
