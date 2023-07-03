@@ -16,7 +16,7 @@ import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol"
 import "../../third_party/balancer/IBalancerGauge.sol";
 import "../../third_party/balancer/IBVault.sol";
 import "../../third_party/balancer/IBalancerMinter.sol";
-import "../../interface/ITetuLiquidator.sol";
+import "../../interfaces/ITetuLiquidator.sol";
 import "./IGaugeDepositor.sol";
 
 /// @title Base contract for farming Balancer pools with staking boost by GaugeDepositor

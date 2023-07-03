@@ -35,6 +35,16 @@ describe('BalancerBoostUniversalTest', async () => {
         gaugeDepositor = r[0].address
 
         // todo bridge boost power from BalLocker [mainnet] to GaugeDepositor [polygon]
+
+        // [mainnet] Tetu governance multisig 0x4bE13bf2B983C31414b358C634bbb61230c332A7 calls setNetworkRemapping on the VotingEscrowRemapper 0x83E443EF4f9963C77bd860f94500075556668cb8 with value 484288978083135 and params:
+        // localUser: 0x9cC56Fa7734DA21aC88F6a816aF10C5b898596Ce (BalLocker)
+        // remoteUser: <deployed GaugeDepositor>
+        // chainId: 109
+
+        // [polygon]
+        //  ...
+        // OmniVotingEscrowChild 0xE241C6e48CA045C7f631600a0f1403b2bFea05ad balanceOf <deployed GaugeDepositor> == BalLocker VE balance
+        // Boost Delegation V2 0xD961E30156C2E0D0d925A0De45f931CB7815e970 balanceOf <deployed GaugeDepositor> == BalLocker voting power
     });
 
     targets.forEach(t => {
