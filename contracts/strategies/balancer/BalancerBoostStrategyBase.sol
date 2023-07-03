@@ -266,7 +266,7 @@ abstract contract BalancerBoostStrategyBase is ProxyStrategyBase {
   /// @dev Join to the given pool (exchange tokenIn to underlying BPT)
   function _balancerJoin(IAsset[] memory _poolTokens, bytes32 _poolId, address _tokenIn, uint _amountIn) internal {
     if (_amountIn != 0) {
-      if (_poolHavePhantomBpt(_poolTokens, _poolId)) {
+      if (_poolHasPhantomBpt(_poolTokens, _poolId)) {
         // just swap for enter
         _balancerSwap(_poolId, _tokenIn, _getPoolAddress(_poolId), _amountIn);
       } else {
@@ -288,7 +288,7 @@ abstract contract BalancerBoostStrategyBase is ProxyStrategyBase {
     }
   }
 
-  function _poolHavePhantomBpt(IAsset[] memory _poolTokens, bytes32 _poolId) internal pure returns (bool) {
+  function _poolHasPhantomBpt(IAsset[] memory _poolTokens, bytes32 _poolId) internal pure returns (bool) {
     address poolAdr = _getPoolAddress(_poolId);
     uint len = _poolTokens.length;
     for (uint i; i < len; ++i) {
@@ -353,5 +353,5 @@ abstract contract BalancerBoostStrategyBase is ProxyStrategyBase {
 
 
   //slither-disable-next-line unused-state
-  uint256[48] private ______gap;
+  uint256[50 - 6] private ______gap;
 }

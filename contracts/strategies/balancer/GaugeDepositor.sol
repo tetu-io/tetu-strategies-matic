@@ -18,6 +18,9 @@ import "../../third_party/balancer/IBalancerGauge.sol";
 import "../../third_party/balancer/IBalancerMinter.sol";
 import "./IGaugeDepositor.sol";
 
+/// @title Boost power holder.
+///        Allowed users can make liquidity deposits to Balancer gauges through this contract to get a boost.
+/// @author a17
 contract GaugeDepositor is ControllableV2, IGaugeDepositor {
     using SafeERC20 for IERC20;
 
@@ -31,27 +34,33 @@ contract GaugeDepositor is ControllableV2, IGaugeDepositor {
         initializeControllable(controller_);
     }
 
-    modifier onlyValidStrategy() {
+    modifier onlyAllowedUser() {
         require(IController(_controller()).isValidStrategy(msg.sender), "GD: denied");
         _;
     }
 
-    function deposit(address token, uint amount, address gauge) external override onlyValidStrategy {
-        require(IBalancerGauge(gauge).balanceOf(address(this)) == _balanceInGauge[msg.sender][gauge], "GD: denied");
+    function deposit(address token, uint amount, address gauge) external override onlyAllowedUser {
+        uint balance = _balanceInGauge[msg.sender][gauge];
+        // only 1 user can use the gauge
+        require(IBalancerGauge(gauge).balanceOf(address(this)) == balance, "GD: deposit denied");
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         _approveIfNeeds(token, amount, gauge);
         IBalancerGauge(gauge).deposit(amount);
-        _balanceInGauge[msg.sender][gauge] += amount;
+        _balanceInGauge[msg.sender][gauge] = balance + amount;
     }
 
-    function withdraw(uint amount, address gauge) external override onlyValidStrategy {
-        require(IBalancerGauge(gauge).balanceOf(address(this)) == _balanceInGauge[msg.sender][gauge], "GD: denied");
+    function withdraw(uint amount, address gauge) external override onlyAllowedUser {
+        uint balance = _balanceInGauge[msg.sender][gauge];
+        // the user can withdraw only from the gauge in which he made deposits
+        require(IBalancerGauge(gauge).balanceOf(address(this)) == balance, "GD: withdrawal denied");
+        require(amount <= balance, "GD: insufficient balance");
         IBalancerGauge(gauge).withdraw(amount, msg.sender);
-        _balanceInGauge[msg.sender][gauge] -= amount;
+        _balanceInGauge[msg.sender][gauge] = balance - amount;
     }
 
-    function claimRewards(address[] memory tokens, address gauge) external override onlyValidStrategy {
-        require(IBalancerGauge(gauge).balanceOf(address(this)) == _balanceInGauge[msg.sender][gauge], "GD: denied");
+    function claimRewards(address[] memory tokens, address gauge) external override onlyAllowedUser {
+        // the user can claim rewards only from the gauge in which he made deposits
+        require(IBalancerGauge(gauge).balanceOf(address(this)) == _balanceInGauge[msg.sender][gauge], "GD: claiming reward denied");
         IBalancerGauge(gauge).claim_rewards();
         IBalancerMinter(IBalancerGauge(gauge).bal_pseudo_minter()).mint(gauge);
         uint len = tokens.length;
