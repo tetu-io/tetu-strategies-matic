@@ -24,7 +24,7 @@ async function main() {
     const poolId = t[1];
     const gauge = t[2];
     const depositToken = t[3];
-    const buyBackRatio = 8_00;
+    const buyBackRatio = 10_00;
     const vault = await DeployerUtilsLocal.findVaultUnderlyingInBookkeeper(signer, underlying);
 
     if (vault) {
