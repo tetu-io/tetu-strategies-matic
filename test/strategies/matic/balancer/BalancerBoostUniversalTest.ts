@@ -8,7 +8,13 @@ import {SpecificStrategyTest} from "../../SpecificStrategyTest";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../../../CoreContractsWrapper";
 import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal";
-import {GaugeDepositor__factory, ISmartVault, IStrategy, StrategyBalancerBoost__factory} from "../../../../typechain";
+import {
+    GaugeDepositor__factory,
+    ISmartVault,
+    IStrategy,
+    ITetuLiquidator__factory,
+    StrategyBalancerBoost__factory
+} from "../../../../typechain";
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {ethers} from "hardhat";
 
@@ -18,6 +24,7 @@ describe('BalancerBoostUniversalTest', async () => {
         [MaticAddresses.BALANCER_MATIC_BOOSTED_AAVE3, MaticAddresses.BALANCER_MATIC_BOOSTED_AAVE3_ID, MaticAddresses.BALANCER_MATIC_BOOSTED_AAVE3_GAUGE, MaticAddresses.stMATIC_TOKEN, ],
         [MaticAddresses.BALANCER_MATICX_BOOSTED_AAVE3, MaticAddresses.BALANCER_MATICX_BOOSTED_AAVE3_ID, MaticAddresses.BALANCER_MATICX_BOOSTED_AAVE3_GAUGE, MaticAddresses.MATIC_X, ],
         [MaticAddresses.BALANCER_WSTETH_BOOSTED_AAVE3, MaticAddresses.BALANCER_WSTETH_BOOSTED_AAVE3_ID, MaticAddresses.BALANCER_WSTETH_BOOSTED_AAVE3_GAUGE, MaticAddresses.WSTETH_TOKEN, ],
+        [MaticAddresses.BALANCER_USD_TETU_BOOSTED, MaticAddresses.BALANCER_USD_TETU_BOOSTED_ID, MaticAddresses.BALANCER_USD_TETU_BOOSTED_GAUGE, MaticAddresses.bb_t_USDC_TOKEN, ],
     ]
 
     const deployInfo: DeployInfo = new DeployInfo();
@@ -45,6 +52,16 @@ describe('BalancerBoostUniversalTest', async () => {
         //  ...
         // OmniVotingEscrowChild 0xE241C6e48CA045C7f631600a0f1403b2bFea05ad balanceOf <deployed GaugeDepositor> == BalLocker VE balance
         // Boost Delegation V2 0xD961E30156C2E0D0d925A0De45f931CB7815e970 balanceOf <deployed GaugeDepositor> == BalLocker voting power
+
+        // route for bb-t-usdc
+        const gov = await DeployerUtilsLocal.impersonate('0xbbbbb8c4364ec2ce52c59d2ed3e56f307e529a94')
+        const liquidator = ITetuLiquidator__factory.connect('0xC737eaB847Ae6A92028862fE38b828db41314772', gov)
+        await liquidator.addLargestPools([{
+            pool: MaticAddresses.bb_t_USDC_TOKEN,
+            swapper: '0xa448329A95970194567fCa4B6B1B0bbA4aC0bF66',
+            tokenIn: MaticAddresses.bb_t_USDC_TOKEN,
+            tokenOut: MaticAddresses.USDC_TOKEN,
+        }], true)
     });
 
     targets.forEach(t => {
