@@ -6,9 +6,9 @@ import {config as dotEnvConfig} from "dotenv";
 import snapshot from "@snapshot-labs/snapshot.js";
 import {Proposal} from "@snapshot-labs/snapshot.js/src/sign/types";
 
-const POLYGON_SNAPSHOT_BLOCK_NUMBER = 44235232
-const START_UNIX = Math.floor((new Date('Jun 23 2023 19:00:00 UTC')).getTime() / 1000)
-const END_UNIX = Math.floor((new Date('Jun 27 2023 03:00:00 UTC')).getTime() / 1000)
+const POLYGON_SNAPSHOT_BLOCK_NUMBER = 44753950
+const START_UNIX = Math.floor((new Date('Jul 06 2023 19:00:00 UTC')).getTime() / 1000)
+const END_UNIX = Math.floor((new Date('Jul 11 2023 03:00:00 UTC')).getTime() / 1000)
 
 // These gauges will be killed shortly:
 // https://forum.balancer.fi/t/bip-262-l2-gauge-migration/4661
@@ -57,7 +57,7 @@ const IGNORED_GAUGES = [
   '0x8d7d227746ee06d2532903d6ef1f69d80647c0e7'
 ]
 
-const TITLE = 'BRV-023: Gauge Weights for 29th June - 12th July 2023 '
+const TITLE = 'BRV-024: Gauge Weights for 12th July - 26th July 2023'
 
 const BODY = `
 The results of this vote be submitted to Balancer and will last for 2 weeks.
@@ -73,7 +73,6 @@ const argv = require('yargs/yargs')()
   .options({
     privateKey: {
       type: "string",
-      default: "85bb5fa78d5c4ed1fde856e9d0d1fe19973d7a79ce9ed6c0358ee06a4550504e" // random account
     },
   }).argv;
 

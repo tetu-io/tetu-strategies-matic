@@ -10,12 +10,12 @@ import {
 } from "../../typechain";
 import {formatUnits, parseUnits} from "ethers/lib/utils";
 import {Web3Utils} from "./tools/Web3Utils";
-import {TransferEvent} from "../../typechain/IERC20";
 import {BigNumber} from "ethers";
 import {RunHelper} from "./tools/RunHelper";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {getSnapshotVoters} from "./tools/voting-utils";
 import {expect} from "chai";
+import {TransferEvent} from "../../typechain/contracts/third_party/IERC20Extended";
 
 // After airdrop receiving from all sources you need to liquidate all tokens to USDC
 // Then launch this script on hardhat network and make sure that you have enough tokens.
@@ -28,9 +28,9 @@ import {expect} from "chai";
 
 // MAKE SURE YOUR LOCAL SNAPSHOT BLOCK IS ACTUAL!
 // the last snapshot https://snapshot.org/#/tetubal.eth
-const PROPOSAL_ID = '0x7e0a1851b24e9d39f4600125b5c04bfad02873dc7fa6398c493bb6e33e51d96f';
+const PROPOSAL_ID = '0xb3e5a3a5993f786e34d030c32af0f855701740ea6f322f9b624a327487bc4c1a';
 // USDC amount received from all bribes
-const USDC_AMOUNT = 6278;
+const USDC_AMOUNT = 5610;
 
 // ----------------------------------------------
 const xtetuBALPerfFee = 0.85;
@@ -58,7 +58,7 @@ async function main() {
   const curDate = Math.floor(new Date().getTime() / 1000);
   const sinceProposal = (curDate - +snapshotData.created);
   console.log('sinceProposal days', sinceProposal / 60 / 60 / 24);
-  if (sinceProposal > 8 * 60 * 60 * 24) throw new Error('Wrong proposal');
+  if (sinceProposal > 10 * 60 * 60 * 24) throw new Error('Wrong proposal');
   const votedPower = snapshotData.vp;
   console.log('PROPOSAL votedPower', votedPower);
 
@@ -223,7 +223,7 @@ async function collectUsers(block: number) {
   for (const acc of balances.keys()) {
     const actualBalance = await IERC20__factory.connect(MaticAddresses.xtetuBAL_TOKEN, ethers.provider).balanceOf(acc, {blockTag: block});
     if (+formatUnits(actualBalance) !== balances.get(acc)) {
-      console.error('actual balance', acc, balances.get(acc), '!==', +formatUnits(actualBalance));
+      // console.error('actual balance', acc, balances.get(acc), '!==', +formatUnits(actualBalance));
     }
     result.set(acc, +formatUnits(actualBalance));
   }

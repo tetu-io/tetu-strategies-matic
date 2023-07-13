@@ -5,14 +5,14 @@ import {MaticAddresses} from "../addresses/MaticAddresses";
 import {getSnapshotData} from "./tools/voting-utils";
 import {Misc} from "./tools/Misc";
 
-
-const BALANCER_VAULT = '0xBA12222222228d8Ba445958a75a0704d566BF2C8';
-const TETU_BAL_BPT_ID = '0xb797adfb7b268faeaa90cadbfed464c76ee599cd0002000000000000000005ba';
-const TETU_BAL = '0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33';
 // check here https://snapshot.org/#/tetubal.eth
-const PREVIOUS_PROPOSAL = '0x7e0a1851b24e9d39f4600125b5c04bfad02873dc7fa6398c493bb6e33e51d96f';
+const PREVIOUS_PROPOSAL = '0xb3e5a3a5993f786e34d030c32af0f855701740ea6f322f9b624a327487bc4c1a';
 
 async function main() {
+  const BALANCER_VAULT = '0xBA12222222228d8Ba445958a75a0704d566BF2C8';
+  const TETU_BAL_BPT_ID = '0xb797adfb7b268faeaa90cadbfed464c76ee599cd0002000000000000000005ba';
+  const TETU_BAL = '0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33';
+
   const curBlock = await ethers.provider?.getBlockNumber() || 0;
   console.log('curBlock', curBlock)
 

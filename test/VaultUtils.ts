@@ -153,6 +153,7 @@ export class VaultUtils {
     }
 
 
+    const strategyName = (await strategyCtr.STRATEGY_NAME());
     const strategyPlatform = (await strategyCtr.platform());
     if (strategyPlatform === 24) {
       console.log('splitter dohardworks');
@@ -177,6 +178,11 @@ export class VaultUtils {
       isPSDisabled = await UniversalLendStrategy__factory.connect(strategy, vault.signer).isProfitSharingDisabled();
     } catch (e) {
     }
+
+    if (strategyName === 'BalBridgedStakingStrategyBase') {
+      isPSDisabled = true;
+    }
+
 
     let rtBalAfter: number = 0;
     if (rt) {
