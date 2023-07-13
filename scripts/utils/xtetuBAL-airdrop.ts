@@ -28,16 +28,17 @@ import {TransferEvent} from "../../typechain/contracts/third_party/IERC20Extende
 
 // MAKE SURE YOUR LOCAL SNAPSHOT BLOCK IS ACTUAL!
 // the last snapshot https://snapshot.org/#/tetubal.eth
-const PROPOSAL_ID = '0xb3e5a3a5993f786e34d030c32af0f855701740ea6f322f9b624a327487bc4c1a';
+const PROPOSAL_ID = '0xe30ac7090e01dc638e45bf69bc54749944eb9be637922971bc8ca3e979077d44';
 // USDC amount received from all bribes
-const USDC_AMOUNT = 5610;
+const USDC_AMOUNT = 10185;
 
 // ----------------------------------------------
-const xtetuBALPerfFee = 0.85;
+const xtetuBALPerfFee = 0.95;
 const tetuBALPower = '0x8FFBa974Efa7C262C97b9521449Fd2B3c69bE4E6'.toLowerCase();
 const POL_OWNER = '0x6672a074b98a7585a8549356f97db02f9416849e'.toLowerCase();
 const DISTRIBUTOR = '0x6DdD4dB035FC15F90D74C1E98ABa967D6b3Ce3Dd';
 const X_TETU_BAL_STRATEGY = '0xdade618E95F5E51198c69bA0A9CC3033874Fa643';
+const TETU_BAL_HOLDER = '0x237114Ef61b27fdF57132e6c8C4244eeea8323D3';
 
 async function main() {
 
@@ -74,7 +75,6 @@ async function main() {
   const xtetuBalTVLUSD = +formatUnits(xtetuBalPrice.mul(xtetuBalTVL), 36);
 
   const distributor = XtetuBALDistributor__factory.connect(DISTRIBUTOR, signer);
-  const usersBalance = await collectUsers(BLOCK);
 
   const usersForUSDC: string[] = [];
   const usersForUSDCAmounts: BigNumber[] = [];
@@ -86,16 +86,35 @@ async function main() {
 
   const power = TetuBalVotingPower__factory.connect(tetuBALPower, signer);
   const xtetuBALStrategyPower = await power.balanceOf(X_TETU_BAL_STRATEGY, {blockTag: BLOCK});
-  console.log('X_TETU_BAL_STRATEGY power', formatUnits(xtetuBALStrategyPower));
+  console.log('X_TETU_BAL_STRATEGY power', +formatUnits(xtetuBALStrategyPower));
 
-  const veTETUCut = +formatUnits(xtetuBALStrategyPower) / +votedPower
-  console.log('veTETUCut', veTETUCut);
+  const tetuBalInBalancer = +formatUnits(await power.tetuBalInBalancer({blockTag: BLOCK}));
+  const tetuBalHolderPower = +formatUnits(await power.balanceOf(TETU_BAL_HOLDER, {blockTag: BLOCK}));
+  console.log('briber delegated power for veTETU(tetuBAL balance in the vault)', tetuBalInBalancer);
+  console.log('tetuBalHolderPower', tetuBalHolderPower);
 
-  const usdcFromStrategy = USDC_AMOUNT * veTETUCut;
+  const expectedStrategyRatio = (+votedPower - tetuBalInBalancer - tetuBalHolderPower) / votedPower;
+  console.log('expectedStrategyRatio', expectedStrategyRatio);
+
+  const xtetuBalStrategyRatio = +formatUnits(xtetuBALStrategyPower) / +votedPower
+  console.log('xtetuBalStrategyRatio', xtetuBalStrategyRatio);
+  // the difference could be from other delegations, need to check the reason
+  expect(xtetuBalStrategyRatio).is.approximately(expectedStrategyRatio, 0.000001);
+
+  const usdcFromStrategy = USDC_AMOUNT * xtetuBalStrategyRatio;
   console.log('Received from votes from strategy: ', usdcFromStrategy)
-  const usdcForDistribute = usdcFromStrategy * xtetuBALPerfFee;
-  console.log('Pure USDC to distribute: ', usdcForDistribute);
 
+  const veTETUPart = USDC_AMOUNT - usdcFromStrategy;
+  console.log('veTETU $ part of rewards', veTETUPart);
+
+  const usdcForDistribute = usdcFromStrategy * xtetuBALPerfFee;
+  const usdcPerfFee = usdcFromStrategy - usdcForDistribute;
+  console.log('Pure USDC to distribute: ', usdcForDistribute);
+  console.log('usdc Perf Fee', usdcPerfFee);
+
+  console.log('>>> SEND THIS TO DEPLOYER: ', usdcForDistribute + veTETUPart);
+
+  const usersBalance = await collectUsers(BLOCK);
   for (const [user, amount] of usersBalance) {
     const userRatio = amount / +formatUnits(xtetuBalTVL);
     const isUseXtetuBal = await distributor.useXtetuBal(user);

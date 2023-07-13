@@ -16,8 +16,8 @@ contract XtetuBALDistributor is ControllableV2 {
   //                        CONSTANTS
   // *************************************************************
 
-  /// @dev Default epoch duration using for check distribution frequency
-  uint internal constant EPOCH_DURATION = 2 weeks;
+  /// @dev Using for check distribution frequency
+  uint internal constant MINIMUM_DELAY_BETWEEN_DISTRIBUTION = 2 days;
   IPriceCalculator internal constant PRICE_CALCULATOR = IPriceCalculator(0x0B62ad43837A69Ad60289EEea7C6e907e759F6E8);
   address internal constant USDC = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
   address internal constant X_tetuBAL = 0x915E49F7CD8B2b5763759c23D9463A74d5b5C1D5;
@@ -116,7 +116,7 @@ contract XtetuBALDistributor is ControllableV2 {
 
     uint epoch = epochCounter + 1;
     uint lastEpochTS = epochTS[epoch - 1];
-    require(block.timestamp > (lastEpochTS + EPOCH_DURATION - 2 days), "!TIME");
+    require(block.timestamp > (lastEpochTS + MINIMUM_DELAY_BETWEEN_DISTRIBUTION), "!TIME");
 
 
     uint distributedUSD;
