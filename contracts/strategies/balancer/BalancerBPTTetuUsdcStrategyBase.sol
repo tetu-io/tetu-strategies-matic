@@ -24,6 +24,8 @@ import "../../interfaces/ITetuLiquidator.sol";
 abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
   using SafeERC20 for IERC20;
 
+  event EmergencyStop();
+
   // *******************************************************
   //                      CONSTANTS
   // *******************************************************
@@ -32,7 +34,7 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "BalancerBPTTetuUsdcStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.2";
+  string public constant VERSION = "1.1.0";
 
   uint private constant PRICE_IMPACT_TOLERANCE = 10_000;
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
@@ -43,6 +45,8 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
   IBalancerGauge public constant GAUGE = IBalancerGauge(0xa86e8e8CfAe8C9847fA9381d4631c13c7b3466bd);
   address public constant BAL_TOKEN = 0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3;
   address public constant TETU_TOKEN = 0x255707B70BF90aa112006E1b07B9AeA6De021424;
+  address public constant anyTETU = 0x652fAE511Be0A529B422945594a2a727B64Af1af;
+  uint public constant EXPECTED_LOCKED_AMOUNT = 373_673_000e18;
 
   // *******************************************************
   //                      VARIABLES
@@ -52,6 +56,9 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
   address public rewardsRecipient;
   address public bribeReceiver;
   uint public polRatio;
+  /// @dev In case of emergency stop we will write virtual balance instead of real.
+  ///      Non zero value indicates that emergency stop is activated.
+  uint public virtualBptBalance;
 
   /// @notice Initialize contract after setup it as proxy implementation
   function initializeStrategy(
@@ -109,12 +116,61 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
   }
 
   // *******************************************************
+  //                      MULTICHAIN RUG PREVENTION
+  // *******************************************************
+
+  function emergencyStop() external {
+    require(isEmergencyStopAvailable() && virtualBptBalance == 0, "not available");
+
+    // withdraw everything from gauge
+    GAUGE.withdraw(GAUGE.balanceOf(address(this)));
+
+    address bpt = _underlying();
+    uint amountForUnwrap = IERC20(bpt).balanceOf(address(this));
+
+    require(amountForUnwrap > 0, "zero amount");
+
+    // write virtual balance for keep vault share price on the same level
+    virtualBptBalance = amountForUnwrap;
+
+    IERC20[] memory tokens = new IERC20[](2);
+    (tokens,,) = BALANCER_VAULT.getPoolTokens(POOL_ID);
+    IAsset[] memory _poolTokens = new IAsset[](2);
+
+    for (uint i; i < 2; ++i) {
+      _poolTokens[i] = IAsset(address(tokens[i]));
+    }
+
+    BALANCER_VAULT.exitPool(
+      POOL_ID,
+      address(this),
+      payable(address(this)),
+      IBVault.ExitPoolRequest({
+        assets: _poolTokens,
+        minAmountsOut: new uint[](2),
+        userData: abi.encode(1, amountForUnwrap),
+        toInternalBalance: false
+      })
+    );
+
+    // we will keep unwrapped USDC and TETU on this contract
+    // in case of emergency stop we will upgrade this contract with necessary logic
+
+    emit EmergencyStop();
+  }
+
+  function isEmergencyStopAvailable() public view returns (bool) {
+    uint lockedAmount = IERC20(TETU_TOKEN).balanceOf(anyTETU);
+    return lockedAmount < EXPECTED_LOCKED_AMOUNT;
+  }
+
+  // *******************************************************
   //                      STRATEGY LOGIC
   // *******************************************************
 
   /// @dev Balance of staked LPs in the gauge
   function _rewardPoolBalance() internal override view returns (uint256) {
-    return GAUGE.balanceOf(address(this));
+    return GAUGE.balanceOf(address(this)) + virtualBptBalance;
   }
 
   /// @dev Rewards amount ready to claim
@@ -148,6 +204,7 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
 
   /// @dev Deposit LP tokens to gauge
   function depositToPool(uint256 amount) internal override {
+    require(virtualBptBalance == 0, "emergency stopped");
     if (amount != 0) {
       GAUGE.deposit(amount);
     }
@@ -155,6 +212,7 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
 
   /// @dev Withdraw LP tokens from gauge
   function withdrawAndClaimFromPool(uint256 amount) internal override {
+    require(virtualBptBalance == 0, "emergency stopped");
     if (amount != 0) {
       GAUGE.withdraw(amount);
     }
@@ -162,6 +220,7 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
 
   /// @dev Emergency withdraw all from a gauge
   function emergencyWithdrawFromPool() internal override {
+    require(virtualBptBalance == 0, "emergency stopped");
     GAUGE.withdraw(GAUGE.balanceOf(address(this)));
   }
 
@@ -216,7 +275,6 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
     }
   }
 
-
   /// @dev Returns the address of a Pool's contract.
   ///      Due to how Pool IDs are created, this is done with no storage accesses and costs little gas.
   function _getPoolAddress(bytes32 id) internal pure returns (address) {
@@ -225,7 +283,6 @@ abstract contract BalancerBPTTetuUsdcStrategyBase is ProxyStrategyBase {
     return address(uint160(uint(id) >> (12 * 8)));
   }
 
-
   //slither-disable-next-line unused-state
-  uint256[47] private ______gap;
+  uint256[46] private ______gap;
 }

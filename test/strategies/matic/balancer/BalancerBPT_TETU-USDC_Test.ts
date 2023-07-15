@@ -10,11 +10,12 @@ import {DeployerUtilsLocal} from "../../../../scripts/deploy/DeployerUtilsLocal"
 import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {
-  IBalancerGauge__factory,
-  IController__factory, IERC20__factory, IERC20Metadata__factory,
-  IFeeRewardForwarder__factory, IPriceCalculator,
-  ISmartVault, ISmartVault__factory,
-  IStrategy, StrategyBalancerTetuUsdc,
+  IERC20__factory,
+  IPriceCalculator,
+  ISmartVault,
+  ISmartVault__factory,
+  IStrategy,
+  StrategyBalancerTetuUsdc,
   StrategyBalancerTetuUsdc__factory
 } from "../../../../typechain";
 import {BalancerBPTUsdcTetuSpecificHardWork} from "./BalancerBPTUsdcTetuSpecificHardWork";
@@ -25,8 +26,8 @@ import {ethers} from "hardhat";
 import {VaultUtils} from "../../../VaultUtils";
 import {TokenUtils} from "../../../TokenUtils";
 import {UniswapUtils} from "../../../UniswapUtils";
-import {parseUnits} from "ethers/lib/utils";
 import {UtilsBalancerGaugeV2} from "../../../baseUtils/balancer/utilsBalancerGaugeV2";
+import {parseUnits} from "ethers/lib/utils";
 
 
 const {expect} = chai;
@@ -85,12 +86,10 @@ describe('BalancerBPT_TETU-USDC_Test', async () => {
 
           await StrategyBalancerTetuUsdc__factory.connect(strategy.address, signer).setPolRatio(50);
 
-          await IFeeRewardForwarder__factory.connect(core.feeRewardForwarder.address, signer).setTokenThreshold(MaticAddresses.BAL_TOKEN, 10_000_000);
-
           // Set up BalancerGauge. Register TETU as reward token in the GAUGE and in the strategy
           await UtilsBalancerGaugeV2.registerRewardTokens(signer, await strat.GAUGE(), MaticAddresses.TETU_TOKEN);
           await strat.connect(await DeployerUtilsLocal.impersonate(await strat.controller())).setRewardTokens([MaticAddresses.TETU_TOKEN]);
-          await UtilsBalancerGaugeV2.depositRewardTokens(signer, await strat.GAUGE(), await strat.rewardTokens());
+          await UtilsBalancerGaugeV2.depositRewardTokens(signer, await strat.GAUGE(), await strat.rewardTokens(), '100000');
 
           return strategy;
         },
@@ -186,8 +185,6 @@ describe('BalancerBPT_TETU-USDC_Test', async () => {
           );
 
           await StrategyBalancerTetuUsdc__factory.connect(strategy.address, signer).setPolRatio(50);
-
-          await IFeeRewardForwarder__factory.connect(core.feeRewardForwarder.address, signer).setTokenThreshold(MaticAddresses.BAL_TOKEN, 10_000_000);
 
           return strategy;
         },
@@ -333,6 +330,43 @@ describe('BalancerBPT_TETU-USDC_Test', async () => {
         const newRecipient = ethers.Wallet.createRandom().address;
         const st = (await strategy as StrategyBalancerTetuUsdc).connect(await DeployerUtilsLocal.impersonate(caller));
         await expect(st.setRewardsRecipient(newRecipient)).revertedWith("SB: Not Gov or Vault");
+      });
+
+      it("should call emergency stop properly", async () => {
+
+
+        const caller = await DeployerUtilsLocal.impersonate(ethers.Wallet.createRandom().address)
+        const st = (await strategy as StrategyBalancerTetuUsdc).connect(caller);
+
+
+        await TokenUtils.getToken(await st.underlying(), st.address, parseUnits('1'))
+        await st.connect(await DeployerUtilsLocal.impersonate(vault.address)).investAllUnderlying()
+
+        expect(await st.isEmergencyStopAvailable()).eq(false);
+
+        const anyTETU = await DeployerUtilsLocal.impersonate(await st.anyTETU());
+        const tetu = IERC20__factory.connect(MaticAddresses.TETU_TOKEN, anyTETU);
+        const usdc = IERC20__factory.connect(MaticAddresses.USDC_TOKEN, anyTETU);
+
+        expect(await tetu.balanceOf(st.address)).eq(0);
+        expect(await usdc.balanceOf(st.address)).eq(0);
+
+        const balance = await tetu.balanceOf(anyTETU.address);
+        await IERC20__factory.connect(MaticAddresses.TETU_TOKEN, anyTETU).transfer(MaticAddresses.TETU_TOKEN, balance);
+
+        expect(await st.isEmergencyStopAvailable()).eq(true);
+
+        const sharePriceBefore = await vault.getPricePerFullShare();
+
+        await st.emergencyStop()
+
+        expect(await tetu.balanceOf(st.address)).not.eq(0);
+        expect(await usdc.balanceOf(st.address)).not.eq(0);
+
+        const sharePriceAfter = await vault.getPricePerFullShare();
+        expect(sharePriceBefore).eq(sharePriceAfter);
+
+        await expect(st.emergencyStop()).rejectedWith("not available");
       });
     });
   });

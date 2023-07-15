@@ -1,10 +1,8 @@
 import {
   IBalancerGauge__factory,
   IERC20__factory,
-  IERC20Metadata__factory,
-  StrategyBalancerTetuUsdc__factory
+  IERC20Metadata__factory
 } from "../../../typechain";
-import {MaticAddresses} from "../../../scripts/addresses/MaticAddresses";
 import {ethers} from "hardhat";
 import {DeployerUtilsLocal} from "../../../scripts/deploy/DeployerUtilsLocal";
 import {parseUnits} from "ethers/lib/utils";
@@ -41,6 +39,7 @@ export class UtilsBalancerGaugeV2 {
       await TokenUtils.getToken(rt, rewardData.distributor, amount);
 
       await IERC20__factory.connect(rt, await DeployerUtilsLocal.impersonate(rewardData.distributor)).approve(gauge.address, Misc.MAX_UINT);
+      console.log('>>> Add rewards', rt, amountNum);
       await gauge.connect(
         await DeployerUtilsLocal.impersonate(rewardData.distributor)
       ).deposit_reward_token(rt, amount);
