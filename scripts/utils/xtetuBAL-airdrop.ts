@@ -30,7 +30,7 @@ import {TransferEvent} from "../../typechain/contracts/third_party/IERC20Extende
 // the last snapshot https://snapshot.org/#/tetubal.eth
 const PROPOSAL_ID = '0xe30ac7090e01dc638e45bf69bc54749944eb9be637922971bc8ca3e979077d44';
 // USDC amount received from all bribes
-const USDC_AMOUNT = 10185;
+const USDC_AMOUNT = 10185 + 10103;
 
 // ----------------------------------------------
 const xtetuBALPerfFee = 0.95;
@@ -90,7 +90,7 @@ async function main() {
 
   const tetuBalInBalancer = +formatUnits(await power.tetuBalInBalancer({blockTag: BLOCK}));
   const tetuBalHolderPower = +formatUnits(await power.balanceOf(TETU_BAL_HOLDER, {blockTag: BLOCK}));
-  console.log('briber delegated power for veTETU(tetuBAL balance in the vault)', tetuBalInBalancer);
+  console.log('briber delegated power for veTETU(tetuBAL balance in the balancer vault)', tetuBalInBalancer);
   console.log('tetuBalHolderPower', tetuBalHolderPower);
 
   const expectedStrategyRatio = (+votedPower - tetuBalInBalancer - tetuBalHolderPower) / votedPower;

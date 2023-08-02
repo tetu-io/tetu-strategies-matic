@@ -2,7 +2,8 @@ import {ethers} from "hardhat";
 import {
   ERC20__factory,
   IController__factory,
-  IERC20__factory, IERC20Extended__factory,
+  IERC20__factory,
+  IERC20Extended__factory,
   IERC721Enumerable__factory,
   ISmartVault__factory,
   IWmatic__factory
@@ -93,6 +94,7 @@ export class TokenUtils {
     [MaticAddresses.BALANCER_WSTETH_BOOSTED_AAVE3, MaticAddresses.BALANCER_VAULT.toLowerCase()], //
     [MaticAddresses.BALANCER_GYRO_MATIC_STMATIC, '0x51416C00388bB4644E28546c77AEe768036F17A8'.toLowerCase()], //
     [MaticAddresses.STADER_TOKEN, '0x80968391da3654ac4fd5feafaf60c9cb45dc84c0'], //
+    [MaticAddresses.tetuBAL, '0x36cc7b13029b5dee4034745fb4f24034f3f2ffc6'], //
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {
@@ -176,7 +178,8 @@ export class TokenUtils {
       return amount;
     }
     const owner = await DeployerUtilsLocal.impersonate(to);
-    if ((await IController__factory.connect(MaticAddresses.CONTROLLER_ADDRESS, owner).isValidVault(token))) {
+    if ((await IController__factory.connect(MaticAddresses.CONTROLLER_ADDRESS, owner).isValidVault(token))
+      && token !== MaticAddresses.tetuBAL) {
       const vault = ISmartVault__factory.connect(token, owner);
       const underlying = await vault.underlying();
       const ppfs = await vault.getPricePerFullShare();
