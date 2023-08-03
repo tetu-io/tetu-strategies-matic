@@ -2,7 +2,7 @@ import hre, {ethers} from "hardhat";
 import {DeployerUtilsLocal} from "../../DeployerUtilsLocal";
 import {
   ISmartVault__factory,
-  StrategyBalancerBoost__factory,
+  StrategyBalancerBoost__factory, StrategyBalancerBoostBPT__factory,
 } from "../../../../typechain";
 import {writeFileSync} from "fs";
 import {RunHelper} from "../../../utils/tools/RunHelper";
@@ -87,6 +87,49 @@ export async function deployBalancerBoostStrategyOnly(
     gauge,
     buyBackRatio,
     depositToken,
+    MaticAddresses.TETU_GAUGE_DEPOSITOR
+  ));
+
+  return {
+    vault,
+    strategy: strategyProxy.address,
+    undSymbol
+  }
+}
+
+export async function deployBalancerBoostBPTStrategyOnly(
+  bpt: string,
+  poolId: string,
+  gauge: string,
+  depositToken: string,
+  depositBPTPoolId: string,
+  buyBackRatio: number,
+  vault: string,
+): Promise<{
+  vault: string,
+  strategy: string,
+  undSymbol: string
+}> {
+  const signer = (await ethers.getSigners())[0];
+  const core = await DeployerUtilsLocal.getCoreAddresses();
+  const undSymbol = await TokenUtils.tokenSymbol(bpt)
+
+  const vaultDetected = await DeployerUtilsLocal.findVaultUnderlyingInBookkeeper(signer, bpt);
+  if (vaultDetected?.toLowerCase() !== vault.toLowerCase()) {
+    throw Error(`Wrong vault ${vaultDetected} !== ${vault}`);
+  }
+
+  const strategy = await DeployerUtilsLocal.deployContract(signer, "StrategyBalancerBoostBPT");
+
+  const strategyProxy = await DeployerUtilsLocal.deployContract(signer, "TetuProxyControlled", strategy.address);
+  await RunHelper.runAndWait(() => StrategyBalancerBoostBPT__factory.connect(strategyProxy.address, signer).initialize(
+    core.controller,
+    vault,
+    poolId,
+    gauge,
+    buyBackRatio,
+    depositToken,
+    depositBPTPoolId,
     MaticAddresses.TETU_GAUGE_DEPOSITOR
   ));
 
