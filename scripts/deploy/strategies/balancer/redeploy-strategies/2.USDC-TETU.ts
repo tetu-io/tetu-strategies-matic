@@ -1,6 +1,8 @@
 import hre, {ethers} from "hardhat";
 import {writeFileSync} from "fs";
-import {deployUsdcTetu2} from "../../../../../test/strategies/matic/balancer/redeploy-balancer-strategies/2.USDC-TETU";
+import {
+  deployUsdcTetu3
+} from "../../../../../test/strategies/matic/balancer/redeploy-balancer-strategies/2.USDC-TETU";
 
 /**
  * npx hardhat run scripts/deploy/strategies/balancer/redeploy-strategies/2.USDC-TETU.ts
@@ -8,11 +10,11 @@ import {deployUsdcTetu2} from "../../../../../test/strategies/matic/balancer/red
  */
 async function main() {
   const signer = (await ethers.getSigners())[0];
-  const {vault, strategy, undSymbol} = await deployUsdcTetu2(signer);
+  const {vault, strategy, undSymbol} = await deployUsdcTetu3(signer);
 
   if (hre.network.name !== 'hardhat') {
     const txt = `vault: ${vault}\nstrategy: ${strategy}`;
-    writeFileSync(`tmp/deployed/balancer_POL${undSymbol.replace('/', '-')}.txt`, txt, 'utf8');
+    writeFileSync(`tmp/deployed/balancer_boost_POL${undSymbol.replace('/', '-')}.txt`, txt, 'utf8');
   }
 }
 
