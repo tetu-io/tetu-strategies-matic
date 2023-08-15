@@ -2,9 +2,36 @@
 import fetch from 'node-fetch';
 
 const SNAPSHOT_GRAPHQL_ENDPOINT = 'https://hub.snapshot.org/graphql'
+const PAWNSHOP_GRAPHQL_ENDPOINT = 'https://api.thegraph.com/subgraphs/name/tetu-io/pawnshop-polygon'
 
 // tslint:disable-next-line:no-var-requires
 const {request, gql} = require('graphql-request')
+
+// tslint:disable-next-line:no-any
+export async function getPawnshopData(block: number): Promise<any> {
+  const resp = await request(
+    PAWNSHOP_GRAPHQL_ENDPOINT,
+    gql`
+        query {
+            positionEntities(
+                block: {number: ${block}},
+                where: {open: true, collateral_: {tokenName: "TETU_ST_BAL"}}
+            ) {
+                borrower
+                collateral {
+                    collateralAmount
+                    collateralToken {
+                        id
+                        name
+                    }
+                }
+            }
+        }
+    `
+  )
+
+  return resp.positionEntities
+}
 
 // tslint:disable-next-line:no-any
 export async function getSnapshotData(proposalId: string): Promise<any> {
@@ -34,6 +61,7 @@ export async function getSnapshotData(proposalId: string): Promise<any> {
 
   return resp.proposals[0]
 }
+
 // tslint:disable-next-line:no-any
 export async function getSnapshotVoters(proposalId: string, voter: string): Promise<any> {
   const resp = await request(

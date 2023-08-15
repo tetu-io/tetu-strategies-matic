@@ -13,7 +13,7 @@ import {Web3Utils} from "./tools/Web3Utils";
 import {BigNumber} from "ethers";
 import {RunHelper} from "./tools/RunHelper";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {getSnapshotVoters} from "./tools/voting-utils";
+import {getPawnshopData, getSnapshotVoters} from "./tools/voting-utils";
 import {expect} from "chai";
 import {TransferEvent} from "../../typechain/contracts/third_party/IERC20Extended";
 
@@ -23,14 +23,15 @@ import {TransferEvent} from "../../typechain/contracts/third_party/IERC20Extende
 // After that send USDC and xtetuBAL tokens to EOA who will call this script.
 // The POL holder will receive back some USDC - it is fine, we should distribute the whole amount throught distributor for properly calc TVL.
 // This received USDC will be used for tetuBAL buybacks.
+// todo describe vetetu part distribution
 
 // ------------------ CHANGE ME ----------------------------
 
 // MAKE SURE YOUR LOCAL SNAPSHOT BLOCK IS ACTUAL!
 // the last snapshot https://snapshot.org/#/tetubal.eth
-const PROPOSAL_ID = '0xe30ac7090e01dc638e45bf69bc54749944eb9be637922971bc8ca3e979077d44';
+const PROPOSAL_ID = '0x5f29f2f385c9a2f87905b329950202033bf5fa0eb532bfedbd651642cf780baf';
 // USDC amount received from all bribes
-const USDC_AMOUNT = 10185 + 10103;
+const USDC_AMOUNT = 8372 + 6963;
 
 // ----------------------------------------------
 const xtetuBALPerfFee = 0.95;
@@ -39,8 +40,14 @@ const POL_OWNER = '0x6672a074b98a7585a8549356f97db02f9416849e'.toLowerCase();
 const DISTRIBUTOR = '0x6DdD4dB035FC15F90D74C1E98ABa967D6b3Ce3Dd';
 const X_TETU_BAL_STRATEGY = '0xdade618E95F5E51198c69bA0A9CC3033874Fa643';
 const TETU_BAL_HOLDER = '0x237114Ef61b27fdF57132e6c8C4244eeea8323D3';
+const PAWNSHOP = '0x0c9FA52D7Ed12a6316d3738c80931eCbC6C49907';
 
 async function main() {
+
+  if (true) {
+    // TODO ADOPT NEW LOGIC!!!!!!!!!!!!!!!!!!!!!!!!!!
+    return;
+  }
 
   let signer: SignerWithAddress;
   if (Misc.getChainName() === 'hardhat') {
@@ -59,12 +66,20 @@ async function main() {
   const curDate = Math.floor(new Date().getTime() / 1000);
   const sinceProposal = (curDate - +snapshotData.created);
   console.log('sinceProposal days', sinceProposal / 60 / 60 / 24);
-  if (sinceProposal > 10 * 60 * 60 * 24) throw new Error('Wrong proposal');
+  if (sinceProposal > 14 * 60 * 60 * 24) throw new Error('Wrong proposal');
   const votedPower = snapshotData.vp;
   console.log('PROPOSAL votedPower', votedPower);
 
   const BLOCK = +snapshotData.proposal.snapshot;
   console.log('BLOCK', BLOCK);
+
+  // --------- collect proposal data
+
+  const pawnshopData = await getPawnshopData(BLOCK);
+  let expectedPawnshopPower =0;
+  for(const pos of pawnshopData) {
+    expectedPawnshopPower += +formatUnits(pos.collateral.collateralAmount);
+  }
 
   // ----------------
 
@@ -90,10 +105,13 @@ async function main() {
 
   const tetuBalInBalancer = +formatUnits(await power.tetuBalInBalancer({blockTag: BLOCK}));
   const tetuBalHolderPower = +formatUnits(await power.balanceOf(TETU_BAL_HOLDER, {blockTag: BLOCK}));
+  const pawnshopPower = +formatUnits(await power.balanceOf(PAWNSHOP, {blockTag: BLOCK}));
   console.log('briber delegated power for veTETU(tetuBAL balance in the balancer vault)', tetuBalInBalancer);
   console.log('tetuBalHolderPower', tetuBalHolderPower);
+  console.log('pawnshopPower', pawnshopPower);
+  expect(pawnshopPower).is.eq(expectedPawnshopPower);
 
-  const expectedStrategyRatio = (+votedPower - tetuBalInBalancer - tetuBalHolderPower) / votedPower;
+  const expectedStrategyRatio = (+votedPower - tetuBalInBalancer - tetuBalHolderPower - pawnshopPower) / votedPower;
   console.log('expectedStrategyRatio', expectedStrategyRatio);
 
   const xtetuBalStrategyRatio = +formatUnits(xtetuBALStrategyPower) / +votedPower
@@ -104,7 +122,13 @@ async function main() {
   const usdcFromStrategy = USDC_AMOUNT * xtetuBalStrategyRatio;
   console.log('Received from votes from strategy: ', usdcFromStrategy)
 
-  const veTETUPart = USDC_AMOUNT - usdcFromStrategy;
+  const pawnshopRatio = pawnshopPower / +votedPower;
+  console.log('pawnshopRatio', pawnshopRatio);
+
+  const usdcFromPawnshop = USDC_AMOUNT * pawnshopRatio;
+  console.log('Received from votes from pawnshop: ', usdcFromPawnshop)
+
+  const veTETUPart = USDC_AMOUNT - usdcFromStrategy - usdcFromPawnshop;
   console.log('veTETU $ part of rewards', veTETUPart);
 
   const usdcForDistribute = usdcFromStrategy * xtetuBALPerfFee;
@@ -112,7 +136,12 @@ async function main() {
   console.log('Pure USDC to distribute: ', usdcForDistribute);
   console.log('usdc Perf Fee', usdcPerfFee);
 
-  console.log('>>> SEND THIS TO DEPLOYER: ', usdcForDistribute + veTETUPart);
+  const usdcForDistributePS = usdcFromPawnshop * xtetuBALPerfFee;
+  const usdcPerfFeePS = usdcFromPawnshop - usdcForDistributePS;
+  console.log('Pure USDC to distribute PS: ', usdcForDistributePS);
+  console.log('usdc Perf Fee PS', usdcPerfFeePS);
+
+  console.log('>>> SEND THIS TO DEPLOYER: ', usdcForDistribute + usdcForDistributePS + veTETUPart);
 
   const usersBalance = await collectUsers(BLOCK);
   for (const [user, amount] of usersBalance) {
@@ -134,6 +163,19 @@ async function main() {
       usersForUSDCAmounts.push(parseUnits(usdcAmountForUser.toFixed(6), 6));
       usdcAmountForDistributing += usdcAmountForUser;
     }
+  }
+
+  for (const pos of pawnshopData) {
+    const user = pos.borrower;
+    const amount = +formatUnits(pos.collateral.collateralAmount);
+    const userRatio = amount / expectedPawnshopPower;
+
+    const usdcAmountForUser = usdcForDistributePS * userRatio;
+
+    console.log('pawnshop USDC => ', user, usdcAmountForUser);
+    usersForUSDC.push(user);
+    usersForUSDCAmounts.push(parseUnits(usdcAmountForUser.toFixed(6), 6));
+    usdcAmountForDistributing += usdcAmountForUser;
   }
 
   console.log('xtetuBal vault TVL at the moment of snapshot:', xtetuBalTVLUSD);

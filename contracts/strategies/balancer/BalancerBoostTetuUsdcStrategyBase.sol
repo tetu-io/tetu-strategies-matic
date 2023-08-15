@@ -57,7 +57,6 @@ abstract contract BalancerBoostTetuUsdcStrategyBase is ProxyStrategyBase {
   address public gaugeDepositor;
   address public rewardsRecipient;
   address public bribeReceiver;
-  uint public polRatio;
   /// @dev In case of emergency stop we will write virtual balance instead of real.
   ///      Non zero value indicates that emergency stop is activated.
   uint public virtualBptBalance;
@@ -109,7 +108,7 @@ abstract contract BalancerBoostTetuUsdcStrategyBase is ProxyStrategyBase {
       _getPoolAddress(POOL_ID),
       vault_,
       rewardTokens_,
-      0 // no buybacks from this strategy
+      5_00
     );
   }
 
@@ -125,11 +124,6 @@ abstract contract BalancerBoostTetuUsdcStrategyBase is ProxyStrategyBase {
       _rewardTokens.push(rts[i]);
       _unsalvageableTokens[rts[i]] = true;
     }
-  }
-
-  /// @dev Set percent (0-100 uint) of generated POL (tetuBAL). Remaining amount will be used for bribes.
-  function setPolRatio(uint value) external restricted {
-    polRatio = value;
   }
 
   function setRewardsRecipient(address rewardsRecipient_) external restricted {
@@ -293,41 +287,31 @@ abstract contract BalancerBoostTetuUsdcStrategyBase is ProxyStrategyBase {
   }
 
   function _liquidateRewards() internal {
+    uint bbRatio = _buyBackRatio();
     address[] memory rts = _rewardTokens;
     uint len = rts.length;
-    uint balToPol;
     for (uint i; i < len; ++i) {
       address rt = rts[i];
-      uint amount = IERC20(rt).balanceOf(address(this));
-      if (amount != 0) {
-        if (rt == BAL_TOKEN) {
-          amount -= balToPol;
-        }
-
-        uint toPol = amount * polRatio / 100;
-        uint toBribes = amount - toPol;
-
-        if (rt != TETU_TOKEN) {
-          _liquidate(rt, TETU_TOKEN, toBribes);
-        }
-
-        if (rt == BAL_TOKEN) {
-          balToPol += toPol;
-        } else {
-          uint balBefore = IERC20(BAL_TOKEN).balanceOf(address(this));
-          _liquidate(rt, BAL_TOKEN, toPol);
-          balToPol += IERC20(BAL_TOKEN).balanceOf(address(this)) - balBefore;
+      if (rt != BAL_TOKEN) {
+        uint amount = IERC20(rt).balanceOf(address(this));
+        if (amount != 0) {
+          _liquidate(rt, BAL_TOKEN, amount);
         }
       }
     }
 
-    if (balToPol != 0) {
-      IERC20(BAL_TOKEN).safeTransfer(rewardsRecipient, balToPol);
+
+    uint amountBal = IERC20(BAL_TOKEN).balanceOf(address(this));
+    uint balToPerfFee = amountBal * bbRatio / _BUY_BACK_DENOMINATOR;
+    uint balToBribes = amountBal - (amountBal * bbRatio / _BUY_BACK_DENOMINATOR);
+
+    if (balToPerfFee != 0) {
+      IERC20(BAL_TOKEN).safeTransfer(rewardsRecipient, balToPerfFee);
     }
 
-    uint bb = IERC20(TETU_TOKEN).balanceOf(address(this));
-    if (bb != 0) {
-      IERC20(TETU_TOKEN).safeTransfer(bribeReceiver, bb);
+
+    if (balToBribes != 0) {
+      IERC20(BAL_TOKEN).safeTransfer(bribeReceiver, balToBribes);
     }
 
     IBookkeeper(IController(_controller()).bookkeeper()).registerStrategyEarned(0);
@@ -347,7 +331,6 @@ abstract contract BalancerBoostTetuUsdcStrategyBase is ProxyStrategyBase {
     }
   }
 
-
   /// @dev Returns the address of a Pool's contract.
   ///      Due to how Pool IDs are created, this is done with no storage accesses and costs little gas.
   function _getPoolAddress(bytes32 id) internal pure returns (address) {
@@ -355,7 +338,6 @@ abstract contract BalancerBoostTetuUsdcStrategyBase is ProxyStrategyBase {
     // since the logical shift already sets the upper bits to zero.
     return address(uint160(uint(id) >> (12 * 8)));
   }
-
 
   //slither-disable-next-line unused-state
   uint256[50 - 6] private ______gap;

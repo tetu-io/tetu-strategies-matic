@@ -16,7 +16,6 @@ import {
   ISmartVault__factory,
   IStrategy, StrategyBalancerBoostTetuUsdc, StrategyBalancerBoostTetuUsdc__factory
 } from "../../../../typechain";
-import {BalancerBPTUsdcTetuSpecificHardWork} from "./BalancerBPTUsdcTetuSpecificHardWork";
 import {Misc} from "../../../../scripts/utils/tools/Misc";
 import {BigNumber} from "ethers";
 import {TimeUtils} from "../../../TimeUtils";
@@ -26,6 +25,7 @@ import {TokenUtils} from "../../../TokenUtils";
 import {UniswapUtils} from "../../../UniswapUtils";
 import {UtilsBalancerGaugeV2} from "../../../baseUtils/balancer/utilsBalancerGaugeV2";
 import {parseUnits} from "ethers/lib/utils";
+import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
 
 
 const {expect} = chai;
@@ -83,8 +83,6 @@ describe('BalancerBoostTetuUsdcTest', async () => {
             MaticAddresses.TETU_GAUGE_DEPOSITOR
           );
 
-          await StrategyBalancerBoostTetuUsdc__factory.connect(strategy.address, signer).setPolRatio(50);
-
           // Set up BalancerGauge. Register TETU as reward token in the GAUGE and in the strategy
           await UtilsBalancerGaugeV2.registerRewardTokens(signer, await strat.GAUGE(), MaticAddresses.TETU_TOKEN);
           await strat.connect(await DeployerUtilsLocal.impersonate(await strat.controller())).setRewardTokens([MaticAddresses.TETU_TOKEN]);
@@ -107,7 +105,7 @@ describe('BalancerBoostTetuUsdcTest', async () => {
       _strategy: IStrategy,
       _balanceTolerance: number
     ) => {
-      const hw = new BalancerBPTUsdcTetuSpecificHardWork(
+      const hw = new DoHardWorkLoopBase(
         _signer,
         _user,
         _core,
@@ -184,8 +182,6 @@ describe('BalancerBoostTetuUsdcTest', async () => {
             MaticAddresses.TETU_GAUGE_DEPOSITOR
           );
 
-          await StrategyBalancerBoostTetuUsdc__factory.connect(strategy.address, signer).setPolRatio(50);
-
           return strategy;
         },
         UNDERLYING,
@@ -203,7 +199,7 @@ describe('BalancerBoostTetuUsdcTest', async () => {
       _strategy: IStrategy,
       _balanceTolerance: number
     ) => {
-      const hw = new BalancerBPTUsdcTetuSpecificHardWork(
+      const hw = new DoHardWorkLoopBase(
         _signer,
         _user,
         _core,
@@ -318,8 +314,8 @@ describe('BalancerBoostTetuUsdcTest', async () => {
 
       it("should set expected value if connected as vault", async () => {
         const newRecipient = ethers.Wallet.createRandom().address;
-        const st = (await strategy as StrategyBalancerBoostTetuUsdc__factory).connect(
-          await DeployerUtilsLocal.impersonate(vault.address)
+        const st = StrategyBalancerBoostTetuUsdc__factory.connect(
+          strategy.address, await DeployerUtilsLocal.impersonate(vault.address)
         );
         await st.setRewardsRecipient(newRecipient);
         expect(await st.rewardsRecipient()).eq(newRecipient);
@@ -328,7 +324,7 @@ describe('BalancerBoostTetuUsdcTest', async () => {
       it("should revert if not vault|controller|governance", async () => {
         const caller = ethers.Wallet.createRandom().address;
         const newRecipient = ethers.Wallet.createRandom().address;
-        const st = (await strategy as StrategyBalancerBoostTetuUsdc__factory).connect(await DeployerUtilsLocal.impersonate(caller));
+        const st = StrategyBalancerBoostTetuUsdc__factory.connect(strategy.address, await DeployerUtilsLocal.impersonate(caller));
         await expect(st.setRewardsRecipient(newRecipient)).revertedWith("SB: Not Gov or Vault");
       });
 
@@ -336,7 +332,7 @@ describe('BalancerBoostTetuUsdcTest', async () => {
 
 
         const caller = await DeployerUtilsLocal.impersonate(ethers.Wallet.createRandom().address)
-        const st = (await strategy as StrategyBalancerBoostTetuUsdc__factory).connect(caller);
+        const st = StrategyBalancerBoostTetuUsdc__factory.connect(strategy.address, caller);
 
 
         await TokenUtils.getToken(await st.underlying(), st.address, parseUnits('1'))

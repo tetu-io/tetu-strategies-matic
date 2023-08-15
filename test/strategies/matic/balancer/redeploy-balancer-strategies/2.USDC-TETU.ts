@@ -52,7 +52,7 @@ export async function deployUsdcTetu3(signer: SignerWithAddress): Promise<{vault
   await RunHelper.runAndWait(() => StrategyBalancerBoostTetuUsdc__factory.connect(strategyProxy.address, signer).initialize(
     core.controller,
     vault,
-    "0x6672A074B98A7585A8549356F97dB02f9416849E", // default rewards recipient
+    "0x9Cc199D4353b5FB3e6C8EEBC99f5139e0d8eA06b", // default rewards recipient
     '0x6672A074B98A7585A8549356F97dB02f9416849E', // EOA temporally - bribe receiver,
     MaticAddresses.TETU_GAUGE_DEPOSITOR
   ));
