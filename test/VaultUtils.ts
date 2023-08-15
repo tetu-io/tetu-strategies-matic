@@ -46,6 +46,7 @@ export const VAULT_SHARE_NO_INCREASE = new Set<string>([
   'BalancerBPTstMaticTetuBoostedStrategyBase',
   'BalancerBPTTngblUsdcStrategyBase',
   'BalancerUniversalStrategyBase',
+  'BalancerBoostTetuUsdcStrategyBase',
 ])
 
 export class VaultUtils {
