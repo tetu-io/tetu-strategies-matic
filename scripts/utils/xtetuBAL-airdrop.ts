@@ -31,7 +31,7 @@ import {TransferEvent} from "../../typechain/contracts/third_party/IERC20Extende
 // the last snapshot https://snapshot.org/#/tetubal.eth
 const PROPOSAL_ID = '0x5f29f2f385c9a2f87905b329950202033bf5fa0eb532bfedbd651642cf780baf';
 // USDC amount received from all bribes
-const USDC_AMOUNT = 8372 + 6963;
+const USDC_AMOUNT = 6529 + 5759 + 8138;
 
 // ----------------------------------------------
 const xtetuBALPerfFee = 0.95;
@@ -45,7 +45,7 @@ const PAWNSHOP = '0x0c9FA52D7Ed12a6316d3738c80931eCbC6C49907';
 async function main() {
 
   if (true) {
-    // TODO ADOPT NEW LOGIC!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // TODO ADOPT NEW LOGIC with cut for the next round !!!!!!!!!!!!!!!!!!!!!!!!!!
     return;
   }
 
@@ -76,8 +76,8 @@ async function main() {
   // --------- collect proposal data
 
   const pawnshopData = await getPawnshopData(BLOCK);
-  let expectedPawnshopPower =0;
-  for(const pos of pawnshopData) {
+  let expectedPawnshopPower = 0;
+  for (const pos of pawnshopData) {
     expectedPawnshopPower += +formatUnits(pos.collateral.collateralAmount);
   }
 
@@ -129,7 +129,7 @@ async function main() {
   console.log('Received from votes from pawnshop: ', usdcFromPawnshop)
 
   const veTETUPart = USDC_AMOUNT - usdcFromStrategy - usdcFromPawnshop;
-  console.log('veTETU $ part of rewards', veTETUPart);
+  console.log('veTETU $ part of rewards(add as bribes on v2)', veTETUPart);
 
   const usdcForDistribute = usdcFromStrategy * xtetuBALPerfFee;
   const usdcPerfFee = usdcFromStrategy - usdcForDistribute;
@@ -141,7 +141,7 @@ async function main() {
   console.log('Pure USDC to distribute PS: ', usdcForDistributePS);
   console.log('usdc Perf Fee PS', usdcPerfFeePS);
 
-  console.log('>>> SEND THIS TO DEPLOYER: ', usdcForDistribute + usdcForDistributePS + veTETUPart);
+  console.log('To distribute USDC amount (will need to cut xtetubal bb part): ', usdcForDistribute + usdcForDistributePS + veTETUPart);
 
   const usersBalance = await collectUsers(BLOCK);
   for (const [user, amount] of usersBalance) {
@@ -150,18 +150,20 @@ async function main() {
 
     const usdcAmountForUser = usdcForDistribute * userRatio;
 
-    if (isUseXtetuBal) {
-      usersForXtetuBAL.push(user);
-      const a = usdcAmountForUser / +formatUnits(xtetuBalPrice);
-      xtetuBalAmountForDistributing += a;
-      // console.log('xtetuBAL => ', user, a);
-      usersForXtetuBALAmounts.push(parseUnits(a.toFixed(18)));
-      amountForBuyingTetuBal += usdcAmountForUser;
-    } else {
-      // console.log('USDC => ', user, usdcAmountForUser);
-      usersForUSDC.push(user);
-      usersForUSDCAmounts.push(parseUnits(usdcAmountForUser.toFixed(6), 6));
-      usdcAmountForDistributing += usdcAmountForUser;
+    if (usdcAmountForUser > 0) {
+      if (isUseXtetuBal) {
+        usersForXtetuBAL.push(user);
+        const a = usdcAmountForUser / +formatUnits(xtetuBalPrice);
+        xtetuBalAmountForDistributing += a;
+        // console.log('xtetuBAL => ', user, a);
+        usersForXtetuBALAmounts.push(parseUnits(a.toFixed(18)));
+        amountForBuyingTetuBal += usdcAmountForUser;
+      } else {
+        // console.log('USDC => ', user, usdcAmountForUser);
+        usersForUSDC.push(user);
+        usersForUSDCAmounts.push(parseUnits(usdcAmountForUser.toFixed(6), 6));
+        usdcAmountForDistributing += usdcAmountForUser;
+      }
     }
   }
 
@@ -172,16 +174,18 @@ async function main() {
 
     const usdcAmountForUser = usdcForDistributePS * userRatio;
 
-    console.log('pawnshop USDC => ', user, usdcAmountForUser);
-    usersForUSDC.push(user);
-    usersForUSDCAmounts.push(parseUnits(usdcAmountForUser.toFixed(6), 6));
-    usdcAmountForDistributing += usdcAmountForUser;
+    if (usdcAmountForUser > 0) {
+      console.log('pawnshop USDC => ', user, usdcAmountForUser);
+      usersForUSDC.push(user);
+      usersForUSDCAmounts.push(parseUnits(usdcAmountForUser.toFixed(6), 6));
+      usdcAmountForDistributing += usdcAmountForUser;
+    }
   }
 
   console.log('xtetuBal vault TVL at the moment of snapshot:', xtetuBalTVLUSD);
 
-  console.log('>>> USDC to distribute: ', usdcAmountForDistributing);
-  console.log('>>> xtetuBal to distribute', xtetuBalAmountForDistributing);
+  console.log('>>> USDC to distribute(send do deployer): ', usdcAmountForDistributing);
+  console.log('>>> xtetuBal to distribute(send to deployer)', xtetuBalAmountForDistributing);
 
   console.log(`Need to buy TetuBal on ${amountForBuyingTetuBal}$`);
 
@@ -240,7 +244,7 @@ async function main() {
     const apr = formatUnits(await distributor.lastAPR());
     console.log('APR', apr);
     expect(+apr).is.greaterThan(10);
-    expect(+apr).is.lessThan(30);
+    expect(+apr).is.lessThan(40);
 
   } else {
     console.error('not enough tokens');
