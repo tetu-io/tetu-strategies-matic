@@ -12,8 +12,10 @@
 
 pragma solidity 0.8.4;
 
-interface ITetuLiquidatorController {
-    function governance() external view returns (address);
-    function isOperator(address _adr) external view returns (bool);
-    function changeOperatorStatus(address operator, bool status) external;
+interface ISmartWalletWhitelist {
+  function check(address) external view returns (bool);
+
+  function admin() external view returns (address);
+
+  function approveWallet(address) external;
 }

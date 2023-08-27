@@ -20,7 +20,6 @@ import {
   IBookkeeper__factory,
   IController,
   IController__factory,
-  IFeeRewardForwarder__factory,
   IFundKeeper__factory,
   IMintHelper__factory,
   IPriceCalculator__factory,
@@ -35,6 +34,7 @@ import {
   TetuProxyControlled, TetuProxyControlled__factory,
 } from "../../typechain";
 import {deployContract} from "./DeployContract";
+import {IFeeRewardForwarder__factory} from "../../typechain/factories/contracts/interfaces";
 
 // tslint:disable-next-line:no-var-requires
 const hre = require("hardhat");
