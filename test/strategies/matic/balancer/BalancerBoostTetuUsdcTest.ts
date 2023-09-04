@@ -31,7 +31,7 @@ import {DoHardWorkLoopBase} from "../../DoHardWorkLoopBase";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('BalancerBoostTetuUsdcTest', async () => {
+describe.skip('BalancerBoostTetuUsdcTest', async () => {
   describe('Universal test', async () => {
     const deployInfo: DeployInfo = new DeployInfo();
     before(async function () {

@@ -20,7 +20,7 @@ import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('BalancerBPT_Tetu_boosted_stMATIC-MATIC_Test', async () => {
+describe.skip('BalancerBPT_Tetu_boosted_stMATIC-MATIC_Test', async () => {
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, true);

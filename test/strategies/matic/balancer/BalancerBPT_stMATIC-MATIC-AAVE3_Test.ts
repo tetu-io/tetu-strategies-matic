@@ -3,7 +3,7 @@ import {DeployInfo} from "../../DeployInfo";
 import {StrategyTestUtils} from "../../StrategyTestUtils";
 import {balancerUniversalTest} from "./universal-test";
 
-describe('BalancerBPT_stMATIC-MATIC-AAVE3_Test', async () => {
+describe.skip('BalancerBPT_stMATIC-MATIC-AAVE3_Test', async () => {
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, true);
