@@ -18,20 +18,22 @@ import {expect} from "chai";
 import {TransferEvent} from "../../typechain/contracts/third_party/IERC20Extended";
 
 // After airdrop receiving from all sources you need to liquidate all tokens to USDC
-// Then launch this script on hardhat network and make sure that you have enough tokens.
+// USDC should be on the dedicated msig - send it to BRIBER address
+// Then launch this script on hardhat network.
 // If you need xtetuBAL for distribute you will keep some USDC for perform buybacks and send xtetuBAL from remaining balance. If not enough - buyback right now, otherwise perform buybacks more wisly.
 // After that send USDC and xtetuBAL tokens to EOA who will call this script.
 // The POL holder will receive back some USDC - it is fine, we should distribute the whole amount throught distributor for properly calc TVL.
 // This received USDC will be used for tetuBAL buybacks.
-// todo describe vetetu part distribution
+//
+// veTETU part is another amount that should be added to tUSDC bribes on v2 (can be done after xtetuBAL distribution).
 
 // ------------------ CHANGE ME ----------------------------
 
 // MAKE SURE YOUR LOCAL SNAPSHOT BLOCK IS ACTUAL!
 // the last snapshot https://snapshot.org/#/tetubal.eth
-const PROPOSAL_ID = '0x5f29f2f385c9a2f87905b329950202033bf5fa0eb532bfedbd651642cf780baf';
+const PROPOSAL_ID = '0xe670ef25898966b18e122aef7d1bb8f8529f4891b7ea7bcb3f6e6694edb9cef6';
 // USDC amount received from all bribes
-const USDC_AMOUNT = 6529 + 5759 + 8138;
+const USDC_AMOUNT = 13774 + 6188;
 
 // ----------------------------------------------
 const xtetuBALPerfFee = 0.95;
@@ -43,12 +45,6 @@ const TETU_BAL_HOLDER = '0x237114Ef61b27fdF57132e6c8C4244eeea8323D3';
 const PAWNSHOP = '0x0c9FA52D7Ed12a6316d3738c80931eCbC6C49907';
 
 async function main() {
-
-  if (true) {
-    // TODO ADOPT NEW LOGIC with cut for the next round !!!!!!!!!!!!!!!!!!!!!!!!!!
-    return;
-  }
-
   let signer: SignerWithAddress;
   if (Misc.getChainName() === 'hardhat') {
     signer = await DeployerUtilsLocal.impersonate('0xbbbbb8c4364ec2ce52c59d2ed3e56f307e529a94');
@@ -103,6 +99,14 @@ async function main() {
   const xtetuBALStrategyPower = await power.balanceOf(X_TETU_BAL_STRATEGY, {blockTag: BLOCK});
   console.log('X_TETU_BAL_STRATEGY power', +formatUnits(xtetuBALStrategyPower));
 
+
+  // const tetuBalReducing = +formatUnits(await power.tetuBalReducing({blockTag: BLOCK}));
+  const tetuBalReducing = 0;
+  console.log('tetuBalReducing power', tetuBalReducing);
+
+  const tetuBalTotalSupply = +formatUnits(await power.totalSupply({blockTag: BLOCK}));
+  console.log('tetuBalTotalSupply', tetuBalTotalSupply);
+
   const tetuBalInBalancer = +formatUnits(await power.tetuBalInBalancer({blockTag: BLOCK}));
   const tetuBalHolderPower = +formatUnits(await power.balanceOf(TETU_BAL_HOLDER, {blockTag: BLOCK}));
   const pawnshopPower = +formatUnits(await power.balanceOf(PAWNSHOP, {blockTag: BLOCK}));
@@ -111,7 +115,16 @@ async function main() {
   console.log('pawnshopPower', pawnshopPower);
   expect(pawnshopPower).is.eq(expectedPawnshopPower);
 
-  const expectedStrategyRatio = (+votedPower - tetuBalInBalancer - tetuBalHolderPower - pawnshopPower) / votedPower;
+  const totalPureTetuBal = tetuBalTotalSupply - tetuBalInBalancer;
+  const extraFromTetuBalCut = totalPureTetuBal * tetuBalReducing;
+  console.log('totalPureTetuBal', totalPureTetuBal);
+  console.log('extraFromTetuBalCut', extraFromTetuBalCut);
+
+  // todo when the cut will be not zero need to check additional logic
+  expect(extraFromTetuBalCut).eq(0);
+
+
+  const expectedStrategyRatio = (+votedPower - tetuBalInBalancer - tetuBalHolderPower - pawnshopPower - extraFromTetuBalCut) / votedPower;
   console.log('expectedStrategyRatio', expectedStrategyRatio);
 
   const xtetuBalStrategyRatio = +formatUnits(xtetuBALStrategyPower) / +votedPower
@@ -128,8 +141,15 @@ async function main() {
   const usdcFromPawnshop = USDC_AMOUNT * pawnshopRatio;
   console.log('Received from votes from pawnshop: ', usdcFromPawnshop)
 
-  const veTETUPart = USDC_AMOUNT - usdcFromStrategy - usdcFromPawnshop;
-  console.log('veTETU $ part of rewards(add as bribes on v2)', veTETUPart);
+  const extraFromTetuBalCutRatio = extraFromTetuBalCut / +votedPower;
+  console.log('extraFromTetuBalCutRatio', extraFromTetuBalCutRatio);
+
+  const usdcFromTetuBalCut = USDC_AMOUNT * extraFromTetuBalCutRatio;
+  console.log('Received from votes from the cut: ', usdcFromTetuBalCut)
+  console.log('>>> cut for adding liquidity', usdcFromTetuBalCut / 2)
+
+  const veTETUPart = USDC_AMOUNT - usdcFromStrategy - usdcFromPawnshop - (usdcFromTetuBalCut / 2);
+  console.log('>>> veTETU $ part of rewards(add as bribes on v2)', veTETUPart);
 
   const usdcForDistribute = usdcFromStrategy * xtetuBALPerfFee;
   const usdcPerfFee = usdcFromStrategy - usdcForDistribute;

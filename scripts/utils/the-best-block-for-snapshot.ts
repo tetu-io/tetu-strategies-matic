@@ -6,7 +6,7 @@ import {getSnapshotData} from "./tools/voting-utils";
 import {Misc} from "./tools/Misc";
 
 // check here https://snapshot.org/#/tetubal.eth
-const PREVIOUS_PROPOSAL = '0x5f29f2f385c9a2f87905b329950202033bf5fa0eb532bfedbd651642cf780baf';
+const PREVIOUS_PROPOSAL = '0xe670ef25898966b18e122aef7d1bb8f8529f4891b7ea7bcb3f6e6694edb9cef6';
 
 async function main() {
   const BALANCER_VAULT = '0xBA12222222228d8Ba445958a75a0704d566BF2C8';
@@ -23,7 +23,7 @@ async function main() {
   const curDate = Math.floor(new Date().getTime() / 1000);
   const sinceProposal = (curDate - +snapshotData.start);
   console.log('sinceProposal days', sinceProposal / 60 / 60 / 24);
-  if (sinceProposal < 7 * 60 * 60 * 24 || sinceProposal > 16 * 60 * 60 * 24) throw new Error('Wrong proposal');
+  if (sinceProposal < 7 * 60 * 60 * 24 || sinceProposal > 17 * 60 * 60 * 24) throw new Error('Wrong proposal');
 
   const previousVotingStartBlock = await Misc.findBlockByDate(snapshotData.start, curBlock - Math.floor(sinceProposal / (await Misc.getAverageBlockTime())) + 20000);
   console.log('previousVotingStartBlock', previousVotingStartBlock);
