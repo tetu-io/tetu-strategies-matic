@@ -95,6 +95,7 @@ export class TokenUtils {
     [MaticAddresses.BALANCER_GYRO_MATIC_STMATIC, '0x51416C00388bB4644E28546c77AEe768036F17A8'.toLowerCase()], //
     [MaticAddresses.STADER_TOKEN, '0x80968391da3654ac4fd5feafaf60c9cb45dc84c0'], //
     [MaticAddresses.tetuBAL, '0x36cc7b13029b5dee4034745fb4f24034f3f2ffc6'], //
+    [MaticAddresses.CAVIAR_TOKEN, '0x6a09eb9b5932a79360b02161125ecdf028dbc6d7'], //
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {

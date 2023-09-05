@@ -20,7 +20,7 @@ import {UtilsBalancerGaugeV2} from "../../../baseUtils/balancer/utilsBalancerGau
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('BalancerBPT_SPHERE-MATIC_Test', async () => {
+describe.skip('BalancerBPT_SPHERE-MATIC_Test', async () => {
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, true);

@@ -86,15 +86,17 @@ export class MaticAddresses {
   public static bbamUSDC_TOKEN = '0xF93579002DBE8046c43FEfE86ec78b1112247BB8'.toLowerCase();
   public static bb_t_USDC_TOKEN = '0xae646817e458C0bE890b81e8d880206710E3c44e'.toLowerCase();
   public static SD_TOKEN = '0x1d734A02eF1e1f5886e66b0673b71Af5B53ffA94'.toLowerCase();
-  public static wUSDR_TOKEN = '0xAF0D9D65fC54de245cdA37af3d18cbEc860A4D4b'.toLowerCase();
+  public static wUSDR_OLD_TOKEN = '0xAF0D9D65fC54de245cdA37af3d18cbEc860A4D4b'.toLowerCase();
   public static stMATIC_TOKEN = '0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4'.toLowerCase();
   public static MATIC_X = '0xfa68FB4628DFF1028CFEc22b4162FCcd0d45efb6'.toLowerCase();
   public static USX_TOKEN = '0xCf66EB3D546F0415b368d98A95EAF56DeD7aA752'.toLowerCase();
   public static xtetuBAL_TOKEN = '0x915E49F7CD8B2b5763759c23D9463A74d5b5C1D5'.toLowerCase();
   public static STADER_TOKEN = '0x1d734A02eF1e1f5886e66b0673b71Af5B53ffA94'.toLowerCase();
   public static WSTETH_TOKEN = '0x03b54A6e9a984069379fae1a4fC4dBAE93B3bCCD'.toLowerCase();
-
-  // public static dQUICK_TOKEN = "".toLowerCase();
+  public static CAVIAR_TOKEN = '0x6AE96Cc93331c19148541D4D2f31363684917092'.toLowerCase();
+  public static PEARL_TOKEN = '0x7238390d5f6F64e67c3211C343A410E2A3DEc142'.toLowerCase();
+  public static USDR_TOKEN = '0x40379a439d4f6795b6fc9aa5687db461677a2dba'.toLowerCase();
+  public static wUSDR_TOKEN = '0x00e8c0E92eB3Ad88189E7125Ec8825eDc03Ab265'.toLowerCase();
 
   // iron
   public static IRON_MINISHEFV2 = "0x1fD1259Fa8CdC60c6E8C86cfA592CA1b8403DFaD".toLowerCase();
@@ -354,6 +356,8 @@ export class MaticAddresses {
   public static DYSTOPIA_ROUTER = '0xbE75Dd16D029c6B32B7aD57A0FD9C1c20Dd2862e'.toLowerCase();
   public static DYSTOPIA_tetuQI_QI = '0x42c0cc5f1827c5d908392654389e5d93da426378'.toLowerCase();
   public static DYSTOPIA_TETU_USDPlus = '0x5A272ad79cBd3C874879E3FEc5753C2127f77583'.toLowerCase();
+  public static DYSTOPIA_SWAPPER = '0x867F88209074f4B7300e7593Cd50C05B2c02Ad01'.toLowerCase();
+
 
   public static dForce_iUSDC = "0x5268b3c4afb0860D365a093C184985FCFcb65234";
   public static dForce_iUSDT = "0xb3ab7148cCCAf66686AD6C1bE24D83e58E6a504e";
@@ -377,6 +381,12 @@ export class MaticAddresses {
   // COMPOUND
 
   public static COMPOUND3_COMET_USDC = "0xF25212E676D1F7F89Cd72fFEe66158f541246445";
+
+  // Pearl
+  public static PEARL_CVR_PEARL_POOL = '0x700D6E1167472bDc312D9cBBdc7c58C7f4F45120'.toLowerCase()
+  public static PEARL_PEARL_USDR_POOL = '0xf68c20d6C50706f6C6bd8eE184382518C93B368c'.toLowerCase()
+  public static PEARL_USDC_USDR_POOL = '0xD17cb0f162f133e339C0BbFc18c36c357E681D6b'.toLowerCase()
+  public static PEARL_wUSDR_USDR_POOL = '0x8711a1a52c34EDe8E61eF40496ab2618a8F6EA4B'.toLowerCase()
 
 
   public static BLUE_CHIPS = new Set<string>([

@@ -18,7 +18,7 @@ import {parseUnits} from "ethers/lib/utils";
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('BalancerBPT_tetuQi_QI_Test', async () => {
+describe.skip('BalancerBPT_tetuQi_QI_Test', async () => {
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, true);

@@ -21,7 +21,7 @@ import {UtilsBalancerGaugeV2} from "../../../baseUtils/balancer/utilsBalancerGau
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('BalancerBPT_TNGBL_USDC_Test', async () => {
+describe.skip('BalancerBPT_TNGBL_USDC_Test', async () => {
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, true);

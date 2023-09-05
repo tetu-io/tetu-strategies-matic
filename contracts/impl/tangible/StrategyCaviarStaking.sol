@@ -9,11 +9,22 @@
 * as all warranties, including any fitness for a particular purpose with respect
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
-
 pragma solidity 0.8.4;
 
-interface ITetuLiquidatorController {
-    function governance() external view returns (address);
-    function isOperator(address _adr) external view returns (bool);
-    function changeOperatorStatus(address operator, bool status) external;
+import "../../strategies/tangible/CaviarStakingStrategyBase.sol";
+
+
+contract StrategyCaviarStaking is CaviarStakingStrategyBase {
+
+  function initialize(
+    address controller_,
+    address vault_,
+    uint buybackRatio_
+  ) external initializer {
+    initializeStrategy(
+      controller_,
+      vault_,
+      buybackRatio_
+    );
+  }
 }

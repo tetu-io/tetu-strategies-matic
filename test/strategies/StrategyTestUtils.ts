@@ -4,7 +4,6 @@ import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
-  IFeeRewardForwarder,
   IPriceCalculator,
   ISmartVault,
   IStrategy,
