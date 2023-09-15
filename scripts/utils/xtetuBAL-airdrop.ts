@@ -31,15 +31,17 @@ import {TransferEvent} from "../../typechain/contracts/third_party/IERC20Extende
 
 // MAKE SURE YOUR LOCAL SNAPSHOT BLOCK IS ACTUAL!
 // the last snapshot https://snapshot.org/#/tetubal.eth
-const PROPOSAL_ID = '0xe670ef25898966b18e122aef7d1bb8f8529f4891b7ea7bcb3f6e6694edb9cef6';
+const PROPOSAL_ID = '0x2f4d1709f19291a97db05874f747844f05502c74600cdd19c2b7a3b456d8f4aa';
 // USDC amount received from all bribes
-const USDC_AMOUNT = 13774 + 6188;
+const USDC_AMOUNT = 7654 * 2;
+// % of USDC amount that will be transfer as TETU tokens. calc it depending on protocol pools bribes where we used TETU as bribes.
+const TETU_RATIO = Number(0.5);
 
 // ----------------------------------------------
 const xtetuBALPerfFee = 0.95;
 const tetuBALPower = '0x8FFBa974Efa7C262C97b9521449Fd2B3c69bE4E6'.toLowerCase();
 const POL_OWNER = '0x6672a074b98a7585a8549356f97db02f9416849e'.toLowerCase();
-const DISTRIBUTOR = '0x6DdD4dB035FC15F90D74C1E98ABa967D6b3Ce3Dd';
+const DISTRIBUTOR = '0x6A5938e635C6AAada7c398b3EDc40e924B323D9F'; // 0x6DdD4dB035FC15F90D74C1E98ABa967D6b3Ce3Dd
 const X_TETU_BAL_STRATEGY = '0xdade618E95F5E51198c69bA0A9CC3033874Fa643';
 const TETU_BAL_HOLDER = '0x237114Ef61b27fdF57132e6c8C4244eeea8323D3';
 const PAWNSHOP = '0x0c9FA52D7Ed12a6316d3738c80931eCbC6C49907';
@@ -49,7 +51,7 @@ async function main() {
   if (Misc.getChainName() === 'hardhat') {
     signer = await DeployerUtilsLocal.impersonate('0xbbbbb8c4364ec2ce52c59d2ed3e56f307e529a94');
 
-    const distributorGov = XtetuBALDistributor__factory.connect('0x6DdD4dB035FC15F90D74C1E98ABa967D6b3Ce3Dd', await DeployerUtilsLocal.impersonate());
+    const distributorGov = XtetuBALDistributor__factory.connect(DISTRIBUTOR, await DeployerUtilsLocal.impersonate());
     await distributorGov.changeOperatorStatus(signer.address, true);
   } else {
     signer = (await ethers.getSigners())[0];
@@ -82,6 +84,7 @@ async function main() {
   const tools = await DeployerUtilsLocal.getToolsAddressesWrapper(signer);
 
   const xtetuBalPrice = await tools.calculator.getPriceWithDefaultOutput(MaticAddresses.xtetuBAL_TOKEN, {blockTag: BLOCK});
+  const tetuPrice = await tools.calculator.getPriceWithDefaultOutput(MaticAddresses.TETU_TOKEN, /*{blockTag: BLOCK}*/); // use actual price
   const xtetuBalTVL = await ISmartVault__factory.connect(MaticAddresses.xtetuBAL_TOKEN, signer).underlyingBalanceWithInvestment({blockTag: BLOCK});
   const xtetuBalTVLUSD = +formatUnits(xtetuBalPrice.mul(xtetuBalTVL), 36);
 
@@ -91,8 +94,11 @@ async function main() {
   const usersForUSDCAmounts: BigNumber[] = [];
   const usersForXtetuBAL: string[] = [];
   const usersForXtetuBALAmounts: BigNumber[] = [];
+  const usersForTetu: string[] = [];
+  const usersForTetuAmounts: BigNumber[] = [];
   let amountForBuyingTetuBal = 0;
   let usdcAmountForDistributing = 0;
+  let tetuAmountForDistributing = 0;
   let xtetuBalAmountForDistributing = 0;
 
   const power = TetuBalVotingPower__factory.connect(tetuBALPower, signer);
@@ -149,7 +155,7 @@ async function main() {
   console.log('>>> cut for adding liquidity', usdcFromTetuBalCut / 2)
 
   const veTETUPart = USDC_AMOUNT - usdcFromStrategy - usdcFromPawnshop - (usdcFromTetuBalCut / 2);
-  console.log('>>> veTETU $ part of rewards(add as bribes on v2)', veTETUPart);
+  console.log(`>>> veTETU $ part of rewards(add as bribes on v2) ${veTETUPart * TETU_RATIO} USDC and ${(veTETUPart * TETU_RATIO) / +formatUnits(tetuPrice)} TETU}`);
 
   const usdcForDistribute = usdcFromStrategy * xtetuBALPerfFee;
   const usdcPerfFee = usdcFromStrategy - usdcForDistribute;
@@ -166,7 +172,8 @@ async function main() {
   const usersBalance = await collectUsers(BLOCK);
   for (const [user, amount] of usersBalance) {
     const userRatio = amount / +formatUnits(xtetuBalTVL);
-    const isUseXtetuBal = await distributor.useXtetuBal(user);
+    // todo change to distributor in next cycle
+    const isUseXtetuBal = await XtetuBALDistributor__factory.connect('0x6DdD4dB035FC15F90D74C1E98ABa967D6b3Ce3Dd', signer).useXtetuBal(user);
 
     const usdcAmountForUser = usdcForDistribute * userRatio;
 
@@ -180,9 +187,21 @@ async function main() {
         amountForBuyingTetuBal += usdcAmountForUser;
       } else {
         // console.log('USDC => ', user, usdcAmountForUser);
-        usersForUSDC.push(user);
-        usersForUSDCAmounts.push(parseUnits(usdcAmountForUser.toFixed(6), 6));
-        usdcAmountForDistributing += usdcAmountForUser;
+        let usdcAmountFinal = usdcAmountForUser;
+        let tetuAmountFinal = 0;
+        if (TETU_RATIO !== 0) {
+          usdcAmountFinal = usdcAmountForUser * TETU_RATIO;
+          tetuAmountFinal = (usdcAmountForUser - usdcAmountFinal) / +formatUnits(tetuPrice);
+
+          usersForTetu.push(user);
+          usersForTetuAmounts.push(parseUnits(tetuAmountFinal.toFixed(18), 18));
+          tetuAmountForDistributing += tetuAmountFinal;
+        }
+        if (TETU_RATIO < 1) {
+          usersForUSDC.push(user);
+          usersForUSDCAmounts.push(parseUnits(usdcAmountFinal.toFixed(6), 6));
+          usdcAmountForDistributing += usdcAmountFinal;
+        }
       }
     }
   }
@@ -196,15 +215,30 @@ async function main() {
 
     if (usdcAmountForUser > 0) {
       console.log('pawnshop USDC => ', user, usdcAmountForUser);
-      usersForUSDC.push(user);
-      usersForUSDCAmounts.push(parseUnits(usdcAmountForUser.toFixed(6), 6));
-      usdcAmountForDistributing += usdcAmountForUser;
+
+      let usdcAmountFinal = usdcAmountForUser;
+      let tetuAmountFinal = 0;
+      if (TETU_RATIO !== 0) {
+        usdcAmountFinal = usdcAmountForUser * TETU_RATIO;
+        tetuAmountFinal = (usdcAmountForUser - usdcAmountFinal) / +formatUnits(tetuPrice);
+
+        usersForTetu.push(user);
+        usersForTetuAmounts.push(parseUnits(tetuAmountFinal.toFixed(18), 18));
+        tetuAmountForDistributing += tetuAmountFinal;
+      }
+
+      if (TETU_RATIO < 1) {
+        usersForUSDC.push(user);
+        usersForUSDCAmounts.push(parseUnits(usdcAmountFinal.toFixed(6), 6));
+        usdcAmountForDistributing += usdcAmountFinal;
+      }
     }
   }
 
   console.log('xtetuBal vault TVL at the moment of snapshot:', xtetuBalTVLUSD);
 
   console.log('>>> USDC to distribute(send do deployer): ', usdcAmountForDistributing);
+  console.log('>>> TETU to distribute(send do deployer): ', tetuAmountForDistributing);
   console.log('>>> xtetuBal to distribute(send to deployer)', xtetuBalAmountForDistributing);
 
   console.log(`Need to buy TetuBal on ${amountForBuyingTetuBal}$`);
@@ -212,12 +246,15 @@ async function main() {
 
   const balanceXtetuBal = await IERC20__factory.connect(MaticAddresses.xtetuBAL_TOKEN, signer).balanceOf(signer.address);
   const balanceUSDC = await IERC20__factory.connect(MaticAddresses.USDC_TOKEN, signer).balanceOf(signer.address);
+  const balanceTETU = await IERC20__factory.connect(MaticAddresses.TETU_TOKEN, signer).balanceOf(signer.address);
 
   console.log('balanceXtetuBal', +formatUnits(balanceXtetuBal));
+  console.log('balanceTETU', +formatUnits(balanceTETU));
   console.log('balanceUSDC', +formatUnits(balanceUSDC, 6));
 
   const usdcAllowance = await IERC20__factory.connect(MaticAddresses.USDC_TOKEN, signer).allowance(signer.address, distributor.address);
   const xtetuBALAllowance = await IERC20__factory.connect(MaticAddresses.xtetuBAL_TOKEN, signer).allowance(signer.address, distributor.address);
+  const tetuAllowance = await IERC20__factory.connect(MaticAddresses.TETU_TOKEN, signer).allowance(signer.address, distributor.address);
 
   if (usdcAllowance.lt(parseUnits(usdcAmountForDistributing.toFixed(6), 6))) {
     console.log('APPROVE USDC', usdcAmountForDistributing);
@@ -239,25 +276,34 @@ async function main() {
     );
   }
 
-  /// remove later
-  // const gov = await DeployerUtilsLocal.impersonate();
-  // const newLogic = await DeployerUtilsLocal.deployContract(gov, 'XtetuBALDistributor')
-  // const core = await DeployerUtilsLocal.getCoreAddressesWrapper(gov);
-  // await core.announcer.announceTetuProxyUpgrade(distributor.address, newLogic.address);
-  // await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 2);
-  // await core.controller.upgradeTetuProxyBatch([distributor.address], [newLogic.address]);
-  //////////////////////
+  if (tetuAllowance.lt(parseUnits((tetuAmountForDistributing + 1).toFixed(18)))) {
+    console.log('APPROVE tetu', tetuAmountForDistributing);
+    await RunHelper.runAndWait(() => IERC20__factory.connect(MaticAddresses.TETU_TOKEN, signer).approve(
+        distributor.address,
+        parseUnits((tetuAmountForDistributing + 1).toFixed(18)).add(1)
+      )
+    );
+  }
 
   if (
     balanceUSDC.gte(parseUnits(usdcAmountForDistributing.toFixed(6), 6))
     && balanceXtetuBal.gte(parseUnits((xtetuBalAmountForDistributing).toFixed(18)))
+    && balanceTETU.gte(parseUnits((tetuAmountForDistributing).toFixed(18)))
   ) {
+    const tp = await DeployerUtilsLocal.txParams();
     await RunHelper.runAndWait(() => distributor.distribute(
-      usersForUSDC,
-      usersForUSDCAmounts,
-      usersForXtetuBAL,
-      usersForXtetuBALAmounts,
-      parseUnits(xtetuBalTVLUSD.toFixed(18))
+      [
+        usersForUSDC,
+        usersForXtetuBAL,
+        usersForTetu
+      ],
+      [
+        usersForUSDCAmounts,
+        usersForXtetuBALAmounts,
+        usersForTetuAmounts
+      ],
+      parseUnits(xtetuBalTVLUSD.toFixed(18)),
+      {...tp}
     ));
 
     // 1.640059157153047501
