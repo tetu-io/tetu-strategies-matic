@@ -3,6 +3,7 @@ import {Misc} from "./tools/Misc";
 import {ethers} from "hardhat";
 import {MaticAddresses} from "../addresses/MaticAddresses";
 import {
+  IBribeDistribution__factory,
   IERC20__factory,
   ISmartVault__factory,
   TetuBalVotingPower__factory,
@@ -31,11 +32,11 @@ import {TransferEvent} from "../../typechain/contracts/third_party/IERC20Extende
 
 // MAKE SURE YOUR LOCAL SNAPSHOT BLOCK IS ACTUAL!
 // the last snapshot https://snapshot.org/#/tetubal.eth
-const PROPOSAL_ID = '0x2f4d1709f19291a97db05874f747844f05502c74600cdd19c2b7a3b456d8f4aa';
+const PROPOSAL_ID = '0x79ed2fc1ef444dee3bf72c19d1609423009b80f40c9f47977f9d17ad84a2d2c5';
 // USDC amount received from all bribes
-const USDC_AMOUNT = 7654 * 2;
+const USDC_AMOUNT = 25682;
 // % of USDC amount that will be transfer as TETU tokens. calc it depending on protocol pools bribes where we used TETU as bribes.
-const TETU_RATIO = Number(0.5);
+const TETU_RATIO = Number(1);
 
 // ----------------------------------------------
 const xtetuBALPerfFee = 0.95;
@@ -45,14 +46,15 @@ const DISTRIBUTOR = '0x6A5938e635C6AAada7c398b3EDc40e924B323D9F'; // 0x6DdD4dB03
 const X_TETU_BAL_STRATEGY = '0xdade618E95F5E51198c69bA0A9CC3033874Fa643';
 const TETU_BAL_HOLDER = '0x237114Ef61b27fdF57132e6c8C4244eeea8323D3';
 const PAWNSHOP = '0x0c9FA52D7Ed12a6316d3738c80931eCbC6C49907';
+const BRIBE_DISTRIBUTOR = '0x1b7B8E29176CF89Cd4c04852FCff552721fC1b2e';
 
 async function main() {
   let signer: SignerWithAddress;
   if (Misc.getChainName() === 'hardhat') {
     signer = await DeployerUtilsLocal.impersonate('0xbbbbb8c4364ec2ce52c59d2ed3e56f307e529a94');
 
-    const distributorGov = XtetuBALDistributor__factory.connect(DISTRIBUTOR, await DeployerUtilsLocal.impersonate());
-    await distributorGov.changeOperatorStatus(signer.address, true);
+    // const distributorGov = XtetuBALDistributor__factory.connect(DISTRIBUTOR, await DeployerUtilsLocal.impersonate());
+    // await distributorGov.changeOperatorStatus(signer.address, true);
   } else {
     signer = (await ethers.getSigners())[0];
   }
@@ -155,7 +157,8 @@ async function main() {
   console.log('>>> cut for adding liquidity', usdcFromTetuBalCut / 2)
 
   const veTETUPart = USDC_AMOUNT - usdcFromStrategy - usdcFromPawnshop - (usdcFromTetuBalCut / 2);
-  console.log(`>>> veTETU $ part of rewards(add as bribes on v2) ${veTETUPart * TETU_RATIO} USDC and ${(veTETUPart * TETU_RATIO) / +formatUnits(tetuPrice)} TETU}`);
+  const veTetuPartOfTetu = (veTETUPart * TETU_RATIO) / +formatUnits(tetuPrice);
+  console.log(`>>> veTETU $ part of rewards(add as bribes on v2) ${veTETUPart - (veTETUPart * TETU_RATIO)} USDC and ${veTetuPartOfTetu} TETU}`);
 
   const usdcForDistribute = usdcFromStrategy * xtetuBALPerfFee;
   const usdcPerfFee = usdcFromStrategy - usdcForDistribute;
@@ -190,7 +193,7 @@ async function main() {
         let usdcAmountFinal = usdcAmountForUser;
         let tetuAmountFinal = 0;
         if (TETU_RATIO !== 0) {
-          usdcAmountFinal = usdcAmountForUser * TETU_RATIO;
+          usdcAmountFinal = usdcAmountForUser - (usdcAmountForUser * TETU_RATIO);
           tetuAmountFinal = (usdcAmountForUser - usdcAmountFinal) / +formatUnits(tetuPrice);
 
           usersForTetu.push(user);
@@ -219,7 +222,7 @@ async function main() {
       let usdcAmountFinal = usdcAmountForUser;
       let tetuAmountFinal = 0;
       if (TETU_RATIO !== 0) {
-        usdcAmountFinal = usdcAmountForUser * TETU_RATIO;
+        usdcAmountFinal = usdcAmountForUser - (usdcAmountForUser * TETU_RATIO);
         tetuAmountFinal = (usdcAmountForUser - usdcAmountFinal) / +formatUnits(tetuPrice);
 
         usersForTetu.push(user);
@@ -238,7 +241,7 @@ async function main() {
   console.log('xtetuBal vault TVL at the moment of snapshot:', xtetuBalTVLUSD);
 
   console.log('>>> USDC to distribute(send do deployer): ', usdcAmountForDistributing);
-  console.log('>>> TETU to distribute(send do deployer): ', tetuAmountForDistributing);
+  console.log('>>> TETU to distribute(send do deployer): ', tetuAmountForDistributing + veTetuPartOfTetu);
   console.log('>>> xtetuBal to distribute(send to deployer)', xtetuBalAmountForDistributing);
 
   console.log(`Need to buy TetuBal on ${amountForBuyingTetuBal}$`);
@@ -315,6 +318,40 @@ async function main() {
   } else {
     console.error('not enough tokens');
   }
+
+  await distributeBribes(signer, veTetuPartOfTetu);
+}
+
+async function distributeBribes(
+  signer: SignerWithAddress,
+  amount: number,
+) {
+
+  console.log('--------- Start distribute veTETU bribes');
+
+  const balanceTETU = await IERC20__factory.connect(MaticAddresses.TETU_TOKEN, signer).balanceOf(signer.address);
+
+  console.log('balanceTETU', +formatUnits(balanceTETU));
+
+  const tetuAllowance = await IERC20__factory.connect(MaticAddresses.TETU_TOKEN, signer).allowance(signer.address, BRIBE_DISTRIBUTOR);
+
+
+  if (tetuAllowance.lt(parseUnits((amount + 1).toFixed(18)))) {
+    console.log('APPROVE tetu', amount);
+    await RunHelper.runAndWait(() => IERC20__factory.connect(MaticAddresses.TETU_TOKEN, signer).approve(
+        BRIBE_DISTRIBUTOR,
+        parseUnits((amount + 1).toFixed(18)).add(1)
+      )
+    );
+  }
+
+  const tp = await DeployerUtilsLocal.txParams();
+  await RunHelper.runAndWait(() => IBribeDistribution__factory.connect(BRIBE_DISTRIBUTOR, signer).manualNotify(
+    parseUnits(amount.toFixed(18)),
+    true,
+    {...tp}
+  ));
+
 }
 
 main()
