@@ -6,7 +6,7 @@ import {getSnapshotData} from "./tools/voting-utils";
 import {Misc} from "./tools/Misc";
 
 // check here https://snapshot.org/#/tetubal.eth
-const PREVIOUS_PROPOSAL = '0x2f4d1709f19291a97db05874f747844f05502c74600cdd19c2b7a3b456d8f4aa';
+const PREVIOUS_PROPOSAL = '0x79ed2fc1ef444dee3bf72c19d1609423009b80f40c9f47977f9d17ad84a2d2c5';
 
 async function main() {
   const BALANCER_VAULT = '0xBA12222222228d8Ba445958a75a0704d566BF2C8';

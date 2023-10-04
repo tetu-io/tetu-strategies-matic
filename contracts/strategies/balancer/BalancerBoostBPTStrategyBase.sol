@@ -32,7 +32,7 @@ abstract contract BalancerBoostBPTStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "BalancerBoostBPTStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
 
   uint private constant PRICE_IMPACT_TOLERANCE = 10_000;
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
@@ -180,9 +180,6 @@ abstract contract BalancerBoostBPTStrategyBase is ProxyStrategyBase {
 
   /// @dev Deposit LP tokens to gauge
   function depositToPool(uint256 amount) internal override {
-    _doHardWork(true, false);
-    // doHardWork can deposit all underlyings
-    amount = IERC20(_underlying()).balanceOf(address(this));
     if (amount != 0) {
       IGaugeDepositor(gaugeDepositor).deposit(_underlying(), amount, address(gauge));
     }
@@ -364,7 +361,6 @@ abstract contract BalancerBoostBPTStrategyBase is ProxyStrategyBase {
     }
   }
 
-
   /// @dev Returns the address of a Pool's contract.
   ///      Due to how Pool IDs are created, this is done with no storage accesses and costs little gas.
   function _getPoolAddress(bytes32 id) internal pure returns (address) {
@@ -372,7 +368,6 @@ abstract contract BalancerBoostBPTStrategyBase is ProxyStrategyBase {
     // since the logical shift already sets the upper bits to zero.
     return address(uint160(uint(id) >> (12 * 8)));
   }
-
 
   //slither-disable-next-line unused-state
   uint256[50 - 6] private ______gap;

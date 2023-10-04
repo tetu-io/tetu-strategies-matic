@@ -32,7 +32,7 @@ abstract contract BalancerBoostStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "BalancerBoostStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
 
   uint private constant PRICE_IMPACT_TOLERANCE = 10_000;
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
@@ -166,9 +166,6 @@ abstract contract BalancerBoostStrategyBase is ProxyStrategyBase {
 
   /// @dev Deposit LP tokens to gauge
   function depositToPool(uint256 amount) internal override {
-    _doHardWork(true, false);
-    // doHardWork can deposit all underlyings
-    amount = IERC20(_underlying()).balanceOf(address(this));
     if (amount != 0) {
       IGaugeDepositor(gaugeDepositor).deposit(_underlying(), amount, address(gauge));
     }
