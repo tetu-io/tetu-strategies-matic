@@ -30,7 +30,7 @@ abstract contract CaviarStakingStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "CaviarStakingStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
 
   uint private constant PRICE_IMPACT_TOLERANCE = 10_000;
   ITetuLiquidator public constant TETU_LIQUIDATOR = ITetuLiquidator(0xC737eaB847Ae6A92028862fE38b828db41314772);
@@ -113,8 +113,6 @@ abstract contract CaviarStakingStrategyBase is ProxyStrategyBase {
 
   /// @dev Stake Caviar tokens to caviarChef to earn rewards
   function depositToPool(uint256 amount) internal override {
-    _doHardWork(true);
-    amount = IERC20(_underlying()).balanceOf(address(this));
     if (amount != 0) {
       _approveIfNeeds(_underlying(), amount, address(CAVIAR_CHEF));
       CAVIAR_CHEF.deposit(amount, address(this));
