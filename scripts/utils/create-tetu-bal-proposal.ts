@@ -7,10 +7,10 @@ import snapshot from "@snapshot-labs/snapshot.js";
 import {Proposal} from "@snapshot-labs/snapshot.js/src/sign/types";
 
 // !!!!!!!!!!!!!!!!!!!!!!!! CHANGE ME !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-const POLYGON_SNAPSHOT_BLOCK_NUMBER = 48082925; // use the-best-block-for-snapshot.ts script
-const START_UNIX = Math.floor((new Date('Sep 28 2023 19:00:00 UTC')).getTime() / 1000)
-const END_UNIX = Math.floor((new Date('Oct 03 2023 03:00:00 UTC')).getTime() / 1000)
-const TITLE = 'BRV-030: Gauge Weights for 05th October - 18th October 2023'
+const POLYGON_SNAPSHOT_BLOCK_NUMBER = 49033177; // use the-best-block-for-snapshot.ts script
+const START_UNIX = Math.floor((new Date('Oct 30 2023 19:00:00 UTC')).getTime() / 1000)
+const END_UNIX = Math.floor((new Date('Oct 31 2023 09:00:00 UTC')).getTime() / 1000)
+const TITLE = 'BRV-032: Gauge Weights for 02th November - 15th November 2023'
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
