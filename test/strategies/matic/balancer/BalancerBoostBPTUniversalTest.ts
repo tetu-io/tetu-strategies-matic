@@ -20,7 +20,7 @@ import {ethers} from "hardhat";
 describe('BalancerBoostBPTUniversalTest', async () => {
     // [underlying, poolId, gauge, depositToken, depositBPTPoolId]
     const targets = [
-        [MaticAddresses.BALANCER_POOL_tetuBAL_BPT, MaticAddresses.BALANCER_POOL_tetuBAL_BPT_ID, MaticAddresses.BALANCER_GAUGE_tetuBAL_BPT, MaticAddresses.BAL_TOKEN, MaticAddresses.BALANCER_POOL_BAL_ETH_ID, ],
+        [MaticAddresses.BALANCER_POOL_tetuBAL_V2_BPT, MaticAddresses.BALANCER_POOL_tetuBAL_V2_BPT_ID, MaticAddresses.BALANCER_GAUGE_tetuBAL_V2_BPT, MaticAddresses.BAL_TOKEN, MaticAddresses.BALANCER_POOL_BAL_ETH_ID, ],
     ]
 
     const deployInfo: DeployInfo = new DeployInfo();
@@ -84,7 +84,7 @@ describe('BalancerBoostBPTUniversalTest', async () => {
                         gaugeDepositor
                     );
 
-                    await core.controller.setRewardDistribution([strategy.address], true);
+                    // await core.controller.setRewardDistribution([strategy.address], true);
                     // await core.vaultController.addRewardTokens([vaultAddress], VAULT_BB_T_USD);
 
                     return strategy;

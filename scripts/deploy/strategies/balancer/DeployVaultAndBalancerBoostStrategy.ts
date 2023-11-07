@@ -105,6 +105,7 @@ export async function deployBalancerBoostBPTStrategyOnly(
   depositBPTPoolId: string,
   buyBackRatio: number,
   vault: string,
+  isVaultRegistered = true
 ): Promise<{
   vault: string,
   strategy: string,
@@ -115,7 +116,7 @@ export async function deployBalancerBoostBPTStrategyOnly(
   const undSymbol = await TokenUtils.tokenSymbol(bpt)
 
   const vaultDetected = await DeployerUtilsLocal.findVaultUnderlyingInBookkeeper(signer, bpt);
-  if (vaultDetected?.toLowerCase() !== vault.toLowerCase()) {
+  if (isVaultRegistered && vaultDetected?.toLowerCase() !== vault.toLowerCase()) {
     throw Error(`Wrong vault ${vaultDetected} !== ${vault}`);
   }
 
