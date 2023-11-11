@@ -8,6 +8,8 @@
 * extent permissible pursuant to applicable law any and all liability as well
 * as all warranties, including any fitness for a particular purpose with respect
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
+*
+* 1.0.1, 1.0.2: fix case for USDC-rewards
 */
 
 pragma solidity 0.8.4;
@@ -15,7 +17,7 @@ pragma solidity 0.8.4;
 import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
 import "../../third_party/balancer/IBalancerGauge.sol";
 import "../../third_party/balancer/IBVault.sol";
-import "../../interface/ITetuLiquidator.sol";
+import "../../interfaces/ITetuLiquidator.sol";
 
 /// @title Base contract for farming Balancer boosted pools
 /// @author belbix
@@ -30,7 +32,7 @@ abstract contract BalancerUniversalStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "BalancerUniversalStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.2";
 
   uint private constant PRICE_IMPACT_TOLERANCE = 10_000;
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
@@ -183,11 +185,28 @@ abstract contract BalancerUniversalStrategyBase is ProxyStrategyBase {
   }
 
   function _doHardWork(bool silently, bool push) internal {
+    _refreshRewardTokens();
+
     uint _lastHw = lastHw;
     if (push || _lastHw == 0 || block.timestamp - _lastHw > 12 hours) {
       gauge.claim_rewards();
       _liquidateRewards(silently);
       lastHw = block.timestamp;
+    }
+  }
+
+  function _refreshRewardTokens() internal {
+    delete _rewardTokens;
+
+    for (uint i = 0; i < 100; ++i) {
+      address rt = gauge.reward_tokens(i);
+      if (rt == address(0)) {
+        break;
+      }
+      _rewardTokens.push(rt);
+      if (!_unsalvageableTokens[rt]) {
+        _unsalvageableTokens[rt] = true;
+      }
     }
   }
 
@@ -208,17 +227,17 @@ abstract contract BalancerUniversalStrategyBase is ProxyStrategyBase {
       if (amount != 0) {
         uint toRewards = amount * (_BUY_BACK_DENOMINATOR - bbRatio) / _BUY_BACK_DENOMINATOR;
         uint toGov = amount - toRewards;
+
+        if (toGov != 0) {
+          IERC20(rt).safeTransfer(DEFAULT_PERF_FEE_RECEIVER, toGov);
+        }
+
         if (toRewards != 0) {
           if (_isCompound) {
             _liquidate(rt, _depositToken, toRewards, silently);
           } else {
             _liquidate(rt, VAULT_BB_T_USD_ENTER_TOKEN, toRewards, silently);
           }
-
-        }
-
-        if (toGov != 0) {
-          IERC20(rt).safeTransfer(DEFAULT_PERF_FEE_RECEIVER, toGov);
         }
       }
     }
@@ -311,7 +330,13 @@ abstract contract BalancerUniversalStrategyBase is ProxyStrategyBase {
 
     // assume need to swap rewritten token manually
     if (tokenOut != tokenOutRewrite && amount != 0) {
-      _swapLinearUSDC(tokenOutRewrite, tokenOut);
+      _swapLinearUSDC(
+        tokenOutRewrite,
+        tokenOut,
+        tokenIn == tokenOutRewrite
+          ? amount
+          : IERC20(tokenOutRewrite).balanceOf(address(this))
+      );
     }
   }
 
@@ -329,7 +354,7 @@ abstract contract BalancerUniversalStrategyBase is ProxyStrategyBase {
   }
 
   /// @dev It is a temporally logic until liquidator doesn't have swapper for LinearPool
-  function _swapLinearUSDC(address tokenIn, address tokenOut) internal {
+  function _swapLinearUSDC(address tokenIn, address tokenOut, uint amount) internal {
     bytes32 linearPoolId;
     if (tokenOut == 0xF93579002DBE8046c43FEfE86ec78b1112247BB8 /*bbamUSDC*/) {
       linearPoolId = 0xf93579002dbe8046c43fefe86ec78b1112247bb8000000000000000000000759;
@@ -337,12 +362,7 @@ abstract contract BalancerUniversalStrategyBase is ProxyStrategyBase {
     if (tokenOut == 0xae646817e458C0bE890b81e8d880206710E3c44e /*bb-t-USDC*/) {
       linearPoolId = 0xae646817e458c0be890b81e8d880206710e3c44e000000000000000000000acb;
     }
-    _balancerSwap(
-      linearPoolId,
-      tokenIn,
-      tokenOut,
-      IERC20(tokenIn).balanceOf(address(this))
-    );
+    _balancerSwap(linearPoolId, tokenIn, tokenOut, amount);
   }
 
   /// @dev Swap _tokenIn to _tokenOut using pool identified by _poolId

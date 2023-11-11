@@ -9,7 +9,7 @@ async function main() {
     MaticAddresses.BALANCER_USD_TETU_BOOSTED_GAUGE,
     MaticAddresses.bb_t_USDC_TOKEN,
     8_00,
-    BalancerConstants.STRATEGY_BALANCER_BPT_LOGIC
+    BalancerConstants.STRATEGY_BALANCER_BPT_LOGIC_103
   );
 }
 

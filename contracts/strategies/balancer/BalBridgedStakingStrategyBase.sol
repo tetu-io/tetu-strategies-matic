@@ -27,9 +27,8 @@ abstract contract BalBridgedStakingStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "BalBridgedStakingStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.2";
-  /// @dev 20% buybacks
-  uint256 private constant _BUY_BACK_RATIO = 20_00;
+  string public constant VERSION = "1.1.3";
+  address public constant BRIBER = 0x6672A074B98A7585A8549356F97dB02f9416849E;
   address internal constant _WETH = 0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
   address internal constant _BAL = 0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3;
   address private constant _BAL_ETH_USDC_WMATIC_POOL = 0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875;
@@ -41,7 +40,6 @@ abstract contract BalBridgedStakingStrategyBase is ProxyStrategyBase {
   bytes32 internal constant _INVESTED_KEY = bytes32(uint256(keccak256("s.invested")) - 1);
   bytes32 internal constant _TARGET_VAULT = bytes32(uint256(keccak256("s.target.vault")) - 1);
   bytes32 internal constant _POL_RATIO = bytes32(uint256(keccak256("s.pol.ratio")) - 1);
-
 
   /// @notice Initialize contract after setup it as proxy implementation
   function initializeStrategy(
@@ -57,10 +55,9 @@ abstract contract BalBridgedStakingStrategyBase is ProxyStrategyBase {
       underlying_,
       vault_,
       rewardTokens_,
-      _BUY_BACK_RATIO
+      100_00
     );
   }
-
 
   // --------------------------------------------
 
@@ -108,149 +105,29 @@ abstract contract BalBridgedStakingStrategyBase is ProxyStrategyBase {
 
   /// @dev Collect profit and do something useful with them
   function doHardWork() external override {
-    // do not spend gas for dust
-    if (IERC20(_BAL).balanceOf(address(this)) < 10e18) {
-      return;
-    }
-
-    // send part of BAL to POL
-    _generatePol();
-
-    // we should receive periodically BAL tokens from mainnet
-    // wrap them into vault shares and send as rewards to the vault
-    liquidateReward();
-  }
-
-  /// @dev Should be called before liquidation
-  function _generatePol() internal {
+    // we received veBAL rewards in form of BAL tokens from mainnet
+    // the whole process simplified for avoid price impact loses
     uint balBalance = IERC20(_BAL).balanceOf(address(this));
-    uint toPol = balBalance * polRatio() / 100;
-
-    if (toPol == 0) {
-      return;
+    if (balBalance != 0) {
+      // send whole amount to the briber for manual handling for the reason huge price impact
+      IERC20(_BAL).safeTransfer(BRIBER, balBalance);
     }
 
-    IERC20(_BAL).safeApprove(address(_BAL_TETU_VAULT), 0);
-    IERC20(_BAL).safeApprove(address(_BAL_TETU_VAULT), toPol);
+    // in case if we will change BAL to WETH
+    uint ethBalance = IERC20(_WETH).balanceOf(address(this));
+    if (ethBalance != 0) {
+      // send whole amount to the briber for manual handling for the reason huge price impact
+      IERC20(_WETH).safeTransfer(BRIBER, ethBalance);
+    }
 
-    _BAL_TETU_VAULT.depositAndInvest(toPol);
-    uint shareBalance = IERC20(address(_BAL_TETU_VAULT)).balanceOf(address(this));
-
-    IERC20(address(_BAL_TETU_VAULT)).safeTransfer(IController(_controller()).fund(), shareBalance);
+    if (balBalance != 0 || ethBalance != 0) {
+      //register as hardwork if transferred
+      IBookkeeper(IController(_controller()).bookkeeper()).registerStrategyEarned(0);
+    }
   }
 
   function liquidateReward() internal override {
-    address vaultForRewards = targetVault();
-    uint balBalance = IERC20(_BAL).balanceOf(address(this));
-
-    uint toBPT = balBalance * (_BUY_BACK_DENOMINATOR - _buyBackRatio()) / _BUY_BACK_DENOMINATOR;
-    uint balForPS = balBalance - toBPT;
-    uint balForWethPart = toBPT * 20 / 100;
-    uint balForJoin = toBPT - balForWethPart;
-    uint balForSwap = balForWethPart + balForPS;
-
-    // -------------- SWAP BAL TO WETH PARTIALLY ------------
-
-    IERC20(_BAL).safeApprove(_BALANCER_VAULT, 0);
-    IERC20(_BAL).safeApprove(_BALANCER_VAULT, balForSwap);
-
-    IBVault(_BALANCER_VAULT).swap(
-      IBVault.SingleSwap({
-    poolId : _BAL_ETH_USDC_WMATIC_POOL_ID,
-    kind : IBVault.SwapKind.GIVEN_IN,
-    assetIn : IAsset(_BAL),
-    assetOut : IAsset(_WETH),
-    amount : balForSwap,
-    userData : bytes("")
-    }),
-      IBVault.FundManagement({
-    sender : address(this),
-    fromInternalBalance : false,
-    recipient : payable(address(this)),
-    toInternalBalance : false
-    }),
-      0,
-      block.timestamp
-    );
-
-    if (toBPT != 0) {
-      // use the same proportion for join
-      // don't care about slippage lost
-      uint wethForJoin = IERC20(_WETH).balanceOf(address(this)) * balForWethPart / balForSwap;
-
-      // -------------- INVEST TO BALANCER POOL ------------
-
-      IAsset[] memory joinAssets = new  IAsset[](2);
-      joinAssets[0] = IAsset(_WETH);
-      joinAssets[1] = IAsset(_BAL);
-
-      // don't care about slippage a lot
-      uint[] memory maxAmounts = new uint[](2);
-      maxAmounts[0] = wethForJoin * 10;
-      maxAmounts[1] = balForJoin * 10;
-
-      uint[] memory amounts = new uint[](2);
-      amounts[0] = wethForJoin;
-      amounts[1] = balForJoin;
-
-      bytes memory userData = abi.encode(IBVault.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT, amounts, 0);
-
-      IERC20(_WETH).safeApprove(_BALANCER_VAULT, 0);
-      IERC20(_WETH).safeApprove(_BALANCER_VAULT, wethForJoin);
-      IERC20(_BAL).safeApprove(_BALANCER_VAULT, 0);
-      IERC20(_BAL).safeApprove(_BALANCER_VAULT, balForJoin);
-
-      IBVault(_BALANCER_VAULT).joinPool(
-        _BAL_ETH_POOL_ID,
-        address(this),
-        address(this),
-        IBVault.JoinPoolRequest({
-      assets : joinAssets,
-      maxAmountsIn : maxAmounts,
-      userData : userData,
-      fromInternalBalance : false
-      })
-      );
-
-      // -------------- INVEST TO VAULT ------------
-
-      // all wrapped tokens go to rewards
-      uint toVault = IERC20(_underlying()).balanceOf(address(this));
-      if (vaultForRewards == address(0)) {
-        vaultForRewards = _vault();
-      }
-
-      if (toVault != 0) {
-        // wrap BPT tokens to tetuBAL
-        ISmartVault sv = ISmartVault(_vault());
-        IERC20(_underlying()).safeApprove(_vault(), 0);
-        IERC20(_underlying()).safeApprove(_vault(), toVault);
-        // make sure that we not call doHardWork again in the vault during investment process
-        sv.depositAndInvest(toVault);
-        uint shareBalance = IERC20(address(sv)).balanceOf(address(this));
-        // add deposited amount to vault rewards
-        IERC20(address(sv)).safeApprove(vaultForRewards, 0);
-        IERC20(address(sv)).safeApprove(vaultForRewards, shareBalance);
-        ISmartVault(vaultForRewards).notifyTargetRewardAmount(address(sv), shareBalance);
-      }
-    }
-    // -------------- LIQUIDATE PLATFORM PART ------------
-
-    // we should have a part of swapped amount in WETH
-    address rt = _WETH;
-    address forwarder = IController(_controller()).feeRewardForwarder();
-    uint targetTokenEarnedTotal = 0;
-    uint amount = IERC20(rt).balanceOf(address(this));
-    if (amount != 0) {
-      IERC20(rt).safeApprove(forwarder, 0);
-      IERC20(rt).safeApprove(forwarder, amount);
-      // it will sell reward token to Target Token and distribute it to SmartVault and PS
-      targetTokenEarnedTotal = IFeeRewardForwarder(forwarder).distribute(amount, rt, vaultForRewards);
-    }
-
-    if (targetTokenEarnedTotal > 0) {
-      IBookkeeper(IController(_controller()).bookkeeper()).registerStrategyEarned(targetTokenEarnedTotal);
-    }
+    //noop
   }
 
   /// @dev Stake underlying to the pool with maximum lock period

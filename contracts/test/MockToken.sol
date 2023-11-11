@@ -12,9 +12,9 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
+import "@tetu_io/tetu-contracts/contracts/openzeppelin/ERC20Burnable.sol";
 
-contract MockToken is ERC20PresetMinterPauser {
+contract MockToken is ERC20Burnable {
 
   uint8 _decimals;
 
@@ -22,7 +22,7 @@ contract MockToken is ERC20PresetMinterPauser {
     string memory name_,
     string memory symbol_,
     uint8 decimals_
-  ) ERC20PresetMinterPauser(name_, symbol_)  {
+  ) ERC20(name_, symbol_)  {
   _decimals = decimals_;
   }
 

@@ -5,26 +5,28 @@ import {MaticAddresses} from "../addresses/MaticAddresses";
 import {getSnapshotData} from "./tools/voting-utils";
 import {Misc} from "./tools/Misc";
 
-
-const BALANCER_VAULT = '0xBA12222222228d8Ba445958a75a0704d566BF2C8';
-const TETU_BAL_BPT_ID = '0xb797adfb7b268faeaa90cadbfed464c76ee599cd0002000000000000000005ba';
-const TETU_BAL = '0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33';
 // check here https://snapshot.org/#/tetubal.eth
-const PREVIOUS_PROPOSAL = '0xbea1a695a085c1f45a7f37cf318fb2ee4dead77e62ea4b12d3315c7deab267c6';
+const PREVIOUS_PROPOSAL = '0xdbf997aa84d1f6cad778b2c36c31feb09efb1011760a401da55a9ca331e81615';
 
 async function main() {
+  const BALANCER_VAULT = '0xBA12222222228d8Ba445958a75a0704d566BF2C8';
+  const TETU_BAL = '0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33';
+  const TETU_BAL_POWER = '0x8FFBa974Efa7C262C97b9521449Fd2B3c69bE4E6';
+  const BRIBER = '0x6672A074B98A7585A8549356F97dB02f9416849E';
+
   const curBlock = await ethers.provider?.getBlockNumber() || 0;
   console.log('curBlock', curBlock)
 
   const snapshotData = await getSnapshotData(PREVIOUS_PROPOSAL)
   console.log('PREVIOUS PROPOSAL', snapshotData.title);
+  const snapshotDate = +snapshotData.end;
 
   const curDate = Math.floor(new Date().getTime() / 1000);
-  const sinceProposal = (curDate - +snapshotData.start);
+  const sinceProposal = (curDate - snapshotDate);
   console.log('sinceProposal days', sinceProposal / 60 / 60 / 24);
-  if (sinceProposal < 7 * 60 * 60 * 24 || sinceProposal > 16 * 60 * 60 * 24) throw new Error('Wrong proposal');
+  if (sinceProposal < 7 * 60 * 60 * 24 || sinceProposal > 17 * 60 * 60 * 24) throw new Error('Wrong proposal');
 
-  const previousVotingStartBlock = await Misc.findBlockByDate(snapshotData.start, curBlock - Math.floor(sinceProposal / (await Misc.getAverageBlockTime())) + 20000);
+  const previousVotingStartBlock = await Misc.findBlockByDate(snapshotDate, curBlock - Math.floor(sinceProposal / (await Misc.getAverageBlockTime())) + 20000);
   console.log('previousVotingStartBlock', previousVotingStartBlock);
 
 
@@ -41,11 +43,11 @@ async function main() {
 
   for (let i = 0; i <= steps; i++) {
     const block = Math.round(previousVotingStartBlock + (blockDiff / steps * i));
-    const data = await balVault.getPoolTokens(TETU_BAL_BPT_ID, {blockTag: block});
-    const totalVeTetuPower = +formatUnits(data.balances[1]);
+    const bbb = await IERC20__factory.connect(TETU_BAL, ethers.provider).balanceOf(BALANCER_VAULT, {blockTag: block});
+    const totalVeTetuPower = +formatUnits(bbb);
     let xtetuBALPower = 0;
     if (block > 41527426) {
-      xtetuBALPower = +formatUnits(await ISmartVault__factory.connect(MaticAddresses.xtetuBAL_TOKEN, ethers.provider).underlyingBalanceWithInvestment({blockTag: block}));
+      xtetuBALPower = +formatUnits(await IERC20__factory.connect(TETU_BAL_POWER, ethers.provider).balanceOf(BRIBER, {blockTag: block}));
     }
 
     const totalSupply = +formatUnits(await IERC20__factory.connect(TETU_BAL, ethers.provider).totalSupply({blockTag: block}));

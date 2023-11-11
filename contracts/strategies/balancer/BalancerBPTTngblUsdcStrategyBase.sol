@@ -15,7 +15,7 @@ pragma solidity 0.8.4;
 import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
 import "../../third_party/balancer/IBalancerGauge.sol";
 import "../../third_party/balancer/IBVault.sol";
-import "../../interface/ITetuLiquidator.sol";
+import "../../interfaces/ITetuLiquidator.sol";
 
 /// @title Base contract for TNBGL-USDC farming with bb-t-BPT vault rewards
 /// @author belbix
@@ -30,7 +30,7 @@ abstract contract BalancerBPTTngblUsdcStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "BalancerBPTTngblUsdcStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.1";
 
   uint private constant PRICE_IMPACT_TOLERANCE = 10_000;
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
@@ -38,7 +38,7 @@ abstract contract BalancerBPTTngblUsdcStrategyBase is ProxyStrategyBase {
 
   /// @dev TNGBL-USDC pool id
   bytes32 public constant POOL_ID = 0x9f9f548354b7c66dc9a9f3373077d86aaaccf8f2000200000000000000000a4a;
-  IBalancerGauge public constant GAUGE = IBalancerGauge(0x07222E30b751c1AB4A730745aFe19810cFd762c0);
+  IBalancerGauge public constant GAUGE = IBalancerGauge(0xb2A8f0f477Aae4D78Ea78d85234233285c91bB08);
   address public constant VAULT_BB_T_USD = 0x4028cba3965e8Aea7320e9eA50914861A14dc724;
   /// @dev bb-t-USDC_TOKEN
   address public constant DEPOSIT_TOKEN_FOR_REWARDS = 0xae646817e458C0bE890b81e8d880206710E3c44e;

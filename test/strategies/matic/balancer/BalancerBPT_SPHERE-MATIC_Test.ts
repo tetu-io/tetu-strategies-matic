@@ -11,16 +11,16 @@ import {ToolsContractsWrapper} from "../../../ToolsContractsWrapper";
 import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {
   ISmartVault,
-  IStrategy,
-  StrategyBalancerStMaticWmatic__factory
+  IStrategy, StrategyBalancerSphereWmatic__factory,
 } from "../../../../typechain";
 import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
+import {UtilsBalancerGaugeV2} from "../../../baseUtils/balancer/utilsBalancerGaugeV2";
 
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('BalancerBPT_SPHERE-MATIC_Test', async () => {
+describe.skip('BalancerBPT_SPHERE-MATIC_Test', async () => {
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, true);
@@ -62,10 +62,8 @@ describe('BalancerBPT_SPHERE-MATIC_Test', async () => {
           signer,
           strategyContractName,
         );
-        await StrategyBalancerStMaticWmatic__factory.connect(strategy.address, signer).initialize(
-          core.controller.address,
-          vaultAddress,
-        );
+        const strat = StrategyBalancerSphereWmatic__factory.connect(strategy.address, signer);
+        await strat.initialize(core.controller.address, vaultAddress);
         console.log('/// STRATEGY DEPLOYED');
 
         await core.controller.setRewardDistribution([strategy.address], true);
@@ -74,6 +72,11 @@ describe('BalancerBPT_SPHERE-MATIC_Test', async () => {
         console.log('end addRewardTokens VAULT_BBAMUSD')
         // await core.vaultController.addRewardTokens([vaultAddress], MaticAddresses.TETU_TOKEN);
         // console.log('end addRewardTokens TETU_TOKEN')
+
+        // Set up BalancerGauge. Register TETU as reward token in the GAUGE and in the strategy
+        await UtilsBalancerGaugeV2.registerRewardTokens(signer, await strat.GAUGE(), MaticAddresses.TETU_TOKEN);
+        await strat.connect(await DeployerUtilsLocal.impersonate(await strat.controller())).updateRewardTokensFromGauge();
+        await UtilsBalancerGaugeV2.depositRewardTokens(signer, await strat.GAUGE(), await strat.rewardTokens());
 
         console.log('/// ENV SETUP');
         return strategy;

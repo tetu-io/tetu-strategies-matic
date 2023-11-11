@@ -4,7 +4,7 @@ pragma solidity 0.8.4;
 
 import "@tetu_io/tetu-contracts/contracts/base/governance/ControllableV2.sol";
 import "@tetu_io/tetu-contracts/contracts/openzeppelin/SafeERC20.sol";
-import "../interface/IPriceCalculator.sol";
+import "../interfaces/IPriceCalculator.sol";
 
 /// @title XtetuBALDistributor
 /// @notice This contract is responsible for distributing xTetuBAL rewards to recipients.
@@ -16,18 +16,19 @@ contract XtetuBALDistributor is ControllableV2 {
   //                        CONSTANTS
   // *************************************************************
 
-  /// @dev Default epoch duration using for check distribution frequency
-  uint internal constant EPOCH_DURATION = 2 weeks;
+  string public constant VERSION = "1.0.1";
+  /// @dev Using for check distribution frequency
+  uint internal constant MINIMUM_DELAY_BETWEEN_DISTRIBUTION = 2 days;
   IPriceCalculator internal constant PRICE_CALCULATOR = IPriceCalculator(0x0B62ad43837A69Ad60289EEea7C6e907e759F6E8);
   address internal constant USDC = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
   address internal constant X_tetuBAL = 0x915E49F7CD8B2b5763759c23D9463A74d5b5C1D5;
+  address internal constant TETU = 0x255707B70BF90aa112006E1b07B9AeA6De021424;
 
   // *************************************************************
   //                        VARIABLES
   // *************************************************************
 
-  /// @dev Operators are able to distribute and setup vault APR.
-  mapping(address => bool) public operators;
+  mapping(address => bool) private _deprecated;
   /// @dev The last epoch index.
   uint public epochCounter;
   /// @dev Epoch start timestamp.
@@ -55,20 +56,13 @@ contract XtetuBALDistributor is ControllableV2 {
   }
 
   modifier onlyOperator() {
-    require(operators[msg.sender], "FORBIDDEN");
+    require(IController(_controller()).isHardWorker(msg.sender), "FORBIDDEN");
     _;
   }
 
   // *************************************************************
   //                        GOV
   // *************************************************************
-
-  /// @notice Setup new operator or remove existing.
-  /// @param _operator The operator address
-  /// @param _status The status of the operator
-  function changeOperatorStatus(address _operator, bool _status) external onlyGov {
-    operators[_operator] = _status;
-  }
 
   // *************************************************************
   //                        MAIN LOGIC
@@ -100,38 +94,58 @@ contract XtetuBALDistributor is ControllableV2 {
   }
 
   /// @notice Distributes the rewards to recipients and update the vault APR.
-  /// @param recipientsUSDC An array of recipient addresses for USDC rewards
-  /// @param amountsUSDC An array of amounts to be distributed to the USDC recipients
-  /// @param recipientsXtetuBAL An array of recipient addresses for xTetuBAL rewards
-  /// @param amountsXtetuBAL An array of amounts to be distributed to the xTetuBAL recipients
+  /// @param recipients An array of recipient addresses
+  ///        0 - USDC
+  ///        1 - xtetuBAL
+  ///        2 - TETU
+  /// @param amounts An array of amounts to be distributed
+  ///        0 - USDC
+  ///        1 - xtetuBAL
+  ///        2 - TETU
   /// @param vaultTVLUSD The vault's total value locked (TVL) in USD at the block of the snapshot.
   function distribute(
-    address[] calldata recipientsUSDC,
-    uint[] calldata amountsUSDC,
-    address[] calldata recipientsXtetuBAL,
-    uint[] calldata amountsXtetuBAL,
+    address[][] calldata recipients,
+    uint[][] calldata amounts,
     uint vaultTVLUSD
   ) external onlyOperator {
-    require(recipientsUSDC.length == amountsUSDC.length && recipientsXtetuBAL.length == amountsXtetuBAL.length, "!LENGTH");
+    require(
+      recipients.length == 3
+      && amounts.length == 3
+      && recipients[0].length == amounts[0].length
+      && recipients[1].length == amounts[1].length
+      && recipients[2].length == amounts[2].length,
+      "!LENGTH");
 
     uint epoch = epochCounter + 1;
-    uint lastEpochTS = epochTS[epoch - 1];
-    require(block.timestamp > (lastEpochTS + EPOCH_DURATION - 2 days), "!TIME");
-
+    require(block.timestamp > (epochTS[epoch - 1] + MINIMUM_DELAY_BETWEEN_DISTRIBUTION), "!TIME");
 
     uint distributedUSD;
 
-    for (uint i; i < recipientsUSDC.length; i++) {
-      IERC20(USDC).safeTransferFrom(msg.sender, recipientsUSDC[i], amountsUSDC[i]);
-      distributedUSD += amountsUSDC[i];
+    if (recipients[0].length != 0) {
+      distributedUSD += _distribute(
+        recipients[0],
+        amounts[0],
+        USDC,
+        6
+      );
     }
 
-    if (recipientsXtetuBAL.length != 0) {
-      uint xtetuBALPrice = PRICE_CALCULATOR.getPriceWithDefaultOutput(X_tetuBAL);
-      for (uint i; i < recipientsXtetuBAL.length; i++) {
-        IERC20(X_tetuBAL).safeTransferFrom(msg.sender, recipientsXtetuBAL[i], amountsXtetuBAL[i]);
-        distributedUSD += amountsXtetuBAL[i] * xtetuBALPrice / 1e18;
-      }
+    if (recipients[1].length != 0) {
+      distributedUSD += _distribute(
+        recipients[1],
+        amounts[1],
+        X_tetuBAL,
+        18
+      );
+    }
+
+    if (recipients[2].length != 0) {
+      distributedUSD += _distribute(
+        recipients[2],
+        amounts[2],
+        TETU,
+        18
+      );
     }
 
     _setEpochMeta(
@@ -145,6 +159,21 @@ contract XtetuBALDistributor is ControllableV2 {
     // epochAPR epochDistributedUSD epochTVLUSD was updated in _setEpochMeta()
     epochCounter = epoch;
     epochTS[epoch] = block.timestamp;
+  }
+
+  function _distribute(
+    address[] calldata recipients,
+    uint[] calldata amounts,
+    address token,
+    uint tokenDecimals
+  ) internal returns (uint) {
+    uint tokenPrice = PRICE_CALCULATOR.getPriceWithDefaultOutput(token);
+    uint distributedUSD;
+    for (uint i; i < recipients.length; i++) {
+      IERC20(token).safeTransferFrom(msg.sender, recipients[i], amounts[i]);
+      distributedUSD += (amounts[i] * 1e18 / (10 ** tokenDecimals)) * tokenPrice / 1e18;
+    }
+    return distributedUSD;
   }
 
   // *************************************************************

@@ -2,7 +2,8 @@ import {ethers} from "hardhat";
 import {
   ERC20__factory,
   IController__factory,
-  IERC20__factory, IERC20Extended__factory,
+  IERC20__factory,
+  IERC20Extended__factory,
   IERC721Enumerable__factory,
   ISmartVault__factory,
   IWmatic__factory
@@ -61,7 +62,7 @@ export class TokenUtils {
     [MaticAddresses.cxADA_TOKEN, '0x41318419cfa25396b47a94896ffa2c77c6434040'.toLowerCase()],
     [MaticAddresses.cxETH_TOKEN, '0x4f6742badb049791cd9a37ea913f2bac38d01279'.toLowerCase()],
     [MaticAddresses.SPHERE_TOKEN, '0x20d61737f972eecb0af5f0a85ab358cd083dd56a'.toLowerCase()],
-    [MaticAddresses.BALANCER_BAL_ETH_POOL, '0x36cc7B13029B5DEe4034745FB4F24034f3F2ffc6'.toLowerCase()],
+    [MaticAddresses.BALANCER_BAL_ETH_POOL, MaticAddresses.BALANCER_VAULT],
     [MaticAddresses.SPHEREV2_TOKEN, '0x7754d8b057CC1d2D857d897461DAC6C3235B4aAe'.toLowerCase()], // sphere owner
     [MaticAddresses.UMA_TOKEN, '0x1b72bac3772050fdcaf468cce7e20deb3cb02d89'.toLowerCase()],
     [MaticAddresses.CLAM2_TOKEN, '0x820f92c1b3ad8e962e6c6d9d7caf2a550aec46fb'.toLowerCase()],
@@ -87,9 +88,15 @@ export class TokenUtils {
     [MaticAddresses.USX_TOKEN, '0x88dcdc47d2f83a99cf0000fdf667a468bb958a78'.toLowerCase()], //
     [MaticAddresses.BALANCER_USD_TETU_BOOSTED, MaticAddresses.BALANCER_VAULT.toLowerCase()], //
     [MaticAddresses.BALANCER_stMATIC_WMATIC_TETU_BOOSTED, MaticAddresses.BALANCER_VAULT.toLowerCase()], //
-    [MaticAddresses.BALANCER_TNGBL_USDC, '0xD1758fbABAE91c805BE76D56548A584EF68B81f0'.toLowerCase()], //
+    [MaticAddresses.BALANCER_TNGBL_USDC, '0x07222e30b751c1ab4a730745afe19810cfd762c0'.toLowerCase()], // see https://polygonscan.com/token/0x9F9F548354B7C66Dc9a9f3373077D86AAACCF8F2#balances
     [MaticAddresses.BALANCER_MATIC_BOOSTED_AAVE3, MaticAddresses.BALANCER_VAULT.toLowerCase()], //
     [MaticAddresses.BALANCER_MATICX_BOOSTED_AAVE3, MaticAddresses.BALANCER_VAULT.toLowerCase()], //
+    [MaticAddresses.BALANCER_WSTETH_BOOSTED_AAVE3, MaticAddresses.BALANCER_VAULT.toLowerCase()], //
+    [MaticAddresses.BALANCER_GYRO_MATIC_STMATIC, '0x51416C00388bB4644E28546c77AEe768036F17A8'.toLowerCase()], //
+    [MaticAddresses.STADER_TOKEN, '0x80968391da3654ac4fd5feafaf60c9cb45dc84c0'], //
+    [MaticAddresses.tetuBAL, '0x36cc7b13029b5dee4034745fb4f24034f3f2ffc6'], //
+    [MaticAddresses.CAVIAR_TOKEN, '0x6a09eb9b5932a79360b02161125ecdf028dbc6d7'], //
+    [MaticAddresses.BALANCER_POOL_tetuBAL_V2_BPT, MaticAddresses.BALANCER_VAULT], //
   ]);
 
   public static async balanceOf(tokenAddress: string, account: string): Promise<BigNumber> {
@@ -173,7 +180,8 @@ export class TokenUtils {
       return amount;
     }
     const owner = await DeployerUtilsLocal.impersonate(to);
-    if ((await IController__factory.connect(MaticAddresses.CONTROLLER_ADDRESS, owner).isValidVault(token))) {
+    if ((await IController__factory.connect(MaticAddresses.CONTROLLER_ADDRESS, owner).isValidVault(token))
+      && token !== MaticAddresses.tetuBAL) {
       const vault = ISmartVault__factory.connect(token, owner);
       const underlying = await vault.underlying();
       const ppfs = await vault.getPricePerFullShare();

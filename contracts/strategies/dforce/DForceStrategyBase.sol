@@ -25,7 +25,7 @@ abstract contract DForceStrategyBase is UniversalLendStrategy {
   /// ******************************************************
 
   /// @notice Version of the contract
-  string public constant VERSION = "1.0.1";
+  string public constant VERSION = "1.0.2";
 
   IStrategy.Platform public constant override platform = IStrategy.Platform.D_FORCE;
 

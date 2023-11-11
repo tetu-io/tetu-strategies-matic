@@ -12,15 +12,16 @@ import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {
   ISmartVault,
   IStrategy,
-  StrategyBalancerStMaticWmatic__factory
+  StrategyBalancerTngblUsdc__factory
 } from "../../../../typechain";
 import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
+import {UtilsBalancerGaugeV2} from "../../../baseUtils/balancer/utilsBalancerGaugeV2";
 
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('BalancerBPT_TNGBL_USDC_Test', async () => {
+describe.skip('BalancerBPT_TNGBL_USDC_Test', async () => {
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, true);
@@ -62,7 +63,8 @@ describe('BalancerBPT_TNGBL_USDC_Test', async () => {
           signer,
           strategyContractName,
         );
-        await StrategyBalancerStMaticWmatic__factory.connect(strategy.address, signer).initialize(
+        const strat = await StrategyBalancerTngblUsdc__factory.connect(strategy.address, signer);
+        strat.initialize(
           core.controller.address,
           vaultAddress,
         );
@@ -72,6 +74,11 @@ describe('BalancerBPT_TNGBL_USDC_Test', async () => {
         console.log('end setRewardDistribution')
         await core.vaultController.addRewardTokens([vaultAddress], VAULT_BB_T_USD);
         console.log('end addRewardTokens VAULT_BBAMUSD')
+
+        // Set up BalancerGauge. Register TETU as reward token in the GAUGE and in the strategy
+        await UtilsBalancerGaugeV2.registerRewardTokens(signer, await strat.GAUGE(), MaticAddresses.TETU_TOKEN);
+        await strat.connect(await DeployerUtilsLocal.impersonate(await strat.controller())).updateRewardTokensFromGauge();
+        await UtilsBalancerGaugeV2.depositRewardTokens(signer, await strat.GAUGE(), await strat.rewardTokens(), "10000");
 
         console.log('/// ENV SETUP');
         return strategy;

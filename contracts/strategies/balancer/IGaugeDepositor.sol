@@ -9,19 +9,17 @@
 * as all warranties, including any fitness for a particular purpose with respect
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
+
 pragma solidity 0.8.4;
 
-import "../../strategies/tetu/TetuSwapStrategyBase.sol";
+interface IGaugeDepositor {
 
-contract StrategyTetuSwap is TetuSwapStrategyBase {
+    function deposit(address token, uint amount, address gauge) external;
 
-  function init(
-    address _controller,
-    address _vault,
-    address _underlying
-  ) external initializer {
-    _initializeStrategy(_controller, _underlying, _vault);
-  }
+    function withdraw(uint amount, address gauge) external;
 
+    function claimRewards(address[] memory tokens, address gauge) external;
+
+    function getBalance(address user, address gauge) external view returns (uint);
 
 }

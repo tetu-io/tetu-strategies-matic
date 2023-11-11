@@ -17,6 +17,7 @@ import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {Misc} from "../../../../scripts/utils/tools/Misc";
 import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
 import {parseUnits} from "ethers/lib/utils";
+import {UtilsBalancerGaugeV2} from "../../../baseUtils/balancer/utilsBalancerGaugeV2";
 
 
 const {expect} = chai;
@@ -68,7 +69,8 @@ describe('BalancerLP_tetuBAL_BPT_Test', async () => {
           signer,
           strategyContractName,
         );
-        await StrategyBalancerBALETH__factory.connect(strategy.address, signer).initialize(
+        const strat = await StrategyBalancerBALETH__factory.connect(strategy.address, signer);
+        await strat.initialize(
           core.controller.address,
           vaultAddress,
           underlying,
@@ -78,6 +80,12 @@ describe('BalancerLP_tetuBAL_BPT_Test', async () => {
           buybackRatio,
           rewardTokens,
         );
+
+        // Set up BalancerGauge. Register TETU as reward token in the GAUGE and in the strategy
+        await UtilsBalancerGaugeV2.registerRewardTokens(signer, await strat.gauge(), MaticAddresses.TETU_TOKEN);
+        await strat.connect(await DeployerUtilsLocal.impersonate(await strat.controller())).setRewardTokens([MaticAddresses.TETU_TOKEN]);
+        await UtilsBalancerGaugeV2.depositRewardTokens(signer, await strat.gauge(), await strat.rewardTokens());
+
         return strategy;
       },
       underlying,

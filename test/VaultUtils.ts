@@ -1,11 +1,12 @@
 import {
-  IControllable__factory, IControllableExtended__factory,
+  IControllableExtended__factory,
   IController,
-  IController__factory, IERC20__factory,
+  IController__factory,
+  IERC20__factory,
   ISmartVault,
-  ISmartVault__factory,
   IStrategy__factory,
-  IStrategySplitter__factory
+  IStrategySplitter__factory,
+  UniversalLendStrategy__factory
 } from "../typechain";
 import {expect} from "chai";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -31,6 +32,10 @@ export const XTETU_NO_INCREASE = new Set<string>([
   'BalancerBPTstMaticTetuBoostedStrategyBase',
   'BalancerBPTTngblUsdcStrategyBase',
   'BalancerUniversalStrategyBase',
+  'BalancerBoostStrategyBase',
+  'BalancerBoostBPTStrategyBase',
+  'BalancerBoostTetuUsdcStrategyBase',
+  'CaviarStakingStrategyBase'
 ])
 export const VAULT_SHARE_NO_INCREASE = new Set<string>([
   'QiStakingStrategyBase',
@@ -43,6 +48,7 @@ export const VAULT_SHARE_NO_INCREASE = new Set<string>([
   'BalancerBPTstMaticTetuBoostedStrategyBase',
   'BalancerBPTTngblUsdcStrategyBase',
   'BalancerUniversalStrategyBase',
+  'BalancerBoostTetuUsdcStrategyBase',
 ])
 
 export class VaultUtils {
@@ -151,6 +157,7 @@ export class VaultUtils {
     }
 
 
+    const strategyName = (await strategyCtr.STRATEGY_NAME());
     const strategyPlatform = (await strategyCtr.platform());
     if (strategyPlatform === 24) {
       console.log('splitter dohardworks');
@@ -170,6 +177,17 @@ export class VaultUtils {
     const veDistBalanceAfter = +formatUnits(await IERC20__factory.connect(MaticAddresses.TETU_TOKEN, vault.signer).balanceOf(MaticAddresses.TETU_VE_DIST_ADDRESS));
     const bbRatio = (await strategyCtr.buyBackRatio()).toNumber();
 
+    let isPSDisabled = false;
+    try {
+      isPSDisabled = await UniversalLendStrategy__factory.connect(strategy, vault.signer).isProfitSharingDisabled();
+    } catch (e) {
+    }
+
+    if (strategyName === 'BalBridgedStakingStrategyBase') {
+      isPSDisabled = true;
+    }
+
+
     let rtBalAfter: number = 0;
     if (rt) {
       rtBalAfter = +utils.formatUnits(await TokenUtils.balanceOf(rt, vault.address));
@@ -187,7 +205,7 @@ export class VaultUtils {
     console.log('--------------------------');
 
     if (positiveCheck) {
-      if (bbRatio > 1000) {
+      if (bbRatio > 1000 && !isPSDisabled) {
         expect(veDistBalanceAfter).is.greaterThan(veDistBalanceBefore,
           'veDIST didnt have any income, it means that rewards was not liquidated and properly sent to PS.' +
           ' Check reward tokens list and liquidation paths');

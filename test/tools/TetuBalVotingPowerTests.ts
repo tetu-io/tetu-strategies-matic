@@ -4,7 +4,6 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {ethers} from "hardhat";
 import {TimeUtils} from "../TimeUtils";
 import {
-  IBVault__factory,
   IERC20,
   IERC20__factory,
   IVeTetu,
@@ -25,17 +24,17 @@ chai.use(chaiAsPromised);
 
 
 const VE_TETU = '0x6FB29DD17fa6E27BD112Bc3A2D0b8dae597AeDA4';
-const TETU_BAL = '0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33';
+const TETU_BAL = MaticAddresses.tetuBAL;
 const TETU_BAL_BPT = MaticAddresses.BALANCER_POOL_tetuBAL_BPT;
 const TETU_BAL_BPT_ID = MaticAddresses.BALANCER_POOL_tetuBAL_BPT_ID;
 const BALANCER_VAULT = '0xBA12222222228d8Ba445958a75a0704d566BF2C8';
-const POL_VOTER = '0x6672A074B98A7585A8549356F97dB02f9416849E';
 
 describe("TetuBalVotingPowerTests", function () {
   let snapshotBefore: string;
   let snapshot: string;
   let signer: SignerWithAddress;
   let gov: SignerWithAddress;
+  let pol: SignerWithAddress;
   let core: CoreAddresses;
 
   let power: TetuBalVotingPower;
@@ -45,7 +44,7 @@ describe("TetuBalVotingPowerTests", function () {
   let tetuBal: IERC20;
 
   before(async function () {
-    [signer] = await ethers.getSigners()
+    [signer, pol] = await ethers.getSigners()
     gov = await DeployerUtilsLocal.impersonate()
     snapshotBefore = await TimeUtils.snapshot();
 
@@ -72,51 +71,124 @@ describe("TetuBalVotingPowerTests", function () {
     await TimeUtils.rollback(snapshot);
   });
 
-  it("test power", async () => {
-    expect(await tetuBal.balanceOf(signer.address)).eq(0);
-    expect(await bpt.balanceOf(signer.address)).eq(0);
-
-    await TokenUtils.getToken(TETU_BAL, signer.address, parseUnits('0.5'))
-    await TokenUtils.getToken(MaticAddresses.BALANCER_TETU_USDC, signer.address, parseUnits('1000'))
-
-    await TokenUtils.approve(MaticAddresses.BALANCER_TETU_USDC, signer, VE_TETU, Misc.MAX_UINT)
-    await IVeTetu__factory.connect(VE_TETU, signer).createLockFor(MaticAddresses.BALANCER_TETU_USDC, parseUnits('1000'), 60 * 60 * 24 * 90, signer.address);
-
-    const tetuBalBalance = await tetuBal.balanceOf(signer.address);
-    const bptTokens = await IBVault__factory.connect(BALANCER_VAULT, signer).getPoolTokens(TETU_BAL_BPT_ID);
-    const bptBal = bptTokens.balances[1];
-
-    console.log('bptBal', formatUnits(bptBal));
-    console.log('tetuBalBalance', formatUnits(tetuBalBalance));
-
-
-    expect(await power.tetuBalPower(signer.address)).eq(tetuBalBalance);
-
-    const userVeTetuPower = +formatUnits(await power.veTetuPower(signer.address));
-    console.log('userVeTetuPower', userVeTetuPower);
-    expect(userVeTetuPower).gt(0);
-
-    const userPowerWithoutCut = +formatUnits(await power.balanceOf(signer.address));
-    console.log('userPowerWithoutCut', userPowerWithoutCut);
-    expect(userPowerWithoutCut).eq(userVeTetuPower + +formatUnits(tetuBalBalance));
-
-
-    const polVoterPowerBeforeCute = +formatUnits(await power.balanceOf(POL_VOTER));
-    console.log('polVoterPowerBeforeCute', polVoterPowerBeforeCute);
-
-    await power.connect(gov).setVeTetuPowerCut(20);
-    const userPower = +formatUnits(await power.balanceOf(signer.address));
-    console.log('userPower', userPower);
-    expect(userPower).approximately((userVeTetuPower * 0.8) + +formatUnits(tetuBalBalance), 0.2);
-
-    const polVoterPower = +formatUnits(await power.balanceOf(POL_VOTER));
-    console.log('polVoterPower', polVoterPower);
+  it("test power as is", async () => {
+    await check(
+      signer,
+      pol,
+      gov,
+      power,
+      bpt,
+      tetuBal,
+    )
   });
 
-  it("test veTETU power", async () => {
-    const amount = await power.veTetuPower('0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94')
-    console.log(formatUnits(amount))
+  it("test power without cut", async () => {
+    const total = +formatUnits(await tetuBal.totalSupply());
+    await TokenUtils.getToken(TETU_BAL, BALANCER_VAULT, parseUnits((total * 0.15).toFixed()))
+
+    await check(
+      signer,
+      pol,
+      gov,
+      power,
+      bpt,
+      tetuBal,
+    )
   });
+
+  it("test power with partially cut", async () => {
+    const total = +formatUnits(await tetuBal.totalSupply());
+    await TokenUtils.getToken(TETU_BAL, BALANCER_VAULT, parseUnits((total * 0.07).toFixed()))
+
+    await check(
+      signer,
+      pol,
+      gov,
+      power,
+      bpt,
+      tetuBal,
+    )
+  });
+
+  it("check total power", async () => {
+    await power.connect(gov).setXtetuBalBriber(pol.address);
+
+    const delegated = new Set([
+
+      BALANCER_VAULT.toLowerCase(),
+    ])
+
+    const topHolders = [
+      '0x36cc7b13029b5dee4034745fb4f24034f3f2ffc6', // humpy
+      '0xdade618e95f5e51198c69ba0a9cc3033874fa643'.toLowerCase(), // xtetuBAL strategy
+      pol.address, // briber
+      '0xcbb90e432be81d9fdd6384412118b7dba57f29ba',
+      '0x252812c33b9f13ffcb64564797231d755495a6a5',
+      '0xe2e3fce1b7712c0faba08e72990b5094c666ef5c',
+      '0xe8c95b6dcacf93c6d1459949bfe932143a6ca50c',
+    ]
+
+    let powerSum = 0;
+    for (const h of topHolders) {
+      if (delegated.has(h.toLowerCase())) {
+        continue;
+      }
+      powerSum += (+formatUnits(await power.balanceOf(h)));
+    }
+
+    const total = +formatUnits(await tetuBal.totalSupply());
+
+    expect(powerSum).approximately(total, total * 0.02);
+    expect(powerSum).lte(total);
+
+  });
+
+  // it("test veTETU power", async () => {
+  //   await power.connect(gov).setVeTetuPowerCut(20);
+  //   const amount = await power.balanceOf('0xbbbbb8C4364eC2ce52c59D2Ed3E56F307E529a94')
+  //   console.log(formatUnits(amount))
+  //   expect(amount).eq(0);
+  // });
 
 
 });
+
+
+async function check(
+  signer: SignerWithAddress,
+  pol: SignerWithAddress,
+  gov: SignerWithAddress,
+  power: TetuBalVotingPower,
+  bpt: IERC20,
+  tetuBal: IERC20,
+) {
+  expect(await tetuBal.balanceOf(signer.address)).eq(0);
+  expect(await bpt.balanceOf(signer.address)).eq(0);
+
+  await TokenUtils.getToken(TETU_BAL, signer.address, parseUnits('0.5'))
+  await TokenUtils.getToken(MaticAddresses.BALANCER_TETU_USDC, signer.address, parseUnits('1000'))
+
+  await TokenUtils.approve(MaticAddresses.BALANCER_TETU_USDC, signer, VE_TETU, Misc.MAX_UINT)
+  await IVeTetu__factory.connect(VE_TETU, signer).createLockFor(MaticAddresses.BALANCER_TETU_USDC, parseUnits('1000'), 60 * 60 * 24 * 90, signer.address);
+
+  const total = +formatUnits(await tetuBal.totalSupply());
+  const tetuBalBalance = +formatUnits(await tetuBal.balanceOf(signer.address));
+  const balancerTetuBal = +formatUnits(await tetuBal.balanceOf(BALANCER_VAULT));
+  const tetuBalReducing = +formatUnits(await power.tetuBalReducing());
+  const p1 = +formatUnits(await power.tetuBalPower(signer.address));
+
+  console.log('total', total);
+  console.log('balancerTetuBal', balancerTetuBal);
+  console.log('tetuBalBalance', tetuBalBalance);
+  console.log('tetuBalReducing', tetuBalReducing);
+  console.log('p1', p1);
+
+  expect(p1).eq(tetuBalBalance * (1 - tetuBalReducing));
+
+  expect((await power.balanceOf(pol.address)).isZero()).eq(true);
+  await power.connect(gov).setXtetuBalBriber(pol.address);
+  const polPower = +formatUnits(await power.balanceOf(pol.address));
+  console.log('polPower', polPower);
+  expect(polPower).lte(total * 0.30);
+  expect(polPower).approximately(balancerTetuBal + ((total - balancerTetuBal) * tetuBalReducing), 0.0001);
+}

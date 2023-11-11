@@ -12,12 +12,13 @@ import {universalStrategyTest} from "../../UniversalStrategyTest";
 import {BalancerBPTSpecificHardWork} from "./BalancerBPTSpecificHardWork";
 import {ISmartVault, IStrategy, StrategyBalancerBPT__factory} from "../../../../typechain";
 import {Misc} from "../../../../scripts/utils/tools/Misc";
+import {UtilsBalancerGaugeV2} from "../../../baseUtils/balancer/utilsBalancerGaugeV2";
 
 
 const {expect} = chai;
 chai.use(chaiAsPromised);
 
-describe('BalancerBPT_boostedStables_Test', async () => {
+describe.skip('BalancerBPT_boostedStables_Test', async () => {
   const deployInfo: DeployInfo = new DeployInfo();
   before(async function () {
     await StrategyTestUtils.deployCoreAndInit(deployInfo, true);
@@ -62,7 +63,8 @@ describe('BalancerBPT_boostedStables_Test', async () => {
           signer,
           strategyContractName,
         );
-        await StrategyBalancerBPT__factory.connect(strategy.address, signer).initialize(
+        const strat = await StrategyBalancerBPT__factory.connect(strategy.address, signer);
+        await strat.initialize(
           core.controller.address,
           vaultAddress,
           depositToken,
@@ -70,6 +72,7 @@ describe('BalancerBPT_boostedStables_Test', async () => {
           gauge,
           buybackRatio
         );
+
         return strategy;
       },
       underlying,

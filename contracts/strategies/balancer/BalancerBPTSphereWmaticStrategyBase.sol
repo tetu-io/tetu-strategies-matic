@@ -15,7 +15,7 @@ pragma solidity 0.8.4;
 import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
 import "../../third_party/balancer/IBalancerGauge.sol";
 import "../../third_party/balancer/IBVault.sol";
-import "../../interface/ITetuLiquidator.sol";
+import "../../interfaces/ITetuLiquidator.sol";
 
 /// @title Base contract for sphere-wmatic farming with bbamBPT/tetu vault rewards
 /// @author belbix
@@ -30,7 +30,7 @@ abstract contract BalancerBPTSphereWmaticStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "BalancerBPTSphereWmaticStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.0";
+  string public constant VERSION = "1.0.2";
 
   uint private constant PRICE_IMPACT_TOLERANCE = 10_000;
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
@@ -38,7 +38,7 @@ abstract contract BalancerBPTSphereWmaticStrategyBase is ProxyStrategyBase {
 
   /// @dev sphere-wmatic pool id
   bytes32 public constant POOL_ID = 0xf3312968c7d768c19107731100ece7d4780b47b2000200000000000000000a50;
-  IBalancerGauge public constant GAUGE = IBalancerGauge(0xFB0243ffDC5309A4ec13b9de9111Da02294b2571);
+  IBalancerGauge public constant GAUGE = IBalancerGauge(0x78B67fdb0613bFd7063C030d9b2a0766A8FdD5e8);
   address public constant VAULT_BBAMUSD = 0xf2fB1979C4bed7E71E6ac829801E0A8a4eFa8513;
   /// @dev bbamUSDC_TOKEN
   address public constant DEPOSIT_TOKEN_FOR_REWARDS = 0xF93579002DBE8046c43FEfE86ec78b1112247BB8;
@@ -154,9 +154,6 @@ abstract contract BalancerBPTSphereWmaticStrategyBase is ProxyStrategyBase {
 
   /// @dev Deposit LP tokens to gauge
   function depositToPool(uint256 amount) internal override {
-    _doHardWork(true, false);
-    // doHardWork can deposit all underlyings
-    amount = IERC20(_underlying()).balanceOf(address(this));
     if (amount != 0) {
       GAUGE.deposit(amount);
     }

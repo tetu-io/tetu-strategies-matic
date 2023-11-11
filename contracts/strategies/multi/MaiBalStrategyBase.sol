@@ -16,8 +16,8 @@ import "@tetu_io/tetu-contracts/contracts/openzeppelin/SafeERC20.sol";
 import "./../../third_party/IERC20Extended.sol";
 import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
 import "./pipelines/LinearPipeline.sol";
-import "../../interface/strategies/IMaiStablecoinPipe.sol";
-import "../../interface/strategies/IAaveMaiBalStrategyBase.sol";
+import "../../interfaces/strategies/IMaiStablecoinPipe.sol";
+import "../../interfaces/strategies/IAaveMaiBalStrategyBase.sol";
 import "@tetu_io/tetu-contracts/contracts/third_party/uniswap/IUniswapV2Router02.sol";
 
 

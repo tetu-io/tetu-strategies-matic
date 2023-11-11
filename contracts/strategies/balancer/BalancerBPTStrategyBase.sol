@@ -15,7 +15,7 @@ pragma solidity 0.8.4;
 import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
 import "../../third_party/balancer/IBalancerGauge.sol";
 import "../../third_party/balancer/IBVault.sol";
-import "../../interface/ITetuLiquidator.sol";
+import "../../interfaces/ITetuLiquidator.sol";
 
 /// @title Base contract for BPT farming
 /// @author belbix
@@ -30,7 +30,7 @@ abstract contract BalancerBPTStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "BalancerBPTStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.0.4";
+  string public constant VERSION = "1.0.5";
 
   uint private constant PRICE_IMPACT_TOLERANCE = 10_000;
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
@@ -149,9 +149,6 @@ abstract contract BalancerBPTStrategyBase is ProxyStrategyBase {
 
   /// @dev Deposit LP tokens to gauge
   function depositToPool(uint256 amount) internal override {
-    _doHardWork(true, false);
-    // doHardWork can deposit all underlyings
-    amount = IERC20(_underlying()).balanceOf(address(this));
     if (amount != 0) {
       gauge.deposit(amount);
     }

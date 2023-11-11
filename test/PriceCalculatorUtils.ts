@@ -8,7 +8,7 @@ import {DeployerUtilsLocal} from "../scripts/deploy/DeployerUtilsLocal";
 import {IPriceCalculator, IPriceCalculator__factory} from "../typechain";
 import {parseUnits} from "ethers/lib/utils";
 
-const log: Logger = new Logger(logSettings);
+const log: Logger<undefined> = new Logger(logSettings);
 
 export class PriceCalculatorUtils {
 

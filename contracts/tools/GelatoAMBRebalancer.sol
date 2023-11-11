@@ -13,9 +13,9 @@
 pragma solidity 0.8.4;
 
 import "../third_party/gelato/PokeMeReady.sol";
-import "../interface/strategies/ILinearPipeline.sol";
-import "../interface/IController.sol";
-import "../interface/IControllableExtended.sol";
+import "../interfaces/strategies/ILinearPipeline.sol";
+import "../interfaces/IController.sol";
+import "../interfaces/IControllableExtended.sol";
 
 contract GelatoAMBRebalancer is PokeMeReady {
 

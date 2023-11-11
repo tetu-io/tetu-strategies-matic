@@ -4,7 +4,6 @@ import {MaticAddresses} from "../../scripts/addresses/MaticAddresses";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
-  IFeeRewardForwarder,
   IPriceCalculator,
   ISmartVault,
   IStrategy,
@@ -21,7 +20,7 @@ import logSettings from "../../log_settings";
 import {Logger} from "tslog";
 import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
 
-const log: Logger = new Logger(logSettings);
+const log: Logger<undefined> = new Logger(logSettings);
 
 export class StrategyTestUtils {
 
@@ -123,38 +122,6 @@ export class StrategyTestUtils {
     expect(await strategy.pausedInvesting()).is.eq(true);
     await strategy.continueInvesting();
     expect(await strategy.pausedInvesting()).is.eq(false);
-  }
-
-  public static async initForwarder(forwarder: IFeeRewardForwarder) {
-    const start = Date.now();
-    await forwarder.setLiquidityNumerator(30);
-    await forwarder.setLiquidityRouter(await DeployerUtilsLocal.getRouterByFactory(await DeployerUtilsLocal.getDefaultNetworkFactory()));
-    // please set liquidation path for each test individually
-    await StrategyTestUtils.setConversionPaths(forwarder);
-    Misc.printDuration('Forwarder initialized', start);
-  }
-
-  public static async setConversionPaths(forwarder: IFeeRewardForwarder) {
-    const net = (await ethers.provider.getNetwork()).chainId;
-    const bc: string[] = JSON.parse(readFileSync(`./test/strategies/data/${net}/bc.json`, 'utf8'));
-
-    const batch = 20;
-    for (let i = 0; i < bc.length / batch; i++) {
-      const l = bc.slice(i * batch, i * batch + batch)
-      log.info('addBlueChipsLps', l.length);
-      await forwarder.addBlueChipsLps(l);
-    }
-
-    const tokens: string[] = JSON.parse(readFileSync(`./test/strategies/data/${net}/tokens.json`, 'utf8'));
-    const lps: string[] = JSON.parse(readFileSync(`./test/strategies/data/${net}/lps.json`, 'utf8'));
-    for (let i = 0; i < tokens.length / batch; i++) {
-      const t = tokens.slice(i * batch, i * batch + batch)
-      const l = lps.slice(i * batch, i * batch + batch)
-      // log.info('t', t)
-      // log.info('l', l)
-      log.info('addLargestLps', t.length);
-      await forwarder.addLargestLps(t, l);
-    }
   }
 
   public static async deployCoreAndInit(deployInfo: DeployInfo, deploy: boolean) {

@@ -11,14 +11,30 @@
 */
 pragma solidity 0.8.4;
 
-import "../../strategies/0vix/ZerovixstMaticStrategyBase.sol";
+import "../../strategies/balancer/BalancerBoostBPTStrategyBase.sol";
 
-contract ZerovixstMaticStrategy is ZerovixstMaticStrategyBase {
-    function initialize(
-        address controller_,
-        address vault_,
-        uint buybackRatio_
-    ) external initializer {
-        ZerovixstMaticStrategyBase.initializeStrategy(controller_, vault_, buybackRatio_);
-    }
+contract StrategyBalancerBoostBPT is BalancerBoostBPTStrategyBase {
+
+  function initialize(
+    address controller_,
+    address vault_,
+    bytes32 poolId_,
+    address gauge_,
+    uint _bbRatio,
+    address depositToken_,
+    bytes32 depositBPTPoolId_,
+    address gaugeDepositor_
+  ) external initializer {
+    initializeStrategy(
+      controller_,
+      vault_,
+      poolId_,
+      gauge_,
+      _bbRatio,
+      depositToken_,
+      depositBPTPoolId_,
+      gaugeDepositor_
+    );
+  }
+
 }

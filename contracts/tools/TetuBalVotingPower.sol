@@ -17,6 +17,8 @@ import "@tetu_io/tetu-contracts/contracts/openzeppelin/IERC20Metadata.sol";
 import "@tetu_io/tetu-contracts/contracts/base/governance/ControllableV2.sol";
 import "../third_party/balancer/IBVault.sol";
 
+import "hardhat/console.sol";
+
 interface IVeTetu {
   function balanceOfNFT(uint) external view returns (uint);
 
@@ -32,18 +34,24 @@ contract TetuBalVotingPower is IERC20, IERC20Metadata, ControllableV2 {
   // *************************************************************
 
   address public constant TETU_BAL = 0x7fC9E0Aa043787BFad28e29632AdA302C790Ce33;
-  bytes32 public constant TETU_BAL_BPT_ID = 0xb797adfb7b268faeaa90cadbfed464c76ee599cd0002000000000000000005ba;
   IBVault public constant BALANCER_VAULT = IBVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
   address public constant VE_TETU = 0x6FB29DD17fa6E27BD112Bc3A2D0b8dae597AeDA4;
-  address public constant POL_VOTER = 0x6672A074B98A7585A8549356F97dB02f9416849E;
+  /// @dev veTETU cut denominator
   uint internal constant CUT_DENOMINATOR = 100;
+  // @dev If balance of tetuBAL in Balancer lower than this value tetuBAL power will be reduced
+  uint public constant HOLD_RATIO_PEG = 0.15e18; // 15%
+  /// @dev We reduce tetuBAL power depending on HOLD_RATIO_PEG
+  uint public constant TETU_BAL_MAX_CUTE = 0.3e18; // 30%
 
   // *************************************************************
   //                        VARIABLES
   // *************************************************************
 
   /// @dev Percent of voting power that will be delegated to POL_VOTER
+  ///      Will be used in off-chain distribution script for xtetuBAL
   uint public veTetuPowerCut;
+  /// @dev This address will receive all voting power of veTETU and distribute bribes to veTETU holders like they deposited in xtetuBAL
+  address public xtetuBalBriber;
 
   // *************************************************************
   //                        INIT
@@ -62,6 +70,12 @@ contract TetuBalVotingPower is IERC20, IERC20Metadata, ControllableV2 {
     require(_isGovernance(msg.sender), "Not governance");
     require(value <= CUT_DENOMINATOR, "Too high");
     veTetuPowerCut = value;
+  }
+
+  /// @notice Set address who managed voting power for xtetuBAL
+  function setXtetuBalBriber(address value) external {
+    require(_isGovernance(msg.sender), "Not governance");
+    xtetuBalBriber = value;
   }
 
   // *************************************************************
@@ -93,48 +107,58 @@ contract TetuBalVotingPower is IERC20, IERC20Metadata, ControllableV2 {
   function balanceOf(address account) external view override returns (uint) {
     uint extra;
 
-    if (account == POL_VOTER) {
-      extra = tetuBalInPool() * veTetuPowerCut / CUT_DENOMINATOR;
+    if (account == xtetuBalBriber) {
+      // we are using all available balance
+      // the cut will be executed in xtetuBAL distribution process
+      extra = tetuBalInBalancer();
+      // calculate all reduced power from pure tetuBAL
+      uint _tetuBalReducing = tetuBalReducing();
+      // do not count balance in Balancer, it is already counted in extra
+      // extra can not be higher than total
+      uint totalPureTetuBal = IERC20(TETU_BAL).totalSupply() - extra;
+      uint extraFromTetuBalCut = totalPureTetuBal * _tetuBalReducing / 1e18;
+      extra += extraFromTetuBalCut;
     }
 
-    return tetuBalPower(account) + veTetuPower(account) + extra;
+    return tetuBalPower(account) + extra;
   }
 
-  // --- tetuBAL
-
+  /// @dev Power for pure tetuBAL for given account
   function tetuBalPower(address account) public view returns (uint) {
-    return IERC20(TETU_BAL).balanceOf(account);
-  }
-
-  // --- BPT tetuBAL-ETH/BAL
-
-  function veTetuPower(address account) public view returns (uint) {
-    uint power = veTetuPowerWithoutCut(account);
-    power -= power * veTetuPowerCut / CUT_DENOMINATOR;
-    return power;
-  }
-
-  function veTetuPowerWithoutCut(address account) public view returns (uint) {
-    uint tetuBalBalance = tetuBalInPool();
-
-    uint veTetuTotalPower = IERC20(VE_TETU).totalSupply();
-
-    uint nftCount = IERC20(VE_TETU).balanceOf(account);
-
-    // protection against ddos
-    nftCount = nftCount > 20 ? 20 : nftCount;
-
-    uint power;
-    for (uint i; i < nftCount; ++i) {
-      uint veId = IVeTetu(VE_TETU).tokenOfOwnerByIndex(account, i);
-      power += IVeTetu(VE_TETU).balanceOfNFT(veId);
+    // in unreal case we need to exclude it - tetuBAL inside balancer suppose to be used for veTETU power
+    if (account == address(BALANCER_VAULT)) {
+      return 0;
     }
-    return tetuBalBalance * power / veTetuTotalPower;
+    // xtetuBalBriber also eligible for the cut if hold any pure tetuBAL
+    uint cutRatio = tetuBalReducing();
+    uint balance = IERC20(TETU_BAL).balanceOf(account);
+    return balance * (1e18 - cutRatio) / 1e18;
   }
 
-  function tetuBalInPool() public view returns (uint) {
-    (,uint[] memory balances,) = BALANCER_VAULT.getPoolTokens(TETU_BAL_BPT_ID);
-    return balances[1];
+  /// @dev Ratio of reducing voting power for pure tetuBAL
+  function tetuBalReducing() public view returns (uint) {
+    uint _holdRatio = holdRatio();
+    if (_holdRatio >= HOLD_RATIO_PEG) {
+      return 0;
+    }
+    // can not overflow coz prev if protection
+    uint reduceRatio = 1e18 - (_holdRatio * 1e18 / HOLD_RATIO_PEG);
+    return TETU_BAL_MAX_CUTE * reduceRatio / 1e18;
+  }
+
+  /// @dev Percent of tetuBAL inside Balancer vault. Assume represent available liquidity.
+  function holdRatio() public view returns (uint) {
+    uint total = IERC20(TETU_BAL).totalSupply();
+    uint hold = tetuBalInBalancer();
+    return hold * 1e18 / total;
+  }
+
+  /// @dev Balance of tetuBAL in Balancer vault
+  function tetuBalInBalancer() public view returns (uint) {
+    // any balancer pools will keep the balance on the vault
+    // we will use them for veTETU power
+    // exception is boosted pools but we assume they will not exist for tetuBAL
+    return IERC20(TETU_BAL).balanceOf(address(BALANCER_VAULT));
   }
 
   // **********************************************

@@ -2,7 +2,6 @@ import {
   IAnnouncer,
   IBookkeeper,
   IController,
-  IFeeRewardForwarder,
   IFundKeeper,
   IMintHelper,
   IRewardToken,
@@ -10,6 +9,7 @@ import {
   IStrategy,
   IVaultController,
 } from "../typechain";
+import {IFeeRewardForwarder} from "../typechain/contracts/interfaces";
 
 export class CoreContractsWrapper {
   public controller: IController;

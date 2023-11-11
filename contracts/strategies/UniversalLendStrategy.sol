@@ -22,9 +22,11 @@ abstract contract UniversalLendStrategy is ProxyStrategyBase {
   ///                Constants and variables
   /// ******************************************************
   uint private constant _DUST = 10_000;
+  address private constant _PERF_FEE_TREASURY = 0x9Cc199D4353b5FB3e6C8EEBC99f5139e0d8eA06b;
 
   uint internal localBalance;
   uint public lastHw;
+  bool public isProfitSharingDisabled;
 
   /// ******************************************************
   ///                    Initialization
@@ -45,6 +47,7 @@ abstract contract UniversalLendStrategy is ProxyStrategyBase {
       __rewardTokens,
       buybackRatio_
     );
+    isProfitSharingDisabled = true;
   }
 
   // *******************************************************
@@ -58,6 +61,10 @@ abstract contract UniversalLendStrategy is ProxyStrategyBase {
       _rewardTokens.push(rts[i]);
       _unsalvageableTokens[rts[i]] = true;
     }
+  }
+
+  function setProfitSharingDisabled(bool value) external restricted {
+    isProfitSharingDisabled = value;
   }
 
   /// ******************************************************
@@ -152,12 +159,16 @@ abstract contract UniversalLendStrategy is ProxyStrategyBase {
         uint toCompound = amount - toBuyBacks;
 
         if (toBuyBacks != 0) {
-          if (silent) {
-            try IFeeRewardForwarder(forwarder).distribute(toBuyBacks, rt, targetVault) returns (uint r) {
-              targetTokenEarned += r;
-            } catch {}
+          if (isProfitSharingDisabled) {
+            IERC20(rt).safeTransfer(_PERF_FEE_TREASURY, toBuyBacks);
           } else {
-            targetTokenEarned += IFeeRewardForwarder(forwarder).distribute(toBuyBacks, rt, targetVault);
+            if (silent) {
+              try IFeeRewardForwarder(forwarder).distribute(toBuyBacks, rt, targetVault) returns (uint r) {
+                targetTokenEarned += r;
+              } catch {}
+            } else {
+              targetTokenEarned += IFeeRewardForwarder(forwarder).distribute(toBuyBacks, rt, targetVault);
+            }
           }
         }
 
@@ -259,5 +270,5 @@ abstract contract UniversalLendStrategy is ProxyStrategyBase {
   }
 
   //slither-disable-next-line unused-state
-  uint256[48] private ______gap;
+  uint256[47] private ______gap;
 }

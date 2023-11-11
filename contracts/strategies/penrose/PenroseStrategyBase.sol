@@ -12,7 +12,7 @@
 pragma solidity 0.8.4;
 
 import "@tetu_io/tetu-contracts/contracts/base/strategies/ProxyStrategyBase.sol";
-import "../../interface/ITetuLiquidator.sol";
+import "../../interfaces/ITetuLiquidator.sol";
 import "../../third_party/penrose/IUserProxy.sol";
 import "../../third_party/penrose/IPenPoolFactory.sol";
 import "../../third_party/penrose/IPenPool.sol";

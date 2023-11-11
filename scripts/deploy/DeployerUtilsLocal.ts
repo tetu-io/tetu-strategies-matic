@@ -1,6 +1,6 @@
-import {ethers, web3} from "hardhat";
+import {ethers} from "hardhat";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {Contract, ContractFactory, utils} from "ethers";
+import {ContractFactory} from "ethers";
 import {CoreContractsWrapper} from "../../test/CoreContractsWrapper";
 import {Addresses} from "../../addresses";
 import {CoreAddresses} from "../models/CoreAddresses";
@@ -14,31 +14,33 @@ import logSettings from "../../log_settings";
 import {Logger} from "tslog";
 import {MaticAddresses} from "../addresses/MaticAddresses";
 import {readFileSync} from "fs";
-import {Libraries} from "hardhat-deploy/dist/types";
 import {
   IAnnouncer__factory,
   IBookkeeper__factory,
   IController,
   IController__factory,
-  IFeeRewardForwarder__factory,
   IFundKeeper__factory,
   IMintHelper__factory,
   IPriceCalculator__factory,
   IRewardToken__factory,
   ISmartVault,
   ISmartVault__factory,
-  IStrategy, IStrategy__factory,
+  IStrategy,
+  IStrategy__factory,
   IStrategySplitter,
   IStrategySplitter__factory,
   IVaultController,
   IVaultController__factory,
-  TetuProxyControlled, TetuProxyControlled__factory,
+  TetuProxyControlled,
+  TetuProxyControlled__factory,
 } from "../../typechain";
 import {deployContract} from "./DeployContract";
+import {IFeeRewardForwarder__factory} from "../../typechain/factories/contracts/interfaces";
+import {formatUnits, parseUnits} from "ethers/lib/utils";
 
 // tslint:disable-next-line:no-var-requires
 const hre = require("hardhat");
-const log: Logger = new Logger(logSettings);
+const log: Logger<undefined> = new Logger(logSettings);
 
 
 dotEnvConfig();
@@ -602,16 +604,40 @@ export class DeployerUtilsLocal {
     await ethers.provider.send("evm_mine", []); // Just mines to the next block
   }
 
-  public static async findVaultUnderlyingInBookkeeper(signer: SignerWithAddress, underlying: string) {
+  public static async findVaultUnderlyingInBookkeeper(signer: SignerWithAddress, underlying: string): Promise<string | undefined> {
     const core = await DeployerUtilsLocal.getCoreAddresses()
     const vaults = await IBookkeeper__factory.connect(core.bookkeeper, signer).vaults();
     for (const vault of vaults) {
       const vaultUnd = await ISmartVault__factory.connect(vault, signer).underlying();
       if (vaultUnd.toLowerCase() === underlying.toLowerCase()) {
-        return true;
+        return vault;
       }
     }
-    return false;
+    return undefined;
+  }
+
+  public static async txParams() {
+    const gasPrice = (await ethers.provider.getGasPrice()).toNumber();
+    console.log('Gas price:', formatUnits(gasPrice, 9));
+    if (hre.network.name === 'hardhat') {
+      return {
+        maxPriorityFeePerGas: parseUnits('1', 9),
+        maxFeePerGas: (gasPrice * 1.5).toFixed(0),
+      };
+    } else if (hre.network.config.chainId === 137) {
+      return {
+        maxPriorityFeePerGas: parseUnits('50', 9),
+        maxFeePerGas: (gasPrice * 3).toFixed(0),
+      };
+    } else if (hre.network.config.chainId === 1) {
+      return {
+        maxPriorityFeePerGas: parseUnits('1', 9),
+        maxFeePerGas: (gasPrice * 1.5).toFixed(0),
+      };
+    }
+    return {
+      gasPrice: (gasPrice * 1.1).toFixed(0),
+    };
   }
 
   // ****************** WAIT ******************

@@ -1,11 +1,17 @@
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {CoreContractsWrapper} from "../CoreContractsWrapper";
-import {IStrategy, ISmartVault, IStrategySplitter__factory, IERC20__factory} from "../../typechain";
+import {
+  IERC20__factory,
+  ISmartVault,
+  IStrategy,
+  IStrategySplitter__factory,
+  UniversalLendStrategy__factory
+} from "../../typechain";
 import {ToolsContractsWrapper} from "../ToolsContractsWrapper";
 import {TokenUtils} from "../TokenUtils";
 import {BigNumber, utils} from "ethers";
 import {Misc} from "../../scripts/utils/tools/Misc";
-import {XTETU_NO_INCREASE, VaultUtils} from "../VaultUtils";
+import {VaultUtils, XTETU_NO_INCREASE} from "../VaultUtils";
 import {TimeUtils} from "../TimeUtils";
 import {expect} from "chai";
 import {PriceCalculatorUtils} from "../PriceCalculatorUtils";
@@ -363,6 +369,12 @@ export class DoHardWorkLoopBase {
     // need to call hard work for sell a little excess rewards
     await this.strategy.doHardWork({gasLimit: 10_000_000});
 
+    let isPSDisabled = false;
+    try {
+      isPSDisabled = await UniversalLendStrategy__factory.connect(this.strategy.address, this.signer).isProfitSharingDisabled();
+    } catch (e) {
+    }
+
     // strategy should not contain any tokens in the end
     const rts = await this.strategy.rewardTokens();
     for (const rt of rts) {
@@ -375,19 +387,19 @@ export class DoHardWorkLoopBase {
     }
 
     // check vault balance
-    if (this.vaultRt !== Misc.ZERO_ADDRESS && this.bbRatio !== 0) {
+    if (this.vaultRt !== Misc.ZERO_ADDRESS && this.bbRatio !== 0 && !isPSDisabled) {
       const vaultBalanceAfter = await TokenUtils.balanceOf(this.vaultRt, this.vault.address);
       expect(vaultBalanceAfter.sub(this.vaultRTBal)).is.not.eq("0", "vault reward should increase");
     }
 
-    if (this.bbRatio !== 0 && !XTETU_NO_INCREASE.has(await this.strategy.STRATEGY_NAME())) {
+    if (this.bbRatio !== 0 && !XTETU_NO_INCREASE.has(await this.strategy.STRATEGY_NAME()) && !isPSDisabled) {
       // check ps balance
       const veDistAfter = await IERC20__factory.connect(this.core.rewardToken.address, this.signer).balanceOf(MaticAddresses.TETU_VE_DIST_ADDRESS);
       expect(veDistAfter.sub(this.veDistBal)).is.not.eq("0", "veDist balance should increase");
     }
 
     // check reward for user
-    if (this.vaultRt !== Misc.ZERO_ADDRESS && this.bbRatio !== 0) {
+    if (this.vaultRt !== Misc.ZERO_ADDRESS && this.bbRatio !== 0 && !isPSDisabled) {
       const rewardBalanceAfter = await TokenUtils.balanceOf(this.vaultRt, this.user.address);
       expect(rewardBalanceAfter.sub(this.userRTBal).toString())
         .is.not.eq("0", "should have earned xTETU rewards");

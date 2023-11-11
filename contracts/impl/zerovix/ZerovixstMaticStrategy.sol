@@ -9,10 +9,16 @@
 * as all warranties, including any fitness for a particular purpose with respect
 * to Tetu and/or the underlying software and the use thereof are disclaimed.
 */
-
 pragma solidity 0.8.4;
 
-interface ITetuLiquidatorController {
-    function governance() external view returns (address);
-    function isOperator(address _adr) external view returns (bool);
+import "../../strategies/zerovix/ZerovixstMaticStrategyBase.sol";
+
+contract ZerovixstMaticStrategy is ZerovixstMaticStrategyBase {
+    function initialize(
+        address controller_,
+        address vault_,
+        uint buybackRatio_
+    ) external initializer {
+        ZerovixstMaticStrategyBase.initializeStrategy(controller_, vault_, buybackRatio_);
+    }
 }

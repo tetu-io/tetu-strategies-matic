@@ -52,7 +52,7 @@ export class LiquidationPriceTest extends SpecificStrategyTest {
       const maiStbPipeCtr = MaiStablecoinPipe__factory.connect(maiStbPipe, signer);
       const _targetPercentage = await maiStbPipeCtr.targetPercentage()
       const _stablecoin = await maiStbPipeCtr.stablecoin()
-      
+
       const stablecoin = IErc20Stablecoin__factory.connect(_stablecoin, signer);
       const currPrice = await stablecoin.getEthPriceSource()
       console.log('currPrice     ', currPrice.toString());

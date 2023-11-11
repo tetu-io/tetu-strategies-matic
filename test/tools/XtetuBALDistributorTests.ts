@@ -4,6 +4,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {ethers} from "hardhat";
 import {TimeUtils} from "../TimeUtils";
 import {
+  IController__factory,
   IERC20Extended,
   IERC20Extended__factory,
   XtetuBALDistributor,
@@ -31,6 +32,7 @@ describe("XtetuBALDistributorTests", function () {
   let distributor: XtetuBALDistributor;
   let usdc: IERC20Extended;
   let xtetuBAL: IERC20Extended;
+  let tetu: IERC20Extended;
 
   before(async function () {
     [signer, signer2] = await ethers.getSigners()
@@ -45,14 +47,18 @@ describe("XtetuBALDistributorTests", function () {
 
     usdc = IERC20Extended__factory.connect(MaticAddresses.USDC_TOKEN, signer);
     xtetuBAL = IERC20Extended__factory.connect(MaticAddresses.xtetuBAL_TOKEN, signer);
+    tetu = IERC20Extended__factory.connect(MaticAddresses.TETU_TOKEN, signer);
 
     await TokenUtils.getToken(usdc.address, signer.address, parseUnits('100000', 6));
     await TokenUtils.getToken(xtetuBAL.address, signer.address, parseUnits('100'));
+    await TokenUtils.getToken(tetu.address, signer.address, parseUnits('100'));
 
     await usdc.approve(distributor.address, Misc.MAX_UINT);
     await xtetuBAL.approve(distributor.address, Misc.MAX_UINT);
+    await tetu.approve(distributor.address, Misc.MAX_UINT);
 
-    await distributor.connect(gov).changeOperatorStatus(signer.address, true);
+
+    await IController__factory.connect(core.controller, gov).addHardWorker(signer.address);
   });
 
   after(async function () {
@@ -75,10 +81,16 @@ describe("XtetuBALDistributorTests", function () {
     const r4 = '0x00000000000000000010c000b000000000000004';
 
     await distributor.distribute(
-      [r1, r2],
-      [parseUnits('100', 6), parseUnits('200', 6)],
-      [r2, r3, r4],
-      [parseUnits('2'), parseUnits('3'), parseUnits('4')],
+      [
+        [r1, r2],
+        [r2, r3, r4],
+        [r3]
+      ],
+      [
+        [parseUnits('100', 6), parseUnits('200', 6)],
+        [parseUnits('2'), parseUnits('3'), parseUnits('4')],
+        [parseUnits('1')]
+      ],
       parseUnits('10000')
     );
 
@@ -88,6 +100,8 @@ describe("XtetuBALDistributorTests", function () {
     expect(await xtetuBAL.balanceOf(r2)).to.be.eq(parseUnits('2'));
     expect(await xtetuBAL.balanceOf(r3)).to.be.eq(parseUnits('3'));
     expect(await xtetuBAL.balanceOf(r4)).to.be.eq(parseUnits('4'));
+
+    expect(await tetu.balanceOf(r3)).to.be.eq(parseUnits('1'));
 
     let epochCounter = (await distributor.epochCounter()).toNumber();
     expect(epochCounter).to.be.eq(1);
@@ -110,15 +124,14 @@ describe("XtetuBALDistributorTests", function () {
     expect(epochDistributedUSD).to.be.gt(0);
     expect(epochTVLUSD).to.be.eq(parseUnits('10000'));
 
-    await expect(distributor.distribute([], [], [], [], 0)).revertedWith("!TIME");
+    await expect(distributor.distribute([[], [], []], [[], [], []], 0)).revertedWith("!TIME");
 
     await TimeUtils.advanceBlocksOnTs(60 * 60 * 24 * 14);
 
     await distributor.distribute(
-      [r1, r2],
-      [parseUnits('200', 6), parseUnits('300', 6)],
-      [r2, r3, r4],
-      [parseUnits('3'), parseUnits('4'), parseUnits('5')],
+      [[r1, r2], [r2, r3, r4], []],
+      [[parseUnits('200', 6), parseUnits('300', 6)],
+        [parseUnits('3'), parseUnits('4'), parseUnits('5')], []],
       parseUnits('10000')
     );
 
