@@ -31,9 +31,9 @@ import {TransferEvent} from "../../typechain/contracts/third_party/IERC20Extende
 
 // MAKE SURE YOUR LOCAL SNAPSHOT BLOCK IS ACTUAL!
 // the last snapshot https://snapshot.org/#/tetubal.eth
-const PROPOSAL_ID = '0xdbf997aa84d1f6cad778b2c36c31feb09efb1011760a401da55a9ca331e81615';
+const PROPOSAL_ID = '0x0ca02a35dce76619cbbc269792df1946b84a774b27fbe2c33bae8d19ab1a8cb1';
 // USDC amount received from all bribes
-const USDC_AMOUNT = 25219;
+const USDC_AMOUNT = 27660;
 // % of USDC amount that will be transfer as TETU tokens. calc it depending on protocol pools bribes where we used TETU as bribes.
 const TETU_RATIO = Number(1);
 
@@ -45,7 +45,7 @@ const DISTRIBUTOR = '0x6A5938e635C6AAada7c398b3EDc40e924B323D9F'; // 0x6DdD4dB03
 const X_TETU_BAL_STRATEGY = '0xdade618E95F5E51198c69bA0A9CC3033874Fa643';
 const TETU_BAL_HOLDER = '0x237114Ef61b27fdF57132e6c8C4244eeea8323D3';
 const PAWNSHOP = '0x0c9FA52D7Ed12a6316d3738c80931eCbC6C49907';
-const BRIBE_DISTRIBUTOR = '0x5947868a6842e69Cacad068AbF6481e1F522063E';
+const BRIBE_DISTRIBUTOR = '0xd1f8b86EfBA4bCEB0E2434337F2d504087F6C4d0';
 
 async function main() {
   let signer: SignerWithAddress;

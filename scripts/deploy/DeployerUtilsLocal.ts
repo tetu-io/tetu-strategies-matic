@@ -53,7 +53,7 @@ const argv = require('yargs/yargs')()
     },
     vaultLogic: {
       type: "string",
-      default: "0x28F32AF48F6C33268F437aACDa0Ddf22ef28ADba"
+      default: "0xF88Cba0461A69cB9B32655F4c79601515fcCe7BA"
     },
     splitterLogic: {
       type: "string",
