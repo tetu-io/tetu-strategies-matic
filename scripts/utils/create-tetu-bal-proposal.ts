@@ -7,11 +7,11 @@ import snapshot from "@snapshot-labs/snapshot.js";
 import {Proposal} from "@snapshot-labs/snapshot.js/src/sign/types";
 
 // !!!!!!!!!!!!!!!!!!!!!!!! CHANGE ME !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-const POLYGON_SNAPSHOT_BLOCK_NUMBER = 49419410; // use the-best-block-for-snapshot.ts script
+const POLYGON_SNAPSHOT_BLOCK_NUMBER = 49996177; // use the-best-block-for-snapshot.ts script
 // const START_UNIX = Math.floor((new Date('Oct 30 2023 19:00:00 UTC')).getTime() / 1000)
 const START_UNIX = Math.floor(Date.now() / 1000)
-const END_UNIX = Math.floor((new Date('Nov 13 2023 20:00:00 UTC')).getTime() / 1000)
-const TITLE = 'BRV-033: Gauge Weights for 16th November - 29th November 2023'
+const END_UNIX = Math.floor((new Date('Nov 27 2023 20:00:00 UTC')).getTime() / 1000)
+const TITLE = 'BRV-034: Gauge Weights for 30th November - 13th December 2023'
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 // new tetubal gauge https://etherscan.io/address/0xF6A814eD60653Cb0e36DA247B01E6309318328d4#code
