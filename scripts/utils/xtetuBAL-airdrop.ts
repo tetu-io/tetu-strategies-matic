@@ -1,6 +1,6 @@
 import {DeployerUtilsLocal} from "../deploy/DeployerUtilsLocal";
 import {Misc} from "./tools/Misc";
-import {ethers} from "hardhat";
+import {ethers, network} from "hardhat";
 import {MaticAddresses} from "../addresses/MaticAddresses";
 import {
   IERC20__factory,
@@ -65,7 +65,7 @@ async function main() {
   const curDate = Math.floor(new Date().getTime() / 1000);
   const sinceProposal = (curDate - +snapshotData.created);
   console.log('sinceProposal days', sinceProposal / 60 / 60 / 24);
-  if (sinceProposal > 14 * 60 * 60 * 24) throw new Error('Wrong proposal');
+  if (sinceProposal > 17 * 60 * 60 * 24) throw new Error('Wrong proposal');
   const votedPower = snapshotData.vp;
   console.log('PROPOSAL votedPower', votedPower);
 
@@ -286,6 +286,16 @@ async function main() {
     );
   }
 
+  console.log('xtetuBalAmountForDistributing', xtetuBalAmountForDistributing)
+  console.log('tetuAmountForDistributing', tetuAmountForDistributing)
+  console.log('usersForUSDC', usersForUSDC)
+  console.log('usersForXtetuBAL', usersForXtetuBAL)
+  console.log('usersForTetu', usersForTetu)
+
+
+  console.log('usersForXtetuBALAmounts', usersForXtetuBALAmounts.map(b => b.toString()))
+  console.log('usersForTetuAmounts', usersForTetuAmounts.map(b => b.toString()))
+
   if (
     balanceUSDC.gte(parseUnits(usdcAmountForDistributing.toFixed(6), 6))
     && balanceXtetuBal.gte(parseUnits((xtetuBalAmountForDistributing).toFixed(18)))
@@ -315,6 +325,9 @@ async function main() {
 
   } else {
     console.error('not enough tokens');
+    if(Misc.getChainName() !== 'hardhat') {
+      throw new Error('not enough tokens');
+    }
   }
 
   await distributeBribes(signer, veTetuPartOfTetu);

@@ -1,7 +1,7 @@
 import axios from "axios";
 
-const FREE_VOTES = 47;
-const OUR_VOTING_POWER = 430000;
+const FREE_VOTES = 52.552;
+const OUR_VOTING_POWER = 459000;
 
 const VOTE_MARKET_HH_API = 'https://vm.crvusd.fi/bribes?name=hiddehand';
 
