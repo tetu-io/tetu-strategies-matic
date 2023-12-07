@@ -5,13 +5,14 @@ import {config as dotEnvConfig} from "dotenv";
 
 import snapshot from "@snapshot-labs/snapshot.js";
 import {Proposal} from "@snapshot-labs/snapshot.js/src/sign/types";
+import {getBalancerGaugesData} from "./tools/voting-utils";
 
 // !!!!!!!!!!!!!!!!!!!!!!!! CHANGE ME !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-const POLYGON_SNAPSHOT_BLOCK_NUMBER = 49996177; // use the-best-block-for-snapshot.ts script
+const POLYGON_SNAPSHOT_BLOCK_NUMBER = 50842837; // use the-best-block-for-snapshot.ts script
 // const START_UNIX = Math.floor((new Date('Oct 30 2023 19:00:00 UTC')).getTime() / 1000)
 const START_UNIX = Math.floor(Date.now() / 1000)
-const END_UNIX = Math.floor((new Date('Nov 27 2023 20:00:00 UTC')).getTime() / 1000)
-const TITLE = 'BRV-034: Gauge Weights for 30th November - 13th December 2023'
+const END_UNIX = Math.floor((new Date('Dec 11 2023 20:00:00 UTC')).getTime() / 1000)
+const TITLE = 'BRV-035: Gauge Weights for 14th November - 27th December 2023'
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 // new tetubal gauge https://etherscan.io/address/0xF6A814eD60653Cb0e36DA247B01E6309318328d4#code
@@ -126,11 +127,11 @@ async function main() {
 }
 
 async function getGaugeChoices(): Promise<string[]> {
-  const resp = await axios.get('https://raw.githubusercontent.com/balancer/frontend-v2/develop/src/data/voting-gauges.json')
+  const resp = await getBalancerGaugesData();
 
   const gaugeChoices = new Map<string, string>();
 
-  for (const d of resp.data) {
+  for (const d of resp) {
     if (d.isKilled) continue
     if (IGNORED_GAUGES.includes(d.address.toLowerCase())) continue
 
@@ -138,7 +139,7 @@ async function getGaugeChoices(): Promise<string[]> {
 
     // max length: 32 chars
     // gaugeChoices[d.address.toLowerCase()] = `${d.pool.symbol.trim().substring(0, 23)} (${truncatedAddr})`
-    gaugeChoices.set(d.address.toLowerCase(), `${d.pool.symbol.trim().substring(0, 23)} (${truncatedAddr})`);
+    gaugeChoices.set(d.address.toLowerCase(), `${d.symbol.trim().substring(0, 23)} (${truncatedAddr})`);
   }
 
   return Array.from(gaugeChoices.values()).sort();

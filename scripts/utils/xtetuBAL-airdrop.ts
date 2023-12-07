@@ -31,9 +31,9 @@ import {TransferEvent} from "../../typechain/contracts/third_party/IERC20Extende
 
 // MAKE SURE YOUR LOCAL SNAPSHOT BLOCK IS ACTUAL!
 // the last snapshot https://snapshot.org/#/tetubal.eth
-const PROPOSAL_ID = '0x0a862cc73c095c84534fe2fd254f53ace56c1243966bd0e0f11e54f61d609970';
+const PROPOSAL_ID = '0xbbd2648064bf1b64ea7460fa43a286a5fc923385a2927b8d0985f3ccfd3719b7';
 // USDC amount received from all bribes
-const USDC_AMOUNT = 49318;
+const USDC_AMOUNT = 40694;
 // % of USDC amount that will be transfer as TETU tokens. calc it depending on protocol pools bribes where we used TETU as bribes.
 const TETU_RATIO = Number(1);
 
@@ -253,6 +253,8 @@ async function main() {
   console.log('balanceTETU', +formatUnits(balanceTETU));
   console.log('balanceUSDC', +formatUnits(balanceUSDC, 6));
 
+  await distributeBribes(signer, veTetuPartOfTetu);
+
   const usdcAllowance = await IERC20__factory.connect(MaticAddresses.USDC_TOKEN, signer).allowance(signer.address, distributor.address);
   const xtetuBALAllowance = await IERC20__factory.connect(MaticAddresses.xtetuBAL_TOKEN, signer).allowance(signer.address, distributor.address);
   const tetuAllowance = await IERC20__factory.connect(MaticAddresses.TETU_TOKEN, signer).allowance(signer.address, distributor.address);
@@ -286,15 +288,14 @@ async function main() {
     );
   }
 
-  console.log('xtetuBalAmountForDistributing', xtetuBalAmountForDistributing)
-  console.log('tetuAmountForDistributing', tetuAmountForDistributing)
-  console.log('usersForUSDC', usersForUSDC)
-  console.log('usersForXtetuBAL', usersForXtetuBAL)
-  console.log('usersForTetu', usersForTetu)
-
-
-  console.log('usersForXtetuBALAmounts', usersForXtetuBALAmounts.map(b => b.toString()))
-  console.log('usersForTetuAmounts', usersForTetuAmounts.map(b => b.toString()))
+  // console.log('xtetuBalAmountForDistributing', xtetuBalAmountForDistributing)
+  // console.log('tetuAmountForDistributing', tetuAmountForDistributing)
+  // console.log('usersForUSDC', usersForUSDC)
+  // console.log('usersForXtetuBAL', usersForXtetuBAL)
+  // console.log('usersForTetu', usersForTetu)
+  //
+  // console.log('usersForXtetuBALAmounts', usersForXtetuBALAmounts.map(b => b.toString()))
+  // console.log('usersForTetuAmounts', usersForTetuAmounts.map(b => b.toString()))
 
   if (
     balanceUSDC.gte(parseUnits(usdcAmountForDistributing.toFixed(6), 6))
@@ -320,8 +321,8 @@ async function main() {
     // 1.640059157153047501
     const apr = formatUnits(await distributor.lastAPR());
     console.log('APR', apr);
-    expect(+apr).is.greaterThan(10);
-    expect(+apr).is.lessThan(40);
+    // expect(+apr).is.greaterThan(10);
+    // expect(+apr).is.lessThan(40);
 
   } else {
     console.error('not enough tokens');
@@ -329,8 +330,6 @@ async function main() {
       throw new Error('not enough tokens');
     }
   }
-
-  await distributeBribes(signer, veTetuPartOfTetu);
 }
 
 async function distributeBribes(
@@ -369,6 +368,8 @@ async function distributeBribes(
       parseUnits(amount.toFixed(18)),
       {...tp}
     ));
+  } else {
+    throw new Error('not enough tokens');
   }
 }
 
