@@ -1,6 +1,6 @@
 import {DeployerUtilsLocal} from "../deploy/DeployerUtilsLocal";
 import {Misc} from "./tools/Misc";
-import {ethers, network} from "hardhat";
+import {ethers} from "hardhat";
 import {MaticAddresses} from "../addresses/MaticAddresses";
 import {
   IERC20__factory,
@@ -31,9 +31,9 @@ import {TransferEvent} from "../../typechain/contracts/third_party/IERC20Extende
 
 // MAKE SURE YOUR LOCAL SNAPSHOT BLOCK IS ACTUAL!
 // the last snapshot https://snapshot.org/#/tetubal.eth
-const PROPOSAL_ID = '0xbbd2648064bf1b64ea7460fa43a286a5fc923385a2927b8d0985f3ccfd3719b7';
+const PROPOSAL_ID = '0xd51f6821c1765d594d21d25636e75d0f3b2843fb7c503d7a763fe2c278d03eba';
 // USDC amount received from all bribes
-const USDC_AMOUNT = 40694;
+const USDC_AMOUNT = 65240;
 // % of USDC amount that will be transfer as TETU tokens. calc it depending on protocol pools bribes where we used TETU as bribes.
 const TETU_RATIO = Number(1);
 
@@ -253,6 +253,13 @@ async function main() {
   console.log('balanceTETU', +formatUnits(balanceTETU));
   console.log('balanceUSDC', +formatUnits(balanceUSDC, 6));
 
+  if (+formatUnits(balanceTETU) < (tetuAmountForDistributing + veTetuPartOfTetu)) {
+    throw new Error('not enough TETU');
+  }
+  if (+formatUnits(balanceXtetuBal) < xtetuBalAmountForDistributing) {
+    throw new Error('not enough xtetuBal');
+  }
+
   await distributeBribes(signer, veTetuPartOfTetu);
 
   const usdcAllowance = await IERC20__factory.connect(MaticAddresses.USDC_TOKEN, signer).allowance(signer.address, distributor.address);
@@ -322,11 +329,11 @@ async function main() {
     const apr = formatUnits(await distributor.lastAPR());
     console.log('APR', apr);
     // expect(+apr).is.greaterThan(10);
-    // expect(+apr).is.lessThan(40);
+    // expect(+apr).is.lessThan(100);
 
   } else {
     console.error('not enough tokens');
-    if(Misc.getChainName() !== 'hardhat') {
+    if (Misc.getChainName() !== 'hardhat') {
       throw new Error('not enough tokens');
     }
   }
@@ -342,23 +349,6 @@ async function distributeBribes(
   const balanceTETU = await IERC20__factory.connect(MaticAddresses.TETU_TOKEN, signer).balanceOf(signer.address);
 
   console.log('balanceTETU', +formatUnits(balanceTETU));
-  //
-  // const tetuAllowance = await IERC20__factory.connect(MaticAddresses.TETU_TOKEN, signer).allowance(signer.address, BRIBE_DISTRIBUTOR);
-  // if (tetuAllowance.lt(parseUnits((amount + 1).toFixed(18)))) {
-  //   console.log('APPROVE tetu', amount);
-  //   await RunHelper.runAndWait(() => IERC20__factory.connect(MaticAddresses.TETU_TOKEN, signer).approve(
-  //       BRIBE_DISTRIBUTOR,
-  //       parseUnits((amount + 1).toFixed(18)).add(1)
-  //     )
-  //   );
-  // }
-  //
-  // const tp = await DeployerUtilsLocal.txParams();
-  // await RunHelper.runAndWait(() => IBribeDistribution__factory.connect(BRIBE_DISTRIBUTOR, signer).manualNotify(
-  //   parseUnits(amount.toFixed(18)),
-  //   true,
-  //   {...tp}
-  // ));
 
   if (amount <= +formatUnits(balanceTETU)) {
     console.log('transfer tetu');

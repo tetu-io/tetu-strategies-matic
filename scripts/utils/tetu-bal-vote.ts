@@ -1,7 +1,8 @@
 import axios from "axios";
+import {getBalancerGaugesData} from "./tools/voting-utils";
 
-const FREE_VOTES = 52.552;
-const OUR_VOTING_POWER = 459000;
+const FREE_VOTES = 31.66;
+const OUR_VOTING_POWER = 466000;
 
 const VOTE_MARKET_HH_API = 'https://vm.crvusd.fi/bribes?name=hiddehand';
 
@@ -22,7 +23,7 @@ async function main() {
     const votes = totalFreeVotes * ratio;
     const percent = votes / OUR_VOTING_POWER * 100;
 
-    console.log(bribe.proposalOption, percent.toFixed(2));
+    console.log(bribe.poolId, percent.toFixed(2)); // todo change to proposalOption
 
     totalUsedVotes += percent;
   }
@@ -44,7 +45,8 @@ async function getBribesForVotes() {
       apr: b.apr * 100,
       title: b.title,
       rewards: b.totalValue,
-      proposalOption: poolIdToGauges.get(b.poolId) ?? 'Unknown'
+      proposalOption: poolIdToGauges.get(b.poolId.toLowerCase()) ?? 'Unknown',
+      poolId: b.poolId.substring(0, 8)
     }
     return r;
   }).filter(b => b.proposalOption !== 'Unknown')
@@ -52,15 +54,15 @@ async function getBribesForVotes() {
 }
 
 async function getProposalOptions(): Promise<Map<string, string>> {
-  const resp = await axios.get('https://raw.githubusercontent.com/balancer/frontend-v2/develop/src/data/voting-gauges.json')
+  const resp = await getBalancerGaugesData()
 
   const result = new Map<string, string>();
 
-  for (const d of resp.data) {
+  for (const d of resp) {
     if (d.isKilled) continue
 
-    const truncatedAddr = d.address.substring(0, 8)
-    result.set(d.pool.id, `${d.pool.symbol.trim().substring(0, 23)} (${truncatedAddr})`);
+    const truncatedAddr = d.gauge.address.substring(0, 8)
+    result.set(d.id.toLowerCase(), `${d.symbol.trim().substring(0, 23)} (${truncatedAddr})`);
   }
 
   return result;
@@ -99,7 +101,8 @@ type BribeInfoSimple = {
   title: string
   apr: number
   rewards: number
-  proposalOption: string
+  proposalOption: string,
+  poolId: string
 }
 
 main()
