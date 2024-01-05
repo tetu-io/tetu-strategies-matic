@@ -1,10 +1,11 @@
 import axios from "axios";
 import {getBalancerGaugesData} from "./tools/voting-utils";
 
-const FREE_VOTES = 31.66;
-const OUR_VOTING_POWER = 466000;
+const FREE_VOTES = 32.81;
+const OUR_VOTING_POWER = 468000;
 
-const VOTE_MARKET_HH_API = 'https://vm.crvusd.fi/bribes?name=hiddehand';
+// const VOTE_MARKET_HH_API = 'https://vm.crvusd.fi/bribes?name=hiddehand';
+const HH_API = 'https://api.hiddenhand.finance/proposal/balancer';
 
 async function main() {
   const bribesForVote = await getBribesForVotes();
@@ -23,7 +24,7 @@ async function main() {
     const votes = totalFreeVotes * ratio;
     const percent = votes / OUR_VOTING_POWER * 100;
 
-    console.log(bribe.poolId, percent.toFixed(2)); // todo change to proposalOption
+    console.log(bribe.proposalOption, percent.toFixed(2));
 
     totalUsedVotes += percent;
   }
@@ -32,17 +33,17 @@ async function main() {
 }
 
 async function getBribesForVotes() {
-  const resp = await axios.get(VOTE_MARKET_HH_API)
-  const result: BribeInfoHH[] = resp.data
-
+  const resp = await axios.get(HH_API)
+  // console.log(resp);
+  const result: BribeInfoHH2[] = resp.data.data;
   const poolIdToGauges = await getProposalOptions();
 
   return result.filter(b =>
-    b.apr * 100 > 20
+    b.valuePerVote > 0.12
     && b.totalValue > 500
   ).map(b => {
     const r: BribeInfoSimple = {
-      apr: b.apr * 100,
+      valuePerVote: b.valuePerVote,
       title: b.title,
       rewards: b.totalValue,
       proposalOption: poolIdToGauges.get(b.poolId.toLowerCase()) ?? 'Unknown',
@@ -97,9 +98,36 @@ type BribeInfoHH = {
   totalVotes: number
 };
 
+type BribeInfoHH2 = {
+  proposal: string,
+  proposalHash: string,
+  title: string,
+  proposalDeadline: number,
+  totalValue: number
+  maxTotalValue: number
+  voteCount: number
+  valuePerVote: number
+  maxValuePerVote: number
+  bribes: {
+    token: string,
+    symbol: string,
+    decimals: number
+    value: number
+    maxValue: number
+    amount: number
+    maxTokensPerVote: number
+    briber: string,
+    periodIndex: number,
+    chainId: number,
+    tokenImage: string
+  }[],
+  poolId: string,
+};
+
 type BribeInfoSimple = {
   title: string
-  apr: number
+  valuePerVote: number
+  // apr: number
   rewards: number
   proposalOption: string,
   poolId: string

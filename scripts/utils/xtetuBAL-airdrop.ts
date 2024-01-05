@@ -31,9 +31,9 @@ import {TransferEvent} from "../../typechain/contracts/third_party/IERC20Extende
 
 // MAKE SURE YOUR LOCAL SNAPSHOT BLOCK IS ACTUAL!
 // the last snapshot https://snapshot.org/#/tetubal.eth
-const PROPOSAL_ID = '0xd51f6821c1765d594d21d25636e75d0f3b2843fb7c503d7a763fe2c278d03eba';
+const PROPOSAL_ID = '0x45e8c0e3df0c4ae63a133570fa30653b1d86ec2d5da89147b50c77725d0f0a07';
 // USDC amount received from all bribes
-const USDC_AMOUNT = 65240;
+const USDC_AMOUNT = 64723;
 // % of USDC amount that will be transfer as TETU tokens. calc it depending on protocol pools bribes where we used TETU as bribes.
 const TETU_RATIO = Number(1);
 
