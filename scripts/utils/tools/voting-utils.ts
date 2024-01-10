@@ -3,9 +3,43 @@ import fetch from 'node-fetch';
 
 const SNAPSHOT_GRAPHQL_ENDPOINT = 'https://hub.snapshot.org/graphql'
 const PAWNSHOP_GRAPHQL_ENDPOINT = 'https://api.thegraph.com/subgraphs/name/tetu-io/pawnshop-polygon'
+const BALANCER_GRAPHQL_ENDPOINT = 'https://api-v3.balancer.fi/'
 
 // tslint:disable-next-line:no-var-requires
 const {request, gql} = require('graphql-request')
+
+// tslint:disable-next-line:no-any
+export async function getBalancerGaugesData(): Promise<any> {
+  const resp = await request(
+    BALANCER_GRAPHQL_ENDPOINT,
+    gql`
+        query {
+            veBalGetVotingList {
+                id
+                address
+                chain
+                type
+                symbol
+                gauge {
+                    address
+                    isKilled
+                    relativeWeightCap
+                    addedTimestamp
+                    childGaugeAddress
+                }
+                tokens {
+                    address
+                    logoURI
+                    symbol
+                    weight
+                }
+            }
+        }
+    `
+  )
+
+  return resp.veBalGetVotingList
+}
 
 // tslint:disable-next-line:no-any
 export async function getPawnshopData(block: number): Promise<any> {

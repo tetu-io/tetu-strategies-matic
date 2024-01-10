@@ -32,7 +32,7 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
   string public constant override STRATEGY_NAME = "MeshStakingStrategyBase";
   /// @notice Version of the contract
   /// @dev Should be incremented when contract changed
-  string public constant VERSION = "1.1.4";
+  string public constant VERSION = "1.1.5";
   /// @dev 5% buybacks, 95% of vested Mesh should go to the targetRewardVault as rewards (not autocompound)
   uint256 private constant _BUY_BACK_RATIO = 5_00;
   uint256 private constant _MAX_LOCK_PERIOD = 1555200000;
@@ -45,11 +45,11 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
   address private constant _TETU_MESH = address(0xDcB8F34a3ceb48782c9f3F98dF6C12119c8d168a);
   uint256 private constant _TARGET_PPFS = 1e18;
 
-
   // DO NOT ADD ANY VARIABLES MORE! ONLY CONSTANTS!
   /// @dev Deprecated, use slots instead
   mapping(bytes32 => uint) private strategyUintStorage;
   bytes32 internal constant _DUST_SLOT = bytes32(uint(keccak256("mesh.staking.dust")) - 1);
+  bytes32 internal constant _NEW_OWNER_SLOT = bytes32(uint(keccak256("mesh.staking.new_owner")) - 1);
   bytes32 internal constant _TARGET_VAULT_SLOT = bytes32(uint(keccak256("mesh.staking.target.vault")) - 1);
   bytes32 internal constant _REWARDS_TOKENS_SPECIFIC_SLOT = bytes32(uint(keccak256("mesh.staking.rewards.tokens.specific")) - 1);
   // DO NOT ADD ANY VARIABLES MORE! ONLY CONSTANTS!
@@ -77,62 +77,56 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
 
   // ------------------ GOV actions --------------------------
 
-  function claimAirdrop(
-    address claimable,
-    address distributor,
-    address reward,
-    address liquidityToken
-  ) external hardWorkers {
+  modifier onlyNewOwner {
+    require(msg.sender == _NEW_OWNER_SLOT.getAddress(), "not new owner");
+    _;
+  }
+
+  /// @dev End farming and set a new owner of this contract (suppose to be a major holder of tetuMESH)
+  function endFarming(address _newOwner) external restricted {
+    require(_NEW_OWNER_SLOT.getAddress() == address(0), "already set");
+    _setOnPause(true);
+    _NEW_OWNER_SLOT.set(_newOwner);
+  }
+
+  function unlockMESH() external onlyNewOwner {
+    VOTING_MESH.unlockMESH();
+  }
+
+  function unlockMESHUnlimited() external onlyNewOwner {
+    VOTING_MESH.unlockMESHUnlimited();
+  }
+
+  function claimReward() external onlyNewOwner {
+    VOTING_MESH.claimReward();
+  }
+
+  function manualWithdraw(address token, uint amount) external onlyNewOwner {
+    IERC20(token).safeTransfer(_NEW_OWNER_SLOT.getAddress(), amount);
+  }
+
+  function claimAirdrop(address claimable, address distributor) external onlyNewOwner {
     IClaimable(claimable).claim(distributor);
-    address forwarder = IController(_controller()).feeRewardForwarder();
-
-    uint balance = IERC20(reward).balanceOf(address(this));
-    require(balance != 0, "zero claim");
-    IERC20(reward).safeApprove(forwarder, 0);
-    IERC20(reward).safeApprove(forwarder, balance);
-
-    address[] memory route = new address[](2);
-    route[0] = reward;
-    route[1] = liquidityToken;
-
-    _meshSwap(balance, route);
-
-    balance = IERC20(liquidityToken).balanceOf(address(this));
-    require(balance != 0, "zero claim");
-    IERC20(liquidityToken).safeApprove(forwarder, 0);
-    IERC20(liquidityToken).safeApprove(forwarder, balance);
-
-    IFeeRewardForwarder(forwarder).distribute(balance, liquidityToken, targetRewardVault());
   }
 
-  /// @dev Manual withdraw for any emergency purposes
-  function manualWithdraw() external restricted {
-    IERC20(_underlying()).safeTransfer(_vault(), IERC20(_underlying()).balanceOf(address(this)));
-  }
-
-  function addVoting(address exchange, uint256 amount) external restricted {
+  function addVoting(address exchange, uint256 amount) external onlyNewOwner {
     require(exchange != address(0), "Exchange address should be specified");
     POOL_VOTING.addVoting(exchange, amount);
     emit VotingAdded(exchange, amount);
   }
 
-  function removeVoting(address exchange, uint256 amount) external restricted {
+  function removeVoting(address exchange, uint256 amount) external onlyNewOwner {
     require(exchange != address(0), "Exchange address should be specified");
     POOL_VOTING.removeVoting(exchange, amount);
     emit VotingRemoved(exchange, amount);
   }
 
-  function removeAllVoting() external restricted {
+  function removeAllVoting() external onlyNewOwner {
     POOL_VOTING.removeAllVoting();
     emit VotingRemovedAll();
   }
 
-  function setTargetRewardVault(address _targetRewardVault) external restricted {
-    _TARGET_VAULT_SLOT.set(_targetRewardVault);
-    emit TargetRewardVaultUpdated(_targetRewardVault);
-  }
-
-  function updateRewardTokensFromVoting(address[] memory _rewardTokensFromVoting) external restricted {
+  function updateRewardTokensFromVoting(address[] memory _rewardTokensFromVoting) external onlyNewOwner {
     _REWARDS_TOKENS_SPECIFIC_SLOT.setLength(_rewardTokensFromVoting.length);
     for (uint i; i < _rewardTokensFromVoting.length; i++) {
       _REWARDS_TOKENS_SPECIFIC_SLOT.setAt(i, _rewardTokensFromVoting[i]);
@@ -141,23 +135,9 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
 
   // --------------------------------------------
 
-  /// @dev Users assets not invested by the reason of rounding
-  function dust() public view returns (uint) {
-    return _DUST_SLOT.getUint();
-  }
-
   /// @dev Target for all generated profit. Assume to be tetuMESH-MESH-LP vault.
   function targetRewardVault() public view returns (address) {
     return _TARGET_VAULT_SLOT.getAddress();
-  }
-
-  /// @dev Reward that can be received from POOL_VOTING
-  function specificRewardTokens() public view returns (address[] memory) {
-    address[] memory arr = new address[](_REWARDS_TOKENS_SPECIFIC_SLOT.arrayLength());
-    for (uint i; i < arr.length; i++) {
-      arr[i] = _REWARDS_TOKENS_SPECIFIC_SLOT.addressAt(i);
-    }
-    return arr;
   }
 
   /// @dev Returns MESH amount under control
@@ -166,163 +146,14 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
   }
 
   /// @dev In this version rewards are accumulated in this strategy
-  function doHardWork() external onlyNotPausedInvesting override hardWorkers {
-    // rewards claimed on lock action so we can not properly calculate exact reward amount
-    // assume that hardWork action will ba called on each deposit and immediately liquidate rewards
-    VOTING_MESH.claimReward();
-    POOL_VOTING.claimRewardAll();
-
-    liquidateReward();
+  function doHardWork() external override pure {
+    revert("MSS: Stopped");
   }
 
   /// @dev Stake Mesh to vMesh
-  function depositToPool(uint256 amount) internal override {
-    uint256 currentPPFS = ISmartVault(_vault()).getPricePerFullShare();
-    if (currentPPFS > _TARGET_PPFS) {
-      amount = _adjustPPFS(amount);
-    }
-
-    // lock on max period
-    // mesh allows only integer values w/o precision e.g 1 mesh token
-    uint256 roundedAmount = amount / _MESH_PRECISION;
-    _DUST_SLOT.set(amount - roundedAmount * _MESH_PRECISION);
-
-    if (roundedAmount > 0) {
-      IERC20(_underlying()).safeApprove(address(VOTING_MESH), 0);
-      IERC20(_underlying()).safeApprove(address(VOTING_MESH), roundedAmount * _MESH_PRECISION);
-      VOTING_MESH.lockMESH(roundedAmount, _MAX_LOCK_PERIOD);
-      uint256 underlyingBalAfter = IERC20(_underlying()).balanceOf(address(this));
-
-      // assume that all balance should be deposited in the staking
-      // exist balance is dust + claimed rewards
-      uint256 rewardsEarned = underlyingBalAfter - dust();
-      if (rewardsEarned > 0) {
-        _liquidateReward(rewardsEarned);
-      }
-    }
+  function depositToPool(uint256 /*amount*/) internal override pure {
+    revert("MSS: Stopped");
   }
-
-  function _meshSwap(uint256 amount, address[] memory _route) internal {
-    if (amount != 0) {
-      require(IERC20(_route[0]).balanceOf(address(this)) >= amount, "Not enough balance");
-      IERC20(_route[0]).safeApprove(address(MESH_ROUTER), 0);
-      IERC20(_route[0]).safeApprove(address(MESH_ROUTER), amount);
-      MESH_ROUTER.swapExactTokensForTokens(
-        amount,
-        0,
-        _route,
-        address(this),
-        block.timestamp
-      );
-    }
-  }
-
-  function _getMeshReserves() internal view returns (uint256 tetuMeshReserves, uint256 meshReserves){
-    tetuMeshReserves = IERC20(_TETU_MESH).balanceOf(_MESH_TETU_MESH_PAIR_ADDRESS);
-    meshReserves = IERC20(_underlying()).balanceOf(_MESH_TETU_MESH_PAIR_ADDRESS);
-  }
-
-
-  function _liquidateReward(uint256 amount) internal {
-    uint toBuybacks = (amount * _buyBackRatio() / _BUY_BACK_DENOMINATOR);
-    address targetVault = targetRewardVault();
-    uint toVault = amount - toBuybacks;
-    if (toBuybacks != 0) {
-      address[] memory route = new address[](2);
-      route[0] = _underlying();
-      route[1] = _USDC_ADDRESS;
-      _meshSwap(toBuybacks, route);
-      uint usdcAmount = IERC20(_USDC_ADDRESS).balanceOf(address(this));
-      address forwarder = IController(_controller()).feeRewardForwarder();
-      IERC20(_USDC_ADDRESS).safeApprove(forwarder, 0);
-      IERC20(_USDC_ADDRESS).safeApprove(forwarder, toBuybacks);
-      // it will sell USDC tokens to Target Token and distribute it to SmartVault and PS
-      uint targetTokenEarned = IFeeRewardForwarder(forwarder).distribute(usdcAmount, _USDC_ADDRESS, targetVault);
-      if (targetTokenEarned > 0) {
-        IBookkeeper(IController(_controller()).bookkeeper()).registerStrategyEarned(targetTokenEarned);
-      }
-    }
-
-    if (toVault != 0) {
-      _distributeMeshRewards(toVault);
-      toVault = IERC20(_TETU_MESH).balanceOf(address(this));
-      IERC20(_TETU_MESH).safeApprove(targetVault, 0);
-      IERC20(_TETU_MESH).safeApprove(targetVault, toVault);
-      ISmartVault(targetVault).notifyTargetRewardAmount(_TETU_MESH, toVault);
-    }
-  }
-
-  function _distributeMeshRewards(uint256 amount) internal {
-    (uint256 tetuMeshReserve, uint256 meshReserve) = _getMeshReserves();
-    if (tetuMeshReserve > meshReserve) {
-      uint256 toSwapMaxAmount = _computeSellAmount(meshReserve, tetuMeshReserve, _MESH_PRECISION);
-      address[] memory route = new address[](2);
-      route[0] = _underlying();
-      route[1] = _TETU_MESH;
-      uint256 toSwap = Math.min(amount, toSwapMaxAmount);
-      _meshSwap(toSwap, route);
-    }
-    uint256 tokensLeft = IERC20(_underlying()).balanceOf(address(this)) - dust();
-
-    if (tokensLeft > 0) {
-      address underlying = _underlying();
-      // invest MESH tokens to tetuMESHVault
-      IERC20(underlying).safeApprove(_TETU_MESH, 0);
-      IERC20(underlying).safeApprove(_TETU_MESH, tokensLeft);
-      ISmartVault(_TETU_MESH).depositAndInvest(tokensLeft);
-    }
-  }
-
-
-  function _adjustPPFS(uint256 amount) internal returns (uint256) {
-    uint256 vaultTotalSupply = IERC20(_vault()).totalSupply();
-    uint256 _investedUnderlyingBalance = _rewardPoolBalance() + IERC20(_underlying()).balanceOf(address(this));
-    if (_investedUnderlyingBalance > vaultTotalSupply) {
-      uint256 adjustment = _investedUnderlyingBalance - vaultTotalSupply;
-      adjustment = Math.min(adjustment, amount);
-      // we are using it only for migration from autocompound model
-      // however this mechanic help to keep share price at 1 if somebody send tokens to the vault
-      // send to governance for properly manual distribution
-      IERC20(_underlying()).transfer(IController(_controller()).governance(), adjustment);
-      return amount - adjustment;
-    } else {
-      return amount;
-    }
-  }
-
-  function _computeSellAmount(
-    uint256 tokenReserve,
-    uint256 oppositeReserve,
-    uint256 targetPrice
-  ) internal pure returns (uint256) {
-    if (targetPrice == 0) {
-      return 0;
-    }
-    // ignore fees
-    uint base = oppositeReserve * tokenReserve / targetPrice * _MESH_PRECISION;
-    uint256 sqrtBase = _sqrt(base);
-    if (sqrtBase < tokenReserve) {
-      // in this case the price lower than target price, need to sell
-      return 0;
-    }
-    return sqrtBase - tokenReserve;
-  }
-
-  /// @dev Babylonian method (https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method)
-  function _sqrt(uint y) internal pure returns (uint z) {
-    z = 0;
-    if (y > 3) {
-      z = y;
-      uint x = y / 2 + 1;
-      while (x < z) {
-        z = x;
-        x = (y / x + x) / 2;
-      }
-    } else if (y != 0) {
-      z = 1;
-    }
-  }
-
 
   /// @dev Not supported by MESH
   function withdrawAndClaimFromPool(uint256) internal pure override {
@@ -335,28 +166,12 @@ abstract contract MeshStakingStrategyBase is ProxyStrategyBase {
   }
 
   /// @dev Make something useful with rewards
-  function liquidateReward() internal override {
-    _liquidateVotingRewards();
-    uint256 underlyingBalance = IERC20(_underlying()).balanceOf(address(this));
-    uint _dust = dust();
-    require(underlyingBalance >= _dust, "Wrong dust amount");
-    _liquidateReward(underlyingBalance - _dust);
+  function liquidateReward() internal override pure {
+    revert("MSS: Stopped");
   }
 
-  function _liquidateVotingRewards() internal {
-    uint256 i = 0;
-    uint length = _REWARDS_TOKENS_SPECIFIC_SLOT.arrayLength();
-    address asset = _underlying();
-    for (i; i < length; i++) {
-      address rt = _REWARDS_TOKENS_SPECIFIC_SLOT.addressAt(i);
-      uint256 rtBalance = IERC20(rt).balanceOf(address(this));
-      if (rtBalance > 0) {
-        address[] memory route = new address[](2);
-        route[0] = rt;
-        route[1] = asset;
-        _meshSwap(rtBalance, route);
-      }
-    }
+  function _liquidateVotingRewards() internal pure {
+    revert("MSS: Stopped");
   }
 
   /// @dev Not implemented

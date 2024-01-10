@@ -134,7 +134,7 @@ export default {
     outDir: "typechain",
   },
   abiExporter: {
-    path: './artifacts/abi',
+    path: './abi',
     runOnCompile: false,
     spacing: 2,
     pretty: false,

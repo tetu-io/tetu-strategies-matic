@@ -5,19 +5,22 @@ import {config as dotEnvConfig} from "dotenv";
 
 import snapshot from "@snapshot-labs/snapshot.js";
 import {Proposal} from "@snapshot-labs/snapshot.js/src/sign/types";
+import {getBalancerGaugesData} from "./tools/voting-utils";
 
 // !!!!!!!!!!!!!!!!!!!!!!!! CHANGE ME !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-const POLYGON_SNAPSHOT_BLOCK_NUMBER = 49033177; // use the-best-block-for-snapshot.ts script
-const START_UNIX = Math.floor((new Date('Oct 30 2023 19:00:00 UTC')).getTime() / 1000)
-const END_UNIX = Math.floor((new Date('Oct 31 2023 09:00:00 UTC')).getTime() / 1000)
-const TITLE = 'BRV-032: Gauge Weights for 02th November - 15th November 2023'
+const POLYGON_SNAPSHOT_BLOCK_NUMBER = 51571176; // use the-best-block-for-snapshot.ts script
+const START_UNIX = Math.floor(Date.now() / 1000)
+const END_UNIX = Math.floor((new Date('Jan 08 2024 20:00:00 UTC')).getTime() / 1000)
+const TITLE = 'BRV-037: Gauge Weights for 11th January - 24th January 2024'
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+// new tetubal gauge https://etherscan.io/address/0xF6A814eD60653Cb0e36DA247B01E6309318328d4#code
 
 // These gauges will be killed shortly:
 // https://forum.balancer.fi/t/bip-262-l2-gauge-migration/4661
 // (addresses are lowercased)
 const IGNORED_GAUGES = [
+  '0xd1177e2157a7fd6a0484b79f8e50e8a9305f8063', // old tetuBAL pool
   '0xc02b1b15888277b54fb4903ef3dedf4881a8c73a',
   '0x78f50cf01a2fd78f04da1d9acf14a51487ec0347',
   '0xec6ba3d9d9045997552155599e6cc89aa08ffd76',
@@ -123,19 +126,19 @@ async function main() {
 }
 
 async function getGaugeChoices(): Promise<string[]> {
-  const resp = await axios.get('https://raw.githubusercontent.com/balancer/frontend-v2/develop/src/data/voting-gauges.json')
+  const resp = await getBalancerGaugesData();
 
   const gaugeChoices = new Map<string, string>();
 
-  for (const d of resp.data) {
+  for (const d of resp) {
     if (d.isKilled) continue
-    if (IGNORED_GAUGES.includes(d.address.toLowerCase())) continue
+    if (IGNORED_GAUGES.includes(d.gauge.address.toLowerCase())) continue
 
-    const truncatedAddr = d.address.substring(0, 8)
+    const truncatedAddr = d.gauge.address.substring(0, 8)
 
     // max length: 32 chars
     // gaugeChoices[d.address.toLowerCase()] = `${d.pool.symbol.trim().substring(0, 23)} (${truncatedAddr})`
-    gaugeChoices.set(d.address.toLowerCase(), `${d.pool.symbol.trim().substring(0, 23)} (${truncatedAddr})`);
+    gaugeChoices.set(d.address.toLowerCase(), `${d.symbol.trim().substring(0, 23)} (${truncatedAddr})`);
   }
 
   return Array.from(gaugeChoices.values()).sort();

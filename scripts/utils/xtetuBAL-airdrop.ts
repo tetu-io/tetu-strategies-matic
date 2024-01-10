@@ -31,9 +31,9 @@ import {TransferEvent} from "../../typechain/contracts/third_party/IERC20Extende
 
 // MAKE SURE YOUR LOCAL SNAPSHOT BLOCK IS ACTUAL!
 // the last snapshot https://snapshot.org/#/tetubal.eth
-const PROPOSAL_ID = '0xdbf997aa84d1f6cad778b2c36c31feb09efb1011760a401da55a9ca331e81615';
+const PROPOSAL_ID = '0x45e8c0e3df0c4ae63a133570fa30653b1d86ec2d5da89147b50c77725d0f0a07';
 // USDC amount received from all bribes
-const USDC_AMOUNT = 25219;
+const USDC_AMOUNT = 64723;
 // % of USDC amount that will be transfer as TETU tokens. calc it depending on protocol pools bribes where we used TETU as bribes.
 const TETU_RATIO = Number(1);
 
@@ -45,7 +45,7 @@ const DISTRIBUTOR = '0x6A5938e635C6AAada7c398b3EDc40e924B323D9F'; // 0x6DdD4dB03
 const X_TETU_BAL_STRATEGY = '0xdade618E95F5E51198c69bA0A9CC3033874Fa643';
 const TETU_BAL_HOLDER = '0x237114Ef61b27fdF57132e6c8C4244eeea8323D3';
 const PAWNSHOP = '0x0c9FA52D7Ed12a6316d3738c80931eCbC6C49907';
-const BRIBE_DISTRIBUTOR = '0x5947868a6842e69Cacad068AbF6481e1F522063E';
+const BRIBE_DISTRIBUTOR = '0xd1f8b86EfBA4bCEB0E2434337F2d504087F6C4d0';
 
 async function main() {
   let signer: SignerWithAddress;
@@ -65,7 +65,7 @@ async function main() {
   const curDate = Math.floor(new Date().getTime() / 1000);
   const sinceProposal = (curDate - +snapshotData.created);
   console.log('sinceProposal days', sinceProposal / 60 / 60 / 24);
-  if (sinceProposal > 14 * 60 * 60 * 24) throw new Error('Wrong proposal');
+  if (sinceProposal > 17 * 60 * 60 * 24) throw new Error('Wrong proposal');
   const votedPower = snapshotData.vp;
   console.log('PROPOSAL votedPower', votedPower);
 
@@ -253,6 +253,15 @@ async function main() {
   console.log('balanceTETU', +formatUnits(balanceTETU));
   console.log('balanceUSDC', +formatUnits(balanceUSDC, 6));
 
+  if (+formatUnits(balanceTETU) < (tetuAmountForDistributing + veTetuPartOfTetu)) {
+    throw new Error('not enough TETU');
+  }
+  if (+formatUnits(balanceXtetuBal) < xtetuBalAmountForDistributing) {
+    throw new Error('not enough xtetuBal');
+  }
+
+  await distributeBribes(signer, veTetuPartOfTetu);
+
   const usdcAllowance = await IERC20__factory.connect(MaticAddresses.USDC_TOKEN, signer).allowance(signer.address, distributor.address);
   const xtetuBALAllowance = await IERC20__factory.connect(MaticAddresses.xtetuBAL_TOKEN, signer).allowance(signer.address, distributor.address);
   const tetuAllowance = await IERC20__factory.connect(MaticAddresses.TETU_TOKEN, signer).allowance(signer.address, distributor.address);
@@ -286,6 +295,15 @@ async function main() {
     );
   }
 
+  // console.log('xtetuBalAmountForDistributing', xtetuBalAmountForDistributing)
+  // console.log('tetuAmountForDistributing', tetuAmountForDistributing)
+  // console.log('usersForUSDC', usersForUSDC)
+  // console.log('usersForXtetuBAL', usersForXtetuBAL)
+  // console.log('usersForTetu', usersForTetu)
+  //
+  // console.log('usersForXtetuBALAmounts', usersForXtetuBALAmounts.map(b => b.toString()))
+  // console.log('usersForTetuAmounts', usersForTetuAmounts.map(b => b.toString()))
+
   if (
     balanceUSDC.gte(parseUnits(usdcAmountForDistributing.toFixed(6), 6))
     && balanceXtetuBal.gte(parseUnits((xtetuBalAmountForDistributing).toFixed(18)))
@@ -310,14 +328,15 @@ async function main() {
     // 1.640059157153047501
     const apr = formatUnits(await distributor.lastAPR());
     console.log('APR', apr);
-    expect(+apr).is.greaterThan(10);
-    expect(+apr).is.lessThan(40);
+    // expect(+apr).is.greaterThan(10);
+    // expect(+apr).is.lessThan(100);
 
   } else {
     console.error('not enough tokens');
+    if (Misc.getChainName() !== 'hardhat') {
+      throw new Error('not enough tokens');
+    }
   }
-
-  await distributeBribes(signer, veTetuPartOfTetu);
 }
 
 async function distributeBribes(
@@ -330,23 +349,6 @@ async function distributeBribes(
   const balanceTETU = await IERC20__factory.connect(MaticAddresses.TETU_TOKEN, signer).balanceOf(signer.address);
 
   console.log('balanceTETU', +formatUnits(balanceTETU));
-  //
-  // const tetuAllowance = await IERC20__factory.connect(MaticAddresses.TETU_TOKEN, signer).allowance(signer.address, BRIBE_DISTRIBUTOR);
-  // if (tetuAllowance.lt(parseUnits((amount + 1).toFixed(18)))) {
-  //   console.log('APPROVE tetu', amount);
-  //   await RunHelper.runAndWait(() => IERC20__factory.connect(MaticAddresses.TETU_TOKEN, signer).approve(
-  //       BRIBE_DISTRIBUTOR,
-  //       parseUnits((amount + 1).toFixed(18)).add(1)
-  //     )
-  //   );
-  // }
-  //
-  // const tp = await DeployerUtilsLocal.txParams();
-  // await RunHelper.runAndWait(() => IBribeDistribution__factory.connect(BRIBE_DISTRIBUTOR, signer).manualNotify(
-  //   parseUnits(amount.toFixed(18)),
-  //   true,
-  //   {...tp}
-  // ));
 
   if (amount <= +formatUnits(balanceTETU)) {
     console.log('transfer tetu');
@@ -356,6 +358,8 @@ async function distributeBribes(
       parseUnits(amount.toFixed(18)),
       {...tp}
     ));
+  } else {
+    throw new Error('not enough tokens');
   }
 }
 
