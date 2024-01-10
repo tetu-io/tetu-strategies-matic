@@ -1,8 +1,10 @@
 import axios from "axios";
 import {getBalancerGaugesData} from "./tools/voting-utils";
 
-const FREE_VOTES = 32.81;
-const OUR_VOTING_POWER = 468000;
+const FREE_VOTES = 19.1;
+const OUR_VOTING_POWER = 172000;
+const MIN_VALUE_PER_VOTE = 0.2;
+const MIN_TOTAL_VALUE = 1000;
 
 // const VOTE_MARKET_HH_API = 'https://vm.crvusd.fi/bribes?name=hiddehand';
 const HH_API = 'https://api.hiddenhand.finance/proposal/balancer';
@@ -39,8 +41,8 @@ async function getBribesForVotes() {
   const poolIdToGauges = await getProposalOptions();
 
   return result.filter(b =>
-    b.valuePerVote > 0.12
-    && b.totalValue > 500
+    b.valuePerVote > MIN_VALUE_PER_VOTE
+    && b.totalValue > MIN_TOTAL_VALUE
   ).map(b => {
     const r: BribeInfoSimple = {
       valuePerVote: b.valuePerVote,
