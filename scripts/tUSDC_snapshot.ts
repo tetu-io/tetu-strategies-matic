@@ -3,7 +3,13 @@ import {BigNumber} from "ethers";
 import {formatUnits} from "ethers/lib/utils";
 import {writeFileSync} from "fs";
 import {Web3Utils} from "./utils/tools/Web3Utils";
-import {ERC20__factory} from "../typechain";
+import {
+  ERC20__factory,
+  ERC721__factory,
+  IHypervisor__factory,
+  IPositionManager__factory,
+  IUni3Pool__factory
+} from "../typechain";
 import {Misc} from "./utils/tools/Misc";
 
 const ALL_HOLDERS = new Map<string, string>([
@@ -257,6 +263,94 @@ const ALL_HOLDERS = new Map<string, string>([
 
 ])
 
+const HYPERVISOR_BALANCES = new Map<string, string>([
+  ['0x71E7D05bE74fF748c45402c06A941c822d756dc5'.toLowerCase(), '0.019999973561760391'],
+  ['0xE6Fb2B218385FF1FFbA914775A35c1A121446CEF'.toLowerCase(), '0.203519260764204221'],
+  ['0x4b7E5cd5654b8173F7BC393B138A89DCcf85Bcf7'.toLowerCase(), '5207.639428159596766939'],
+  ['0xeE28f0e5740ece71ea63C6aFbd82f725243974A3'.toLowerCase(), '391.423545387666906659'],
+  ['0x6c2693F5a936f37eD03CfA8465bF2D8BEFf19A0f'.toLowerCase(), '359.481945755798647443'],
+  ['0x29991B99815c3A97194445B19145B4b622BFFD28'.toLowerCase(), '2.93160165287558781'],
+  ['0x947ebecd725e07baC225363F328De957AA5819b3'.toLowerCase(), '1000.337461850899595896'],
+  ['0xF9c97Ba6b1348FA9d07777dB6C2e9A954360E238'.toLowerCase(), '517.150001781172680193'],
+  ['0x47D574e85DF71a059Ec442cAd8DeE2224F58b0D8'.toLowerCase(), '54.044327738510592467'],
+  ['0xC9e847261Ae6F2776732D0E7EADD0E3CE212b454'.toLowerCase(), '403.377584263362266423'],
+  ['0x7617452156F474836604C1a79c79c0627be5fE74'.toLowerCase(), '130.314007099471246386'],
+])
+
+const RETRO_POOL_HOLDERS = new Map<string, number[]>([
+  ['0x38cc8e2bfe87ba71a0b4c893d5a94fbdcbd5e5ec'.toLowerCase(), [863, 1379, 1380, 1412]],
+  ['0xc10ced99f11b84963aa20c30499f1794c1526725'.toLowerCase(), [1604, 1653, 1654, 1658, 1708, 1985, 2357, 2973]],
+  ['0x97e388e8819f6b90ceafc36edf51fc12f3e9108f'.toLowerCase(), [1608, 1704]],
+  ['0xf5a4d5d1921d0114b456982d077f8d0987255188'.toLowerCase(), [1623, 1707, 1715, 1718, 1856, 1898]],
+  ['0x17b1d9a1a8f0363e04bccdf2839cb107b2297774'.toLowerCase(), [1637, 4115, 5897]],
+  ['0xb9c0aba138b98656ffea4309bfe2881b0b7c1d96'.toLowerCase(), [1649]],
+  ['0xf712ab8c4505eb4b36a2ff9fa746470be81e6538'.toLowerCase(), [1650, 1656, 1717, 1737, 1739, 1869, 1870, 2180, 3456, 4446]],
+  ['0x41bc7d0687e6cea57fa26da78379dfdc5627c56d'.toLowerCase(), [1657, 1872, 3217, 3347, 3349, 3369, 3370, 3401, 3402]],
+  ['0x193db18a5ef9a0320b7374c1fe8af976235f3211'.toLowerCase(), [1659, 1661, 3201, 3412, 3413, 4260, 5922]],
+  ['0xdfb4ddd69b7c0eefcb4085439632cf6d17d55a6b'.toLowerCase(), [1667]],
+  ['0x92b2bd9daf8ee1c68bd9df29e186a145684e6f3f'.toLowerCase(), [1675, 1684, 1701, 1734, 4130, 4131]],
+  ['0xdeaf42d4a2cc1dc14505ce4e4f59629aec253d75'.toLowerCase(), [1699, 1722]],
+  ['0x17c8afd739a175eacf8af5531671b222102b8083'.toLowerCase(), [1716, 1774]],
+  ['0x51c1ce246708b2a198f7e7e9dc3d154ee4cd9572'.toLowerCase(), [1735, 1743, 1864, 2296, 3212, 3229, 3365, 4110, 5159, 5423, 5459, 6403]],
+  ['0x29f82d09c2afd12f3c10ee49cd713331f4a7228e'.toLowerCase(), [1763, 5871]],
+  ['0x0524f2b8765ee3a1a033311ddc9e2dcaad34b8c3'.toLowerCase(), [1770]],
+  ['0xf99c8873b972b4192e789f55ab954188d0d9a133'.toLowerCase(), [1793, 2343, 3271, 3421, 3422, 3606, 4218, 5190]],
+  ['0x9ce6e6b60c894d1df9bc3d9d6cc969b79fb176b7'.toLowerCase(), [1851, 1852, 1853, 2045, 2310, 2591, 3134, 3168]],
+  ['0x96669b041f54338edfc62f8c8de59e6c743bd536'.toLowerCase(), [1861]],
+  ['0xf2fc4f6c2ba2e81e4a81dd7366b790d276fdd007'.toLowerCase(), [1865, 3257, 3258]],
+  ['0xa5ef9af3729a15479a4ee7b669a20db1a65bfa40'.toLowerCase(), [1866]],
+  ['0x20d61737f972eecb0af5f0a85ab358cd083dd56a'.toLowerCase(), [1897, 2096, 2378, 2681, 3211, 3461, 4441, 4539]],
+  ['0xf60de76791c2f09995df52aa1c6e2e7dcf1e75d7'.toLowerCase(), [1934, 4124, 4125, 4129, 4132, 4181, 4272, 4276]],
+  ['0x07c3830075ae563eb66204a72ea118b00efdd58e'.toLowerCase(), [1996, 1999, 3398, 4163, 4164, 4165, 4248, 4249]],
+  ['0x0d374583fb42ac6463b83371c620707535d45633'.toLowerCase(), [2129, 3384]],
+  ['0x7754d8b057cc1d2d857d897461dac6c3235b4aae'.toLowerCase(), [2725]],
+  ['0xcf1d3ac7ee568dbfcad52a05c5ff31fa4ba0fd23'.toLowerCase(), [3286, 3288]],
+  ['0xfdbbfb0fe2986672af97eca0e797d76a0bbf35c9'.toLowerCase(), [3311, 3392, 3393, 3582, 3588, 4169]],
+  ['0x021bee9a6ec446d561b7e341b73ba8599f70a1cf'.toLowerCase(), [3380, 3381]],
+  ['0xe174c7b1e5081f10b7bca87858073294f28e25cf'.toLowerCase(), [3391]],
+  ['0x52076094b0f7b982838518d8b578aeee9176ef60'.toLowerCase(), [3394, 3396]],
+  ['0x5e309305799fc40a58d2a0214107fd6c5ac36bee'.toLowerCase(), [3399, 3400, 3614]],
+  ['0x06d4269fbbfd4774f7b1cbdd9b132d5e0fb52f27'.toLowerCase(), [3419]],
+  ['0x09db89c32d01606ff660d2a72f683526b422bb77'.toLowerCase(), [3428]],
+  ['0x63712c2f30f48ff20beb3837578071b70cea9f07'.toLowerCase(), [3444]],
+  ['0x4ee0a98041069b745855eef05cfa0046dfcbbd4d'.toLowerCase(), [3447, 3552]],
+  ['0xbee2d469aacb46251ae33cca91f482e26c971dff'.toLowerCase(), [3511]],
+  ['0x2184d88114f300050841b82d7c344049278d5d82'.toLowerCase(), [3699, 4148, 4187, 4246, 5297]],
+  ['0x6c2693f5a936f37ed03cfa8465bf2d8beff19a0f'.toLowerCase(), [3703, 3707, 4101]],
+  ['0xa304816c9c78505714f24fc13222fe07ce0cc711'.toLowerCase(), [3883]],
+  ['0xf80cacd82b00da8c669e9f7bbbd80e320a40c8fb'.toLowerCase(), [4105, 4106, 4191]],
+  ['0xa049afef83d112f9b9ac4e9d743c50ad08ebee01'.toLowerCase(), [4114]],
+  ['0x8d82d851e220c5e20ed85340e8e290018c6e59f7'.toLowerCase(), [4119]],
+  ['0xe60dabff3e7fa76ed649f6f78c51d6a77729c0b2'.toLowerCase(), [4126, 4134, 4135, 5779, 6034, 6040, 6051]],
+  ['0x74e142df816c376bd35d7ae02914fc8168fcd45f'.toLowerCase(), [4141]],
+  ['0x13108ab5c6eb7efdcd7ba6f8cc55d265eae6176f'.toLowerCase(), [4142, 4185]],
+  ['0xf36f1d40b11bba720391cbc987e0eef03107242f'.toLowerCase(), [4145, 4179, 4208, 4474]],
+  ['0xafe6b977fcf3c634cdcd2b324b799b31fb69d708'.toLowerCase(), [4158, 4159, 4160, 4161]],
+  ['0xc467bb07d0509494e413b62f4f2797b6826f4ed8'.toLowerCase(), [4190, 5601]],
+  ['0xd90d5bf29e01ed2f45125cb99455c290be0dfbed'.toLowerCase(), [4199]],
+  ['0x68a0187089e2d1addee1ff35c4b0a7b5988931ea'.toLowerCase(), [4255, 4380, 4382]],
+  ['0xcbdc452727a417176e92046061fa1a380d20aae3'.toLowerCase(), [4311]],
+  ['0x4229f5429301ab35a079ca91db550d40fc43eb19'.toLowerCase(), [4821]],
+  ['0xece1477d3c350a42486d2dc802f6243e99409a41'.toLowerCase(), [5160]],
+  ['0x2a724be1b63caec1c3ef95834fdd443c3347ee1d'.toLowerCase(), [5235]],
+  ['0x14c49fb42d4aca62f905e3fd4eecba1932f58c90'.toLowerCase(), [5339]],
+  ['0x14ae683317d9d27957f56c78e9308e7d54bc3b36'.toLowerCase(), [5401]],
+  ['0x3c948a11c4d5462ace49a505ece7112531b16725'.toLowerCase(), [5862]],
+  ['0x0bd27fac898a59680b9dc92bb7378df610825e8d'.toLowerCase(), [5866]],
+  ['0x44a03946c8e690c6ecdb254b3744690a42e1ed17'.toLowerCase(), [5874]],
+  ['0x16ef04260ca959c75bd8d4247874517c9cf74d12'.toLowerCase(), [5904]],
+  ['0x72c5cd18a51d53db34072546a7a38a4f73600d92'.toLowerCase(), [5932]],
+  ['0x7b3fc8884f69a30bea47013961e06c54fc003ad3'.toLowerCase(), [5984]],
+  ['0xc5105f63c5a051c2a900b2893a164cd2f24bff26'.toLowerCase(), [6161, 6164, 6165]],
+  ['0x643bb72735e4912bd1a194a1c1517a5dcedbbfa8'.toLowerCase(), [6193]],
+  ['0x93d8ea87e2904828d5a5420dcc13d04fbc0473c3'.toLowerCase(), [6270]],
+  ['0x47d574e85df71a059ec442cad8dee2224f58b0d8'.toLowerCase(), [6342]],
+  ['0x000000000000000000000000000000000000dead'.toLowerCase(), [5225]],
+  ['0xe5a99377a4616ae1912bfdfe5840fcf461ac6b7d'.toLowerCase(), [6932]],
+  ['0x3db50485076d2bbd81a0c33cf43fdb7c1ec05ab1'.toLowerCase(), [3390]],
+
+])
+
 const RETRO_UNI_POOL_POSITIONS_DATA = {
   "positions": [
     {
@@ -294,9 +388,21 @@ const RETRO_UNI_POOL_POSITIONS_DATA = {
     {
       "owner": "0x51c1ce246708b2a198f7e7e9dc3d154ee4cd9572",
       "liquidity": "133230336468083080"
+    },
+    {
+      "owner": "0x58d9c906D69Ef796271706017D317E84cB8127A8",
+      "liquidity": "701211147978697787"
     }
   ]
 }
+
+const GAMMA_POSITIONS_TICKS = [
+  [-886800, 886800,],
+  [-600, 600,],
+  [275800, 276200,],
+  [276600, 276800,],
+  [276400, 276600,],
+]
 
 // token0 = tUSDC
 const RETRO_UNI_POOL_DATA = {
@@ -308,6 +414,7 @@ const RETRO_UNI_POOL_DATA = {
 const START_BLOCK = 36870060;
 const END_BLOCK = 50269407;
 const tUSDC = '0x0D397F4515007AE4822703b74b9922508837A04E';
+const CASH = '0x5D066D022EDE10eFa2717eD3D79f22F949F8C175';
 
 const BIG_ADDR_NAMES = new Map<string, string>([
   ['0x1a8042DeD3d7B02929a1BEC785a5325B2E89EAd8'.toLowerCase(), 'GnosisSafeProxy'],
@@ -345,10 +452,327 @@ const KYBER_USDC_DAI_ASSETS = 42483.23066;
 const KYBER_USDC_DAI_TO_COMPENSATE = 41578.53;
 const KYBER_USDC_DAI_RATIO = KYBER_USDC_DAI_ASSETS / TUSDC_TOTAL_ASSETS;
 
+const RETRO_UNI3_NFT = '0x8aac493fd8c78536ef193882aeffeaa3e0b8b5c5';
+const X_T_USDC_CASH10 = '0x58d9c906D69Ef796271706017D317E84cB8127A8';
+const RETRO_UNI_POOL = '0x4FcdB2DCc4Ce156c723aD541dba8B39d47284FC5';
+
+async function prepareRetroPool(tvl: number) {
+  // const totalLiq = BigNumber.from(RETRO_UNI_POOL_DATA.liquidity);
+  let totalLiq = 0;
+
+  const result = new Map<string, string>();
+  for (const pos of RETRO_UNI_POOL_POSITIONS_DATA.positions) {
+    totalLiq += +(pos.liquidity);
+  }
+  for (const pos of RETRO_UNI_POOL_POSITIONS_DATA.positions) {
+
+
+    const liq = +(pos.liquidity);
+    const percent = liq / totalLiq;
+    const sharesTUSDCPart = tvl * percent;
+    if (pos.owner.toLowerCase() === X_T_USDC_CASH10.toLowerCase()) {
+      const hPoses = await collectHypervisorAllocs(sharesTUSDCPart);
+
+      for (const [address, amount] of hPoses) {
+        result.set(address.toLowerCase(), amount.toString());
+        // console.log('Hypervisor', address, amount.toString());
+      }
+
+    } else {
+      // console.log('RETRO', pos.owner, percent.toFixed(4), usdcPart);
+      result.set(pos.owner.toLowerCase(), sharesTUSDCPart.toString());
+    }
+  }
+
+  return result;
+}
+
+async function collectAllERC20Holders(token: string) {
+  const symbol = await ERC20__factory.connect(token, ethers.provider).symbol();
+  console.log('start collection for ', symbol);
+
+  const event = ERC20__factory.createInterface().getEvent('Transfer')
+  const topic = ERC20__factory.createInterface().getEventTopic('Transfer')
+
+  const decimals = await ERC20__factory.connect(token, ethers.provider).decimals();
+
+  const logs = await Web3Utils.parseLogs([token], [topic], START_BLOCK, END_BLOCK);
+
+  const holders = new Map<string, BigNumber>();
+
+  for (const log of logs) {
+
+    const transfer = ERC20__factory.createInterface().decodeEventLog(event, log.data, log.topics)
+
+    // if the transfer is to the holder, add it to their balance; if the transfer is from the holder, subtract it
+    if (holders.has(transfer.to)) {
+      holders.set(transfer.to, (holders.get(transfer.to) ?? BigNumber.from(0)).add(transfer.value));
+    } else {
+      holders.set(transfer.to, transfer.value);
+    }
+
+    if (holders.has(transfer.from)) {
+      holders.set(transfer.from, (holders.get(transfer.from) ?? BigNumber.from(0)).sub(transfer.value));
+    } else {
+      holders.set(transfer.from, BigNumber.from(0));
+    }
+
+    console.log(`Holder: ${transfer.from}: ${formatUnits((holders.get(transfer.from) ?? BigNumber.from(0)).toString(), decimals)}`);
+    console.log(`Holder: ${transfer.to}: ${formatUnits((holders.get(transfer.to) ?? BigNumber.from(0)).toString(), decimals)}`);
+
+    // const block = await ethers.provider.getBlock(log.blockNumber)
+    console.log('block', log.blockNumber,
+      `Holder from: ${transfer.from}: ${formatUnits((holders.get(transfer.from) ?? BigNumber.from(0)).toString(), decimals)}`,
+      `Holder to: ${transfer.to}: ${formatUnits((holders.get(transfer.to) ?? BigNumber.from(0)).toString(), decimals)}`
+    );
+    // if (block.timestamp > END_TIME) {
+    //   break;
+    // }
+  }
+
+  let out = ''
+  console.log(symbol, 'Holders:');
+  let sum = 0
+
+  const allHolders = new Map<string, string>();
+
+  for (const [holder, balance] of holders) {
+    if (balance.isZero() || holder.toLowerCase() === Misc.ZERO_ADDRESS) {
+      continue;
+    }
+
+    const realBalance = await ERC20__factory.connect(token, ethers.provider).balanceOf(holder, {blockTag: END_BLOCK});
+
+    if (!realBalance.eq(balance)) {
+      console.log('Real balance', holder, formatUnits(realBalance, decimals), formatUnits(balance, decimals));
+    }
+
+    sum += (+formatUnits(balance, decimals));
+
+
+    // console.log(holder, formatUnits(balance.toString()));
+
+    out += `${holder} ${formatUnits(balance.toString(), decimals)}\n`
+    allHolders.set(holder.toLowerCase(), formatUnits(balance.toString(), decimals));
+  }
+
+
+  console.log(symbol, 'Total:', sum);
+
+  writeFileSync(`./tmp/${symbol}_holders.txt`, out, 'utf8');
+
+  return allHolders;
+}
+
+async function collectHypervisorAllocs(shares: number) {
+  const hypervisor = IHypervisor__factory.connect(X_T_USDC_CASH10, ethers.provider);
+
+  const hPos = await hypervisor.getTotalAmounts({blockTag: END_BLOCK})
+
+  // console.log('hPos tUSDC', formatUnits(hPos[0], 6));
+  // console.log('hPos CACH', formatUnits(hPos[1], 18));
+
+  let totalHBal = 0;
+  for (const [address, amount] of HYPERVISOR_BALANCES) {
+    totalHBal += Number(amount);
+  }
+
+
+  const hTUSDCBal = +formatUnits(hPos[0], 6);
+  const hRatios = new Map<string, number>();
+  for (const [address, amount] of HYPERVISOR_BALANCES) {
+    // console.log('hPos', address, amount, Number(amount) / totalHBal, Number(amount) / totalHBal * hTUSDCBal);
+    hRatios.set(address, Number(amount) / totalHBal);
+  }
+
+  // const allLiq = +formatUnits((await hypervisor.getBasePosition({blockTag: END_BLOCK})).liquidity);
+  const allocs = new Map<string, number>();
+  for (const [address, ratio] of hRatios) {
+    allocs.set(address, ratio * shares);
+  }
+
+  return allocs;
+}
+
+async function collectHypervisorLiq() {
+  const hypervisor = IHypervisor__factory.connect(X_T_USDC_CASH10, ethers.provider);
+
+  const base = await hypervisor.getBasePosition({blockTag: END_BLOCK});
+
+  console.log('base', base.liquidity.toString(), base.amount0.toString(), base.amount1.toString());
+  return base.liquidity;
+}
+
+async function collectNFTHolders(nft: string, check: (tokenId: number, block: number) => Promise<boolean>) {
+  const symbol = await ERC721__factory.connect(nft, ethers.provider).symbol();
+  console.log('start collection for ', symbol);
+
+  const event = ERC721__factory.createInterface().getEvent('Transfer')
+  const topic = ERC721__factory.createInterface().getEventTopic('Transfer')
+
+  const logs = await Web3Utils.parseLogs([nft], [topic], START_BLOCK, END_BLOCK);
+
+  const holders = new Map<string, number[]>();
+
+  for (const log of logs) {
+
+    const transfer = ERC721__factory.createInterface().decodeEventLog(event, log.data, log.topics)
+
+    const from = transfer.from.toLowerCase();
+    const to = transfer.to.toLowerCase();
+    const tokenId = Number(transfer.tokenId.toString());
+
+    if (!(await check(tokenId, log.blockNumber))) {
+      continue;
+    }
+
+    const arrTo = holders.get(to) ?? [];
+    arrTo.push(tokenId);
+    holders.set(to, arrTo);
+
+    const arrFrom = holders.get(from) ?? [];
+    if (arrFrom.indexOf(tokenId) !== -1) {
+      arrFrom.splice(arrFrom.indexOf(tokenId), 1);
+    }
+    holders.set(from, arrFrom);
+  }
+
+  let out = ''
+  console.log(symbol, 'Holders:');
+
+  const allHolders = new Map<string, number[]>();
+
+  for (const [holder, balance] of holders) {
+    if (balance.length === 0 || holder.toLowerCase() === Misc.ZERO_ADDRESS) {
+      continue;
+    }
+
+    const realBalance = await ERC20__factory.connect(nft, ethers.provider).balanceOf(holder, {blockTag: END_BLOCK});
+
+    if (!realBalance.eq(balance.length)) {
+      console.log('Real balance', holder, realBalance, balance.length, balance);
+    }
+
+    // console.log(holder, formatUnits(balance.toString()));
+
+    out += `${holder} ${balance.toString()}\n`
+    allHolders.set(holder.toLowerCase(), balance);
+  }
+
+  writeFileSync(`./tmp/${symbol}_holders.txt`, out, 'utf8');
+
+  return allHolders;
+}
+
+async function checkUni3Nft(posManager: string, tokenId: number, block: number, expectedToken: string) {
+  try {
+    console.log('check id', tokenId);
+    const pos = await IPositionManager__factory.connect(posManager, ethers.provider).positions(tokenId, {blockTag: block});
+
+    return pos.token0.toLowerCase() === expectedToken.toLowerCase() || pos.token1.toLowerCase() === expectedToken.toLowerCase();
+  } catch (e) {
+    console.error('can not get pos info', tokenId);
+    return true;
+  }
+}
+
+async function collectRetroPoolBalances(poolBalance: number) {
+
+  const allLiq = new Map<string, BigNumber>();
+  let liqSum = BigNumber.from(0);
+  for (const [address, tokenIds] of RETRO_POOL_HOLDERS) {
+    for (const tokenId of tokenIds) {
+      const pos = await IPositionManager__factory.connect(RETRO_UNI3_NFT, ethers.provider).positions(tokenId, {blockTag: END_BLOCK});
+      // console.log('RETRO pos', tokenId, pos.token0, pos.token1, pos.fee, pos.liquidity.toString());
+
+      if (pos.token0.toLowerCase() === tUSDC.toLowerCase() && pos.token1.toLowerCase() === CASH.toLowerCase() && pos.fee === 10000) {
+        const amount = allLiq.get(address.toLowerCase()) ?? BigNumber.from(0);
+        allLiq.set(address.toLowerCase(), amount.add(pos.liquidity));
+        liqSum = liqSum.add(pos.liquidity)
+      }
+    }
+  }
+
+  const realLiq = await IUni3Pool__factory.connect(RETRO_UNI_POOL, ethers.provider).liquidity({blockTag: END_BLOCK});
+  console.log('RETRO realLiq', realLiq.toString(), liqSum.toString(), 'diff:', realLiq.sub(liqSum).toString());
+  if (!realLiq.eq(liqSum)) {
+    throw new Error('Wrong liq sum');
+  }
+
+  const holders = new Map<string, string>();
+  let sum = 0;
+  for (const [address, amount] of allLiq) {
+    const val = Number(formatUnits(amount, 18)) / Number(formatUnits(liqSum, 18)) * poolBalance;
+    if (val === 0) {
+      continue;
+    }
+    sum += val;
+    holders.set(address, val.toString());
+    console.log('RETRO amount', address, val);
+  }
+  console.log('RETRO sum', sum);
+
+  return holders;
+}
+
+async function collectUni3PoolPositionsLiq(pool: string) {
+  console.log('start collection for ', pool);
+
+  const event = IUni3Pool__factory.createInterface().getEvent('Mint')
+  const topic = IUni3Pool__factory.createInterface().getEventTopic('Mint')
+
+
+  const logs = await Web3Utils.parseLogs([pool], [topic], 46295394, END_BLOCK);
+
+  const pos = new Map<string, number[][]>();
+
+  for (const log of logs) {
+
+    const mint = IUni3Pool__factory.createInterface().decodeEventLog(event, log.data, log.topics)
+
+    const owner = mint.owner.toLowerCase();
+    const tickLower = Number(mint.tickLower.toString())
+    const tickUpper = Number(mint.tickUpper.toString())
+
+    const arr = pos.get(owner) ?? [];
+    if (!arr.some(p => p[0] === tickLower && p[1] === tickUpper)) {
+      arr.push([Number(mint.tickLower.toString()), Number(mint.tickUpper.toString()),]);
+    }
+    pos.set(owner, arr);
+  }
+
+  let out = ''
+
+  for (const [owner, positions] of pos) {
+    console.log(owner, positions);
+    out += `${owner} ${positions}\n`
+  }
+
+  writeFileSync(`./tmp/UNI3_pos.txt`, out, 'utf8');
+
+  return pos;
+}
+
+async function collectUni3LiqByTicks(ticks: number[][]) {
+  let sum = BigNumber.from(0);
+  for (const tick of ticks) {
+    const keyEncoded = ethers.utils.defaultAbiCoder.encode(['address', 'int24', 'int24'], ['0x58d9c906D69Ef796271706017D317E84cB8127A8', tick[0], tick[1]]);
+    const key = ethers.utils.keccak256(keyEncoded);
+    const liq = await IUni3Pool__factory.connect(RETRO_UNI_POOL, ethers.provider).positions(key, {blockTag: END_BLOCK});
+    console.log('tick', tick, liq._liquidity.toString());
+    sum = sum.add(liq._liquidity)
+  }
+  console.log('sum', sum.toString());
+  return sum;
+}
+
+
 async function main() {
+
   // const allHolders = await collectAllUsers();
+  // const allHoldersHypervisor = await collectAllUsersHyperVisor();
   const allHolders = ALL_HOLDERS;
-  const retroData = prepareRetroPool(14829.169482);
+  const retroData = await prepareRetroPool(14829.169482);
 
   for (const [address, amount] of retroData) {
     if (allHolders.has(address)) {
@@ -387,15 +811,14 @@ async function main() {
       // const toCompensateUsdcUsdt = Number(amount) / TUSDC_TOTAL_SHARES * KYBER_USDC_USDT_TO_COMPENSATE;
       const toCompensateUsdcDai = Number(amount) / TUSDC_TOTAL_SHARES * KYBER_USDC_DAI_TO_COMPENSATE;
 
-      console.log('toCompensateUsdcDai', address, toCompensateUsdcDai,);
+      console.log('toCompensate', address, toCompensateUsdcDai,);
       toCompensateSum += toCompensateUsdcDai;
     }
 
     totalAmount += Number(amount);
   }
 
-  console.log('totalAmount', totalAmount,);
-  console.log('skippedAmount', skippedAmount,);
+
 
 
   const ratio = Number(skippedAmount) / TUSDC_TOTAL_SHARES;
@@ -403,106 +826,13 @@ async function main() {
   // const a = ratio * KYBER_USDC_USDT_TO_COMPENSATE;
   const a = ratio * KYBER_USDC_DAI_TO_COMPENSATE;
 
-  console.log('toCompensate_slipped', '0x6672A074B98A7585A8549356F97dB02f9416849E', a,);
+  console.log('toCompensate_skipped', '0x6672A074B98A7585A8549356F97dB02f9416849E', a,);
   toCompensateSum += a;
 
   console.log('toCompensateSum', toCompensateSum,);
+  console.log('totalAmount', totalAmount,);
+  console.log('skippedAmount', skippedAmount,);
 
-}
-
-function prepareRetroPool(tvl: number) {
-  // const totalLiq = BigNumber.from(RETRO_UNI_POOL_DATA.liquidity);
-  let totalLiq = 0;
-
-  const result = new Map<string, string>();
-  for (const pos of RETRO_UNI_POOL_POSITIONS_DATA.positions) {
-    totalLiq += +(pos.liquidity);
-  }
-  for (const pos of RETRO_UNI_POOL_POSITIONS_DATA.positions) {
-    const liq = +(pos.liquidity);
-    const percent = liq / totalLiq;
-    const usdcPart = tvl * percent;
-
-    // console.log('RETRO', pos.owner, percent.toFixed(4), usdcPart);
-    result.set(pos.owner.toLowerCase(), usdcPart.toString());
-  }
-
-  return result;
-}
-
-async function collectAllUsers() {
-  const event = ERC20__factory.createInterface().getEvent('Transfer')
-  const topic = ERC20__factory.createInterface().getEventTopic('Transfer')
-  const curBlock = await ethers.provider.getBlockNumber();
-
-  const decimals = await ERC20__factory.connect(tUSDC, ethers.provider).decimals();
-
-  const logs = await Web3Utils.parseLogs([tUSDC], [topic], START_BLOCK, END_BLOCK);
-
-  const holders = new Map<string, BigNumber>();
-
-  for (const log of logs) {
-
-    const transfer = ERC20__factory.createInterface().decodeEventLog(event, log.data, log.topics)
-
-    // if the transfer is to the holder, add it to their balance; if the transfer is from the holder, subtract it
-    if (holders.has(transfer.to)) {
-      holders.set(transfer.to, (holders.get(transfer.to) ?? BigNumber.from(0)).add(transfer.value));
-    } else {
-      holders.set(transfer.to, transfer.value);
-    }
-
-    if (holders.has(transfer.from)) {
-      holders.set(transfer.from, (holders.get(transfer.from) ?? BigNumber.from(0)).sub(transfer.value));
-    } else {
-      holders.set(transfer.from, BigNumber.from(0));
-    }
-
-    console.log(`Holder: ${transfer.from}: ${formatUnits((holders.get(transfer.from) ?? BigNumber.from(0)).toString(), decimals)}`);
-    console.log(`Holder: ${transfer.to}: ${formatUnits((holders.get(transfer.to) ?? BigNumber.from(0)).toString(), decimals)}`);
-
-    // const block = await ethers.provider.getBlock(log.blockNumber)
-    console.log('block', log.blockNumber,
-      `Holder from: ${transfer.from}: ${formatUnits((holders.get(transfer.from) ?? BigNumber.from(0)).toString(), decimals)}`,
-      `Holder to: ${transfer.to}: ${formatUnits((holders.get(transfer.to) ?? BigNumber.from(0)).toString(), decimals)}`
-    );
-    // if (block.timestamp > END_TIME) {
-    //   break;
-    // }
-  }
-
-  let out = ''
-  console.log('Holders:');
-  let sum = 0
-
-  const allHolders = new Map<string, string>();
-
-  for (const [holder, balance] of holders) {
-    if (balance.isZero() || holder.toLowerCase() === Misc.ZERO_ADDRESS) {
-      continue;
-    }
-
-    const realBalance = await ERC20__factory.connect(tUSDC, ethers.provider).balanceOf(holder, {blockTag: END_BLOCK});
-
-    if (!realBalance.eq(balance)) {
-      console.log('Real balance', holder, formatUnits(realBalance, decimals), formatUnits(balance, decimals));
-    }
-
-    sum += (+formatUnits(balance, decimals));
-
-
-    // console.log(holder, formatUnits(balance.toString()));
-
-    out += `${holder} ${formatUnits(balance.toString(), decimals)}\n`
-    allHolders.set(holder.toLowerCase(), formatUnits(balance.toString(), decimals));
-  }
-
-
-  console.log('Total:', sum);
-
-  writeFileSync('./tmp/tUSDC_holders.txt', out, 'utf8');
-
-  return allHolders;
 }
 
 
