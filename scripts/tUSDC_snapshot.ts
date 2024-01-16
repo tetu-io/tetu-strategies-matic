@@ -8,7 +8,8 @@ import {
   ERC721__factory,
   IHypervisor__factory,
   IPositionManager__factory,
-  IUni3Pool__factory
+  IUni3Pool__factory,
+  Uni3LiqCalc__factory
 } from "../typechain";
 import {Misc} from "./utils/tools/Misc";
 
@@ -354,44 +355,44 @@ const RETRO_POOL_HOLDERS = new Map<string, number[]>([
 const RETRO_UNI_POOL_POSITIONS_DATA = {
   "positions": [
     {
-      "owner": "0x38cc8e2bfe87ba71a0b4c893d5a94fbdcbd5e5ec",
-      "liquidity": "6834886923019"
+      "id": "1380",
+      "owner": "0x38cc8e2bfe87ba71a0b4c893d5a94fbdcbd5e5ec"
     },
     {
-      "owner": "0xc467bb07d0509494e413b62f4f2797b6826f4ed8",
-      "liquidity": "124753366630737544"
+      "id": "5601",
+      "owner": "0xc467bb07d0509494e413b62f4f2797b6826f4ed8"
     },
     {
-      "owner": "0x3c948a11c4d5462ace49a505ece7112531b16725",
-      "liquidity": "991232258390033542"
+      "id": "5862",
+      "owner": "0x3c948a11c4d5462ace49a505ece7112531b16725"
     },
     {
-      "owner": "0x0bd27fac898a59680b9dc92bb7378df610825e8d",
-      "liquidity": "445135693582915782"
+      "id": "5866",
+      "owner": "0x0bd27fac898a59680b9dc92bb7378df610825e8d"
     },
     {
-      "owner": "0x29f82d09c2afd12f3c10ee49cd713331f4a7228e",
-      "liquidity": "120653563894495710"
+      "id": "5871",
+      "owner": "0x29f82d09c2afd12f3c10ee49cd713331f4a7228e"
     },
     {
-      "owner": "0x44a03946c8e690c6ecdb254b3744690a42e1ed17",
-      "liquidity": "244069597577893853"
+      "id": "5874",
+      "owner": "0x44a03946c8e690c6ecdb254b3744690a42e1ed17"
     },
     {
-      "owner": "0x17b1d9a1a8f0363e04bccdf2839cb107b2297774",
-      "liquidity": "43865373966568208"
+      "id": "5897",
+      "owner": "0x17b1d9a1a8f0363e04bccdf2839cb107b2297774"
     },
     {
-      "owner": "0x193db18a5ef9a0320b7374c1fe8af976235f3211",
-      "liquidity": "19244561585089023"
+      "id": "5922",
+      "owner": "0x193db18a5ef9a0320b7374c1fe8af976235f3211"
     },
     {
-      "owner": "0x51c1ce246708b2a198f7e7e9dc3d154ee4cd9572",
-      "liquidity": "133230336468083080"
+      "id": "6403",
+      "owner": "0x51c1ce246708b2a198f7e7e9dc3d154ee4cd9572"
     },
     {
+      "id": "-1", // HYPERVISOR
       "owner": "0x58d9c906D69Ef796271706017D317E84cB8127A8",
-      "liquidity": "701211147978697787"
     }
   ]
 }
@@ -458,31 +459,122 @@ const RETRO_UNI_POOL = '0x4FcdB2DCc4Ce156c723aD541dba8B39d47284FC5';
 
 async function prepareRetroPool(tvl: number) {
   // const totalLiq = BigNumber.from(RETRO_UNI_POOL_DATA.liquidity);
-  let totalLiq = 0;
-
+  let totalBalance0 = 0;
+  const decimals = 6;
   const result = new Map<string, string>();
-  for (const pos of RETRO_UNI_POOL_POSITIONS_DATA.positions) {
-    totalLiq += +(pos.liquidity);
-  }
-  for (const pos of RETRO_UNI_POOL_POSITIONS_DATA.positions) {
+
+  const nftUsers = new Map<string, {
+    tickLower: number;
+    tickUpper: number;
+    liquidity: BigNumber;
+  }>();
+
+  const usersTicks = new Map<string, string[]>();
 
 
-    const liq = +(pos.liquidity);
-    const percent = liq / totalLiq;
-    const sharesTUSDCPart = tvl * percent;
-    if (pos.owner.toLowerCase() === X_T_USDC_CASH10.toLowerCase()) {
+  for (const pos of RETRO_UNI_POOL_POSITIONS_DATA.positions) {
+
+    if (+pos.id > 0) {
+      const info = await IPositionManager__factory.connect(RETRO_UNI3_NFT, ethers.provider).positions(pos.id, {blockTag: END_BLOCK});
+
+      if (info.liquidity.isZero()) {
+        throw new Error('Liquidity is zero for position ' + pos.id);
+      }
+
+      nftUsers.set(pos.owner.toLowerCase(), {
+        tickLower: info.tickLower,
+        tickUpper: info.tickUpper,
+        liquidity: info.liquidity,
+      });
+
+      const tickKey = `${info.tickLower}_${info.tickUpper}`;
+
+      const arr = usersTicks.get(tickKey) ?? [];
+      arr.push(pos.owner.toLowerCase());
+      usersTicks.set(tickKey, arr);
+
+      // const bal0 = formatUnits(await collectUni3BalanceByTicks(
+      //   RETRO_UNI3_NFT,
+      //   [[info.tickLower, info.tickUpper]],
+      // ), decimals);
+      //
+      // result.set(pos.owner.toLowerCase(), bal0);
+      // totalBalance0 += +bal0;
+    } else {
+      // collect hypervisor
+
+
+      const sharesTUSDCPart = +formatUnits(await collectUni3BalanceByTicks('0x58d9c906D69Ef796271706017D317E84cB8127A8', GAMMA_POSITIONS_TICKS), decimals);
+      totalBalance0 += sharesTUSDCPart;
+
       const hPoses = await collectHypervisorAllocs(sharesTUSDCPart);
 
       for (const [address, amount] of hPoses) {
         result.set(address.toLowerCase(), amount.toString());
         // console.log('Hypervisor', address, amount.toString());
       }
-
-    } else {
-      // console.log('RETRO', pos.owner, percent.toFixed(4), usdcPart);
-      result.set(pos.owner.toLowerCase(), sharesTUSDCPart.toString());
     }
   }
+
+  // collect info for nftUsers
+  for (const [tickKey, users] of usersTicks) {
+    const [tickLower, tickUpper] = tickKey.split('_').map(Number);
+    const bal0 = formatUnits(await collectUni3BalanceByTicks(
+      RETRO_UNI3_NFT,
+      [[tickLower, tickUpper]],
+    ), decimals);
+
+    const key = ethers.utils.solidityKeccak256(['address', 'int24', 'int24'], [RETRO_UNI3_NFT, tickLower, tickUpper]);
+    const pos = await IUni3Pool__factory.connect(RETRO_UNI_POOL, ethers.provider).positions(key, {blockTag: END_BLOCK});
+
+    const nftUsersFiltered = new Map<string, {
+      tickLower: number;
+      tickUpper: number;
+      liquidity: BigNumber;
+      ratio: number;
+    }>();
+    let usersLiq = BigNumber.from(0);
+
+    for (const address of users) {
+      const info = nftUsers.get(address.toLowerCase());
+      if (!info) {
+        console.log('No info for user', address);
+        throw new Error('No info for user');
+      }
+
+      if (info.tickLower === tickLower && info.tickUpper === tickUpper) {
+
+        const ratio = +formatUnits(info.liquidity, decimals) / +formatUnits(pos._liquidity, decimals);
+
+        nftUsersFiltered.set(address, {
+          ...info,
+          ratio,
+        });
+        usersLiq = usersLiq.add(info.liquidity);
+      } else {
+        console.log('Tick not match', info.tickLower, info.tickUpper, tickLower, tickUpper);
+        throw new Error('Tick not match');
+      }
+    }
+
+    if (!pos._liquidity.eq(usersLiq)) {
+      console.log('Liquidity not match', pos._liquidity.toString(), usersLiq.toString(), users);
+      throw new Error('Liquidity not match');
+    }
+
+    for (const [address, info] of nftUsersFiltered) {
+      const amount = +bal0 * info.ratio;
+      result.set(address.toLowerCase(), amount.toString());
+    }
+
+    totalBalance0 += +bal0;
+  }
+
+
+  // if (totalBalance0 !== tvl) {
+  //   console.log('Total balance', totalBalance0, tvl);
+  //   throw new Error('Total balance not match');
+  // }
 
   return result;
 }
@@ -753,19 +845,70 @@ async function collectUni3PoolPositionsLiq(pool: string) {
   return pos;
 }
 
-async function collectUni3LiqByTicks(ticks: number[][]) {
+async function collectUni3BalanceByTicks(owner: string, ticks: number[][]) {
+  const calculator = Uni3LiqCalc__factory.connect('0xbE9502dF79b81F53A2DB48FD21D23d5Fc145897D', ethers.provider);
+
+  const slot0 = await IUni3Pool__factory.connect(RETRO_UNI_POOL, ethers.provider).slot0({blockTag: END_BLOCK});
+
   let sum = BigNumber.from(0);
   for (const tick of ticks) {
-    const keyEncoded = ethers.utils.defaultAbiCoder.encode(['address', 'int24', 'int24'], ['0x58d9c906D69Ef796271706017D317E84cB8127A8', tick[0], tick[1]]);
-    const key = ethers.utils.keccak256(keyEncoded);
-    const liq = await IUni3Pool__factory.connect(RETRO_UNI_POOL, ethers.provider).positions(key, {blockTag: END_BLOCK});
-    console.log('tick', tick, liq._liquidity.toString());
-    sum = sum.add(liq._liquidity)
+    const key = ethers.utils.solidityKeccak256(['address', 'int24', 'int24'], [owner, tick[0], tick[1]]);
+    const pos = await IUni3Pool__factory.connect(RETRO_UNI_POOL, ethers.provider).positions(key, {blockTag: END_BLOCK});
+
+    // pure function is fine call on any block
+    const amount01 = await calculator.amountsForLiquidity(
+      slot0.sqrtPriceX96,
+      tick[0],
+      tick[1],
+      pos._liquidity
+    );
+
+    // console.log('tick', tick, pos._liquidity.toString(), amount01[0].toString());
+
+    sum = sum.add(amount01[0])
   }
-  console.log('sum', sum.toString());
+  // console.log('sum', sum.toString());
   return sum;
 }
 
+async function collectRetroPoolShareBalances(poolBalance: number) {
+
+  const allLiq = new Map<string, BigNumber>();
+  let liqSum = BigNumber.from(0);
+  for (const [address, tokenIds] of RETRO_POOL_HOLDERS) {
+    for (const tokenId of tokenIds) {
+      const pos = await IPositionManager__factory.connect(RETRO_UNI3_NFT, ethers.provider).positions(tokenId, {blockTag: END_BLOCK});
+      // console.log('RETRO pos', tokenId, pos.token0, pos.token1, pos.fee, pos.liquidity.toString());
+
+      if (pos.token0.toLowerCase() === tUSDC.toLowerCase() && pos.token1.toLowerCase() === CASH.toLowerCase() && pos.fee === 10000) {
+        const amount = allLiq.get(address.toLowerCase()) ?? BigNumber.from(0);
+        allLiq.set(address.toLowerCase(), amount.add(pos.liquidity));
+        liqSum = liqSum.add(pos.liquidity)
+      }
+    }
+  }
+
+  const realLiq = await IUni3Pool__factory.connect(RETRO_UNI_POOL, ethers.provider).liquidity({blockTag: END_BLOCK});
+  console.log('RETRO realLiq', realLiq.toString(), liqSum.toString(), 'diff:', realLiq.sub(liqSum).toString());
+  if (!realLiq.eq(liqSum)) {
+    throw new Error('Wrong liq sum');
+  }
+
+  const holders = new Map<string, string>();
+  let sum = 0;
+  for (const [address, amount] of allLiq) {
+    const val = Number(formatUnits(amount, 18)) / Number(formatUnits(liqSum, 18)) * poolBalance;
+    if (val === 0) {
+      continue;
+    }
+    sum += val;
+    holders.set(address, val.toString());
+    console.log('RETRO amount', address, val);
+  }
+  console.log('RETRO sum', sum);
+
+  return holders;
+}
 
 async function main() {
 
@@ -817,8 +960,6 @@ async function main() {
 
     totalAmount += Number(amount);
   }
-
-
 
 
   const ratio = Number(skippedAmount) / TUSDC_TOTAL_SHARES;
