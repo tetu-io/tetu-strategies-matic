@@ -1,10 +1,10 @@
 import axios from "axios";
 import {getBalancerGaugesData} from "./tools/voting-utils";
 
-const FREE_VOTES = 19.1;
-const OUR_VOTING_POWER = 172000;
+const FREE_VOTES = 37.28;
+const OUR_VOTING_POWER = 214000;
 const MIN_VALUE_PER_VOTE = 0.2;
-const MIN_TOTAL_VALUE = 1000;
+const MIN_TOTAL_VALUE = 100;
 
 // const VOTE_MARKET_HH_API = 'https://vm.crvusd.fi/bribes?name=hiddehand';
 const HH_API = 'https://api.hiddenhand.finance/proposal/balancer';
@@ -26,7 +26,7 @@ async function main() {
     const votes = totalFreeVotes * ratio;
     const percent = votes / OUR_VOTING_POWER * 100;
 
-    console.log(bribe.proposalOption, percent.toFixed(2));
+    console.log(bribe.proposalOption + ';' + percent.toFixed(2));
 
     totalUsedVotes += percent;
   }
@@ -38,21 +38,24 @@ async function getBribesForVotes() {
   const resp = await axios.get(HH_API)
   // console.log(resp);
   const result: BribeInfoHH2[] = resp.data.data;
-  const poolIdToGauges = await getProposalOptions();
+  // const poolIdToGauges = await getProposalOptions();
 
   return result.filter(b =>
     b.valuePerVote > MIN_VALUE_PER_VOTE
     && b.totalValue > MIN_TOTAL_VALUE
   ).map(b => {
-    const r: BribeInfoSimple = {
-      valuePerVote: b.valuePerVote,
-      title: b.title,
-      rewards: b.totalValue,
-      proposalOption: poolIdToGauges.get(b.poolId.toLowerCase()) ?? 'Unknown',
-      poolId: b.poolId.substring(0, 8)
-    }
-    return r;
-  }).filter(b => b.proposalOption !== 'Unknown')
+    return b.bribes.map(bribe => {
+      const r: BribeInfoSimple = {
+        valuePerVote: b.valuePerVote,
+        title: b.title,
+        rewards: bribe.value,
+        proposalOption: formatProposalOption(b.title, b.proposal),
+        poolId: b.poolId.substring(0, 8)
+      }
+      return r;
+    })
+  }).flatMap(b => b)
+    .filter(b => b.proposalOption !== 'Unknown')
     .sort((a, b) => b.rewards - a.rewards)
 }
 
@@ -64,41 +67,21 @@ async function getProposalOptions(): Promise<Map<string, string>> {
   for (const d of resp) {
     if (d.isKilled) continue
 
-    const truncatedAddr = d.gauge.address.substring(0, 8)
-    result.set(d.id.toLowerCase(), `${d.symbol.trim().substring(0, 23)} (${truncatedAddr})`);
+    const key = d.id.toLowerCase() + '_' + d.chain.toString();
+
+    if (result.has(key)) {
+      throw Error('duplicate ' + JSON.stringify(d));
+    }
+
+    result.set(key, formatProposalOption(d.symbol, d.gauge.address));
   }
 
   return result;
 }
 
-type BribeInfoHH = {
-  proposal: string,
-  proposalHash: string,
-  title: string,
-  proposalDeadline: number,
-  totalValue: number
-  maxTotalValue: number
-  voteCount: number
-  valuePerVote: number
-  maxValuePerVote: number
-  bribes: {
-    token: string,
-    symbol: string,
-    decimals: number
-    value: number
-    maxValue: number
-    amount: number
-    maxTokensPerVote: number
-    briber: string,
-    periodIndex: number,
-    chainId: number,
-    tokenImage: string
-  }[],
-  poolId: string,
-  totalReward: number,
-  apr: number,
-  totalVotes: number
-};
+function formatProposalOption(symbol: string, gauge: string) {
+  return `${symbol.trim().substring(0, 23)};${gauge.substring(0, 8)}`;
+}
 
 type BribeInfoHH2 = {
   proposal: string,

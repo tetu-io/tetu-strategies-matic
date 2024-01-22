@@ -380,13 +380,16 @@ async function collectUsers(block: number) {
   );
 
   console.log('logs', logs.length);
+  const TARGET_FOR_CHECK = '0'.toLowerCase();
 
   const balances = new Map<string, number>();
 
   for (const log of logs) {
     const transfer = IERC20__factory.createInterface().parseLog(log) as unknown as TransferEvent;
 
-    // console.log('transfer', transfer);
+    if (transfer.args.from.toLowerCase() === TARGET_FOR_CHECK || transfer.args.to.toLowerCase() === TARGET_FOR_CHECK) {
+      console.log('TARGET transfer', +formatUnits(transfer.args.value));
+    }
 
     balances.set(transfer.args.from, (balances.get(transfer.args.from) ?? 0) - +formatUnits(transfer.args.value));
     balances.set(transfer.args.to, (balances.get(transfer.args.to) ?? 0) + +formatUnits(transfer.args.value));
@@ -403,6 +406,10 @@ async function collectUsers(block: number) {
       // console.error('actual balance', acc, balances.get(acc), '!==', +formatUnits(actualBalance));
     }
     result.set(acc, +formatUnits(actualBalance));
+
+    if (acc.toLowerCase() === TARGET_FOR_CHECK) {
+      console.log('TARGET balance', +formatUnits(actualBalance));
+    }
   }
 
   return result;
