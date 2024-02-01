@@ -31,9 +31,9 @@ import {TransferEvent} from "../../typechain/contracts/third_party/IERC20Extende
 
 // MAKE SURE YOUR LOCAL SNAPSHOT BLOCK IS ACTUAL!
 // the last snapshot https://snapshot.org/#/tetubal.eth
-const PROPOSAL_ID = '0x41f459d6588d0d70467111557679c4af01df4b86248575cea5fa3d2900bb1df3';
+const PROPOSAL_ID = '0xbd2a8bf40f4e9e8859cf4bc30848e650d65f9c55d3864489d1c7c01d216e35e8';
 // USDC amount received from all bribes
-const USDC_AMOUNT = 22697;
+const USDC_AMOUNT = 29989;
 // % of USDC amount that will be transfer as TETU tokens. calc it depending on protocol pools bribes where we used TETU as bribes.
 const TETU_RATIO = Number(1);
 
@@ -88,6 +88,7 @@ async function main() {
   const tetuPrice = await tools.calculator.getPriceWithDefaultOutput(MaticAddresses.TETU_TOKEN, /*{blockTag: BLOCK}*/); // use actual price
   const xtetuBalTVL = await ISmartVault__factory.connect(MaticAddresses.xtetuBAL_TOKEN, signer).underlyingBalanceWithInvestment({blockTag: BLOCK});
   const xtetuBalTVLUSD = +formatUnits(xtetuBalPrice.mul(xtetuBalTVL), 36);
+  console.log('tetuPrice', +formatUnits(tetuPrice));
 
   const distributor = XtetuBALDistributor__factory.connect(DISTRIBUTOR, signer);
 
@@ -107,8 +108,7 @@ async function main() {
   console.log('X_TETU_BAL_STRATEGY power', +formatUnits(xtetuBALStrategyPower));
 
 
-  // const tetuBalReducing = +formatUnits(await power.tetuBalReducing({blockTag: BLOCK}));
-  const tetuBalReducing = 0;
+  const tetuBalReducing = +formatUnits(await power.tetuBalReducing({blockTag: BLOCK}));
   console.log('tetuBalReducing power', tetuBalReducing);
 
   const tetuBalTotalSupply = +formatUnits(await power.totalSupply({blockTag: BLOCK}));
