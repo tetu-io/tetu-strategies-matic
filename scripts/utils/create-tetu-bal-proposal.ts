@@ -8,10 +8,10 @@ import {Proposal} from "@snapshot-labs/snapshot.js/src/sign/types";
 import {getBalancerGaugesData} from "./tools/voting-utils";
 
 // !!!!!!!!!!!!!!!!!!!!!!!! CHANGE ME !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-const POLYGON_SNAPSHOT_BLOCK_NUMBER = 52631363; // use the-best-block-for-snapshot.ts script
+const POLYGON_SNAPSHOT_BLOCK_NUMBER = 53164734; // use the-best-block-for-snapshot.ts script
 const START_UNIX = Math.floor(Date.now() / 1000)
-const END_UNIX = Math.floor((new Date('Feb 05 2024 20:00:00 UTC')).getTime() / 1000)
-const TITLE = 'BRV-039: Gauge Weights for 08th February - 20th February 2024'
+const END_UNIX = Math.floor((new Date('Feb 19 2024 20:00:00 UTC')).getTime() / 1000)
+const TITLE = 'BRV-040: Gauge Weights for 22th February - 06th March 2024'
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 // new tetubal gauge https://etherscan.io/address/0xF6A814eD60653Cb0e36DA247B01E6309318328d4#code
