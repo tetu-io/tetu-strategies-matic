@@ -1,9 +1,9 @@
 import axios from "axios";
 import {getBalancerGaugesData} from "./tools/voting-utils";
 
-const FREE_VOTES = 37.28;
-const OUR_VOTING_POWER = 214000;
-const MIN_VALUE_PER_VOTE = 0.2;
+const FREE_VOTES = 43.64;
+const OUR_VOTING_POWER = 237000;
+const MIN_VALUE_PER_VOTE = 0.18;
 const MIN_TOTAL_VALUE = 100;
 
 // const VOTE_MARKET_HH_API = 'https://vm.crvusd.fi/bribes?name=hiddehand';

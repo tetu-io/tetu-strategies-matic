@@ -31,9 +31,9 @@ import {TransferEvent} from "../../typechain/contracts/third_party/IERC20Extende
 
 // MAKE SURE YOUR LOCAL SNAPSHOT BLOCK IS ACTUAL!
 // the last snapshot https://snapshot.org/#/tetubal.eth
-const PROPOSAL_ID = '0xbd2a8bf40f4e9e8859cf4bc30848e650d65f9c55d3864489d1c7c01d216e35e8';
+const PROPOSAL_ID = '0x4dc14ecac7137c2c4b186c562e7987a73627ad1ef83f71590c3685622cfbc45e';
 // USDC amount received from all bribes
-const USDC_AMOUNT = 29989;
+const USDC_AMOUNT = 35602;
 // % of USDC amount that will be transfer as TETU tokens. calc it depending on protocol pools bribes where we used TETU as bribes.
 const TETU_RATIO = Number(1);
 
@@ -111,6 +111,8 @@ async function main() {
   const tetuBalReducing = +formatUnits(await power.tetuBalReducing({blockTag: BLOCK}));
   console.log('tetuBalReducing power', tetuBalReducing);
 
+  expectedPawnshopPower = expectedPawnshopPower * (1 - tetuBalReducing);
+
   const tetuBalTotalSupply = +formatUnits(await power.totalSupply({blockTag: BLOCK}));
   console.log('tetuBalTotalSupply', tetuBalTotalSupply);
 
@@ -126,10 +128,6 @@ async function main() {
   const extraFromTetuBalCut = totalPureTetuBal * tetuBalReducing;
   console.log('totalPureTetuBal', totalPureTetuBal);
   console.log('extraFromTetuBalCut', extraFromTetuBalCut);
-
-  // todo when the cut will be not zero need to check additional logic
-  expect(extraFromTetuBalCut).eq(0);
-
 
   const expectedStrategyRatio = (+votedPower - tetuBalInBalancer - tetuBalHolderPower - pawnshopPower - extraFromTetuBalCut) / votedPower;
   console.log('expectedStrategyRatio', expectedStrategyRatio);
