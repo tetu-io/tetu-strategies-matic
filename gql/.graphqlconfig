@@ -1,0 +1,15 @@
+{
+  "name": "TetuGame GraphQL Schema",
+  "schemaPath": "schema.graphql",
+  "extensions": {
+    "endpoints": {
+      "Default GraphQL Endpoint": {
+        "headers": {
+          "user-agent": "JS GraphQL"
+        },
+        "introspect": false,
+        "url": "https://api.thegraph.com/subgraphs/name/alexandersazonof/tetubal"
+      }
+    }
+  }
+}

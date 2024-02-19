@@ -16,6 +16,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {getPawnshopData, getSnapshotVoters} from "./tools/voting-utils";
 import {expect} from "chai";
 import {TransferEvent} from "../../typechain/contracts/third_party/IERC20Extended";
+import { getUserBalanceByBlock } from '../graphql/graph-service';
 
 // After airdrop receiving from all sources you need to liquidate all tokens to USDC
 // USDC should be on the dedicated msig - send it to BRIBER address
@@ -177,6 +178,21 @@ async function main() {
     const isUseXtetuBal = await XtetuBALDistributor__factory.connect(DISTRIBUTOR, signer).useXtetuBal(user);
 
     const usdcAmountForUser = usdcForDistribute * userRatio;
+
+    const userBalanceFromGraph = await getUserBalanceByBlock(user, BLOCK);
+
+    if (userBalanceFromGraph.length === 0) {
+      console.log(`In subgraph no balances for ${user}`)
+    }
+
+    if (+userBalanceFromGraph[0].balance !== amount) {
+      console.log(
+        `
+        Balances different for user - ${user} !!!\n
+        FROM SUBGRAPH BALANCE = ${userBalanceFromGraph[0].balance} , FETCHED ON BLOCK = ${userBalanceFromGraph[0].blockNumber}\n
+        CURRENT BALANCE = ${amount}
+      `)
+    }
 
     if (usdcAmountForUser > 0) {
       if (isUseXtetuBal) {

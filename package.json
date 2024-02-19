@@ -7,7 +7,8 @@
     "test": "test"
   },
   "scripts": {
-    "build": "npm run clean && npm run compile",
+    "build": "npm run clean && npm run compile && npm run build:gql",
+    "build:gql": "graphql-codegen --config ./gql/codegen.yml",
     "clean": "npx hardhat clean",
     "compile": "npx hardhat compile",
     "test": "npm run build && npx hardhat test",
@@ -30,6 +31,10 @@
   "license": "ISC",
   "homepage": "https://tetu.io/",
   "dependencies": {
+    "@apollo/client": "^3.8.8",
+    "@graphql-codegen/cli": "^5.0.0",
+    "@graphql-codegen/typescript": "^4.0.1",
+    "@graphql-codegen/typescript-operations": "^4.0.1",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@nomiclabs/hardhat-etherscan": "^3.1.7",
     "@nomiclabs/hardhat-solhint": "^3.0.1",
