@@ -32,9 +32,9 @@ import { getUserBalanceByBlock } from '../graphql/graph-service';
 
 // MAKE SURE YOUR LOCAL SNAPSHOT BLOCK IS ACTUAL!
 // the last snapshot https://snapshot.org/#/tetubal.eth
-const PROPOSAL_ID = '0x45e8c0e3df0c4ae63a133570fa30653b1d86ec2d5da89147b50c77725d0f0a07';
+const PROPOSAL_ID = '0x4dc14ecac7137c2c4b186c562e7987a73627ad1ef83f71590c3685622cfbc45e';
 // USDC amount received from all bribes
-const USDC_AMOUNT = 64723;
+const USDC_AMOUNT = 35602;
 // % of USDC amount that will be transfer as TETU tokens. calc it depending on protocol pools bribes where we used TETU as bribes.
 const TETU_RATIO = Number(1);
 
@@ -89,6 +89,7 @@ async function main() {
   const tetuPrice = await tools.calculator.getPriceWithDefaultOutput(MaticAddresses.TETU_TOKEN, /*{blockTag: BLOCK}*/); // use actual price
   const xtetuBalTVL = await ISmartVault__factory.connect(MaticAddresses.xtetuBAL_TOKEN, signer).underlyingBalanceWithInvestment({blockTag: BLOCK});
   const xtetuBalTVLUSD = +formatUnits(xtetuBalPrice.mul(xtetuBalTVL), 36);
+  console.log('tetuPrice', +formatUnits(tetuPrice));
 
   const distributor = XtetuBALDistributor__factory.connect(DISTRIBUTOR, signer);
 
@@ -108,9 +109,10 @@ async function main() {
   console.log('X_TETU_BAL_STRATEGY power', +formatUnits(xtetuBALStrategyPower));
 
 
-  // const tetuBalReducing = +formatUnits(await power.tetuBalReducing({blockTag: BLOCK}));
-  const tetuBalReducing = 0;
+  const tetuBalReducing = +formatUnits(await power.tetuBalReducing({blockTag: BLOCK}));
   console.log('tetuBalReducing power', tetuBalReducing);
+
+  expectedPawnshopPower = expectedPawnshopPower * (1 - tetuBalReducing);
 
   const tetuBalTotalSupply = +formatUnits(await power.totalSupply({blockTag: BLOCK}));
   console.log('tetuBalTotalSupply', tetuBalTotalSupply);
@@ -127,10 +129,6 @@ async function main() {
   const extraFromTetuBalCut = totalPureTetuBal * tetuBalReducing;
   console.log('totalPureTetuBal', totalPureTetuBal);
   console.log('extraFromTetuBalCut', extraFromTetuBalCut);
-
-  // todo when the cut will be not zero need to check additional logic
-  expect(extraFromTetuBalCut).eq(0);
-
 
   const expectedStrategyRatio = (+votedPower - tetuBalInBalancer - tetuBalHolderPower - pawnshopPower - extraFromTetuBalCut) / votedPower;
   console.log('expectedStrategyRatio', expectedStrategyRatio);
@@ -396,13 +394,16 @@ async function collectUsers(block: number) {
   );
 
   console.log('logs', logs.length);
+  const TARGET_FOR_CHECK = '0'.toLowerCase();
 
   const balances = new Map<string, number>();
 
   for (const log of logs) {
     const transfer = IERC20__factory.createInterface().parseLog(log) as unknown as TransferEvent;
 
-    // console.log('transfer', transfer);
+    if (transfer.args.from.toLowerCase() === TARGET_FOR_CHECK || transfer.args.to.toLowerCase() === TARGET_FOR_CHECK) {
+      console.log('TARGET transfer', +formatUnits(transfer.args.value));
+    }
 
     balances.set(transfer.args.from, (balances.get(transfer.args.from) ?? 0) - +formatUnits(transfer.args.value));
     balances.set(transfer.args.to, (balances.get(transfer.args.to) ?? 0) + +formatUnits(transfer.args.value));
@@ -419,6 +420,10 @@ async function collectUsers(block: number) {
       // console.error('actual balance', acc, balances.get(acc), '!==', +formatUnits(actualBalance));
     }
     result.set(acc, +formatUnits(actualBalance));
+
+    if (acc.toLowerCase() === TARGET_FOR_CHECK) {
+      console.log('TARGET balance', +formatUnits(actualBalance));
+    }
   }
 
   return result;
