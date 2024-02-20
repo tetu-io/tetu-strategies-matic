@@ -1,4 +1,4 @@
-import { DocumentNode, gql } from '@apollo/client';
+import { DocumentNode, gql } from '@apollo/client/core';
 
 export function getUserBalanceByBlockQuery(): DocumentNode {
   return gql`
