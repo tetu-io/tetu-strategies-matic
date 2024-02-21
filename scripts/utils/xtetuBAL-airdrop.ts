@@ -20,6 +20,7 @@ import {TransferEvent} from "../../typechain/contracts/third_party/IERC20Extende
 import { getAllUserBalanceByBlock } from '../graphql/graph-service';
 import { UserBalanceHistoryEntity } from '../../generated/gql';
 import { Addresses } from '../../addresses';
+import { getAllUserByBlock } from './users/users-balances';
 
 // After airdrop receiving from all sources you need to liquidate all tokens to USDC
 // USDC should be on the dedicated msig - send it to BRIBER address
@@ -50,9 +51,6 @@ const X_TETU_BAL_STRATEGY = '0xdade618E95F5E51198c69bA0A9CC3033874Fa643';
 const TETU_BAL_HOLDER = '0x237114Ef61b27fdF57132e6c8C4244eeea8323D3';
 const PAWNSHOP = '0x0c9FA52D7Ed12a6316d3738c80931eCbC6C49907';
 const BRIBE_DISTRIBUTOR = '0xd1f8b86EfBA4bCEB0E2434337F2d504087F6C4d0';
-
-const VALIDATE_USER_BALANCE_ON_CHAIN = process.env.TETU_VALIDATE_USER_BALANCE_ON_CHAIN === 'true';
-const VALIDATE_TOTAL_SUPPLY = process.env.TETU_VALIDATE_TOTAL_SUPPLY === 'true';
 
 async function main() {
   let signer: SignerWithAddress;
@@ -176,40 +174,10 @@ async function main() {
 
   console.log('To distribute USDC amount (will need to cut xtetubal bb part): ', usdcForDistribute + usdcForDistributePS + veTETUPart);
 
-  const usersBalances = await collectUsers2(BLOCK);
-  console.log('User balances size: ', usersBalances.length);
-  let usersBalancesOnChain: string[] = [];
-  if (VALIDATE_USER_BALANCE_ON_CHAIN) {
-    usersBalancesOnChain = (await getAllBalance(usersBalances, BLOCK)).returnData;
-  }
-
-  console.log('VALIDATE_TOTAL_SUPPLY', VALIDATE_TOTAL_SUPPLY);
-  if (VALIDATE_TOTAL_SUPPLY) {
-    const totalSupply = await totalSupplyAt(MaticAddresses.xtetuBAL_TOKEN, BLOCK);
-    const totalSupplyFormatted = +formatUnits(totalSupply);
-    const sumBalance = usersBalances.map(userBalance => +formatUnits(userBalance.balance)).reduce((accumulator: number, currentValue: number) => accumulator + currentValue, 0);
-    console.log('xtetuBAL total supply', totalSupplyFormatted);
-    console.log('xtetuBAL sum balance from subgraph', sumBalance);
-    if (totalSupplyFormatted.toFixed(2) !== sumBalance.toFixed(2)) {
-      console.log('Total supply and sum balance are not equal');
-    }
-  }
-
-  let index = 0;
-  console.log('VALIDATE_USER_BALANCE_ON_CHAIN', VALIDATE_USER_BALANCE_ON_CHAIN);
+  const usersBalances = await getAllUserByBlock(BLOCK);
 
   for (const userBalance of usersBalances) {
     const amount = +formatUnits(userBalance.balance);
-
-    // validate on chain balance
-    if (VALIDATE_USER_BALANCE_ON_CHAIN) {
-      const onChainAmount = +formatUnits(BigInt(usersBalancesOnChain[index]));
-      index++;
-      // console.log(`User ${userBalance.user.id} balance: ${amount} on chain: ${onChainAmount}`)
-      if (onChainAmount !== amount) {
-        console.error('on chain amount', userBalance.user.id, onChainAmount, '!==', amount);
-      }
-    }
 
     const user = userBalance.user.id;
     const userRatio = amount / +formatUnits(xtetuBalTVL);
@@ -409,22 +377,6 @@ main()
     process.exit(1);
   });
 
-async function collectUsers2(block: number) {
-  const userBalancesHistory = await getAllUserBalanceByBlock(block);
-  const uniqueRecords: { [key: string]: UserBalanceHistoryEntity } = {};
-
-  for (const record of userBalancesHistory) {
-    if (uniqueRecords[record.user.id]) {
-      if (uniqueRecords[record.user.id].blockNumber < record.blockNumber) {
-        uniqueRecords[record.user.id] = record;
-      }
-    } else {
-      uniqueRecords[record.user.id] = record;
-    }
-  }
-  return Object.values(uniqueRecords);
-}
-
 async function collectUsers(block: number) {
   const logs = await Web3Utils.parseLogs(
     [MaticAddresses.xtetuBAL_TOKEN],
@@ -467,22 +419,4 @@ async function collectUsers(block: number) {
   }
 
   return result;
-}
-
-async function getAllBalance(userBalances: UserBalanceHistoryEntity[], block: number) {
-  const multicall = Addresses.TOOLS.get(Misc.getChainId() + '')?.multicall;
-  if (!multicall) {
-    throw new Error(`Multicall address not found for chainId ${Misc.getChainId()}`);
-  }
-  const cals = userBalances.map(b => {
-    return {
-      target: MaticAddresses.xtetuBAL_TOKEN,
-      callData: ERC20__factory.createInterface().encodeFunctionData('balanceOf', [b.user.id]),
-    };
-  });
-  return Multicall__factory.connect(multicall, (await ethers.getSigners())[0]).callStatic.aggregate(cals, {blockTag: block});
-}
-
-async function totalSupplyAt(address: string, block: number) {
-  return IERC20__factory.connect(address, ethers.provider).totalSupply({blockTag: block});
 }
