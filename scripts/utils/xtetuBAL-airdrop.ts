@@ -3,11 +3,12 @@ import {Misc} from "./tools/Misc";
 import {ethers} from "hardhat";
 import {MaticAddresses} from "../addresses/MaticAddresses";
 import {
+  ERC20__factory,
   IERC20__factory,
-  ISmartVault__factory,
+  ISmartVault__factory, Multicall__factory,
   TetuBalVotingPower__factory,
-  XtetuBALDistributor__factory
-} from "../../typechain";
+  XtetuBALDistributor__factory,
+} from '../../typechain';
 import {formatUnits, parseUnits} from "ethers/lib/utils";
 import {Web3Utils} from "./tools/Web3Utils";
 import {BigNumber} from "ethers";
@@ -16,6 +17,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {getPawnshopData, getSnapshotVoters} from "./tools/voting-utils";
 import {expect} from "chai";
 import {TransferEvent} from "../../typechain/contracts/third_party/IERC20Extended";
+import { getAllUserByBlock } from './users/users-balances';
 
 // After airdrop receiving from all sources you need to liquidate all tokens to USDC
 // USDC should be on the dedicated msig - send it to BRIBER address
@@ -169,8 +171,12 @@ async function main() {
 
   console.log('To distribute USDC amount (will need to cut xtetubal bb part): ', usdcForDistribute + usdcForDistributePS + veTETUPart);
 
-  const usersBalance = await collectUsers(BLOCK);
-  for (const [user, amount] of usersBalance) {
+  const usersBalances = await getAllUserByBlock(BLOCK);
+
+  for (const userBalance of usersBalances) {
+    const amount = +formatUnits(userBalance.balance);
+
+    const user = userBalance.id;
     const userRatio = amount / +formatUnits(xtetuBalTVL);
     const isUseXtetuBal = await XtetuBALDistributor__factory.connect(DISTRIBUTOR, signer).useXtetuBal(user);
 
@@ -367,7 +373,6 @@ main()
     console.error(error);
     process.exit(1);
   });
-
 
 async function collectUsers(block: number) {
   const logs = await Web3Utils.parseLogs(
