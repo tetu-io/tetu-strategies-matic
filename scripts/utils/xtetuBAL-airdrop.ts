@@ -17,9 +17,6 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {getPawnshopData, getSnapshotVoters} from "./tools/voting-utils";
 import {expect} from "chai";
 import {TransferEvent} from "../../typechain/contracts/third_party/IERC20Extended";
-import { getAllUserBalanceByBlock } from '../graphql/graph-service';
-import { UserBalanceHistoryEntity } from '../../generated/gql';
-import { Addresses } from '../../addresses';
 import { getAllUserByBlock } from './users/users-balances';
 
 // After airdrop receiving from all sources you need to liquidate all tokens to USDC
@@ -179,7 +176,7 @@ async function main() {
   for (const userBalance of usersBalances) {
     const amount = +formatUnits(userBalance.balance);
 
-    const user = userBalance.user.id;
+    const user = userBalance.id;
     const userRatio = amount / +formatUnits(xtetuBalTVL);
     const isUseXtetuBal = await XtetuBALDistributor__factory.connect(DISTRIBUTOR, signer).useXtetuBal(user);
 

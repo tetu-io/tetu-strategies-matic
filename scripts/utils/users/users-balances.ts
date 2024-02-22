@@ -1,5 +1,5 @@
-import { getAllUserBalanceByBlock } from '../../graphql/graph-service';
-import { UserBalanceHistoryEntity } from '../../../generated/gql';
+import { getAllUsersOnBlock } from '../../graphql/graph-service';
+import { UserEntity } from '../../../generated/gql';
 import { MaticAddresses } from '../../addresses/MaticAddresses';
 import { formatUnits } from 'ethers/lib/utils';
 import { Addresses } from '../../../addresses';
@@ -10,24 +10,17 @@ import { ethers } from 'hardhat';
 const VALIDATE_USER_BALANCE_ON_CHAIN = process.env.TETU_VALIDATE_USER_BALANCE_ON_CHAIN === 'true';
 const VALIDATE_TOTAL_SUPPLY = process.env.TETU_VALIDATE_TOTAL_SUPPLY === 'true';
 
-export async function getAllUserByBlock(block: number): Promise<UserBalanceHistoryEntity[]> {
-  const usersBalances = await getAllUserByBlockInGraph(block);
-  await validateBalances(usersBalances, block);
-  return usersBalances;
+export async function getAllUserByBlock(block: number): Promise<UserEntity[]> {
+  const users = await getAllUserByBlockInGraph(block);
+  await validateBalances(users, block);
+  return users;
 }
 
-
-async function getAllUserByBlockInGraph(block: number): Promise<UserBalanceHistoryEntity[]> {
-  const userBalancesHistory = await getAllUserBalanceByBlock(block);
-  return Object.values(userBalancesHistory.reduce((uniqueRecords, record) => {
-    if (!uniqueRecords[record.user.id] || uniqueRecords[record.user.id].blockNumber < record.blockNumber) {
-      uniqueRecords[record.user.id] = record;
-    }
-    return uniqueRecords;
-  }, {} as { [key: string]: UserBalanceHistoryEntity }));
+async function getAllUserByBlockInGraph(block: number): Promise<UserEntity[]> {
+  return getAllUsersOnBlock(block);
 }
 
-async function validateBalances(usersBalances: UserBalanceHistoryEntity[], block: number) {
+async function validateBalances(usersBalances: UserEntity[], block: number) {
   console.log('User balances size: ', usersBalances.length);
 
   if (VALIDATE_TOTAL_SUPPLY) {
@@ -39,7 +32,7 @@ async function validateBalances(usersBalances: UserBalanceHistoryEntity[], block
   }
 }
 
-async function validateTotalSupply(usersBalances: UserBalanceHistoryEntity[], block: number) {
+async function validateTotalSupply(usersBalances: UserEntity[], block: number) {
   const totalSupply = await totalSupplyAt(MaticAddresses.xtetuBAL_TOKEN, block);
   const totalSupplyFormatted = +formatUnits(totalSupply);
   const sumBalance = usersBalances.reduce((acc, { balance }) => acc + +formatUnits(balance), 0);
@@ -52,23 +45,23 @@ async function validateTotalSupply(usersBalances: UserBalanceHistoryEntity[], bl
   }
 }
 
-async function validateUserBalancesOnChain(usersBalances: UserBalanceHistoryEntity[], block: number) {
+async function validateUserBalancesOnChain(usersBalances: UserEntity[], block: number) {
   const usersBalancesOnChain = await getAllBalance(usersBalances, block);
 
   usersBalances.forEach((userBalance, index) => {
     const amount = +formatUnits(userBalance.balance);
     const onChainAmount = +formatUnits(BigInt(usersBalancesOnChain.returnData[index]));
-    // console.log(`User ${userBalance.user.id} balance: ${amount}, on chain: ${onChainAmount}`)
+    // console.log(`User ${userBalance.id} balance: ${amount}, on chain: ${onChainAmount}`)
 
     if (onChainAmount !== amount) {
-      console.error('on chain amount', userBalance.user.id, onChainAmount, '!==', amount);
+      console.error('on chain amount', userBalance.id, onChainAmount, '!==', amount);
     }
   });
 }
 
-async function getAllBalance(userBalances: UserBalanceHistoryEntity[], block: number) {
+async function getAllBalance(userBalances: UserEntity[], block: number) {
   const multicall = getMulticallAddress();
-  const calls = userBalances.map(({ user: { id } }) => ({
+  const calls = userBalances.map(({ id }) => ({
     target: MaticAddresses.xtetuBAL_TOKEN,
     callData: ERC20__factory.createInterface().encodeFunctionData('balanceOf', [id]),
   }));
