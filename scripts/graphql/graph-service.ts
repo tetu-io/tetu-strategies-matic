@@ -3,7 +3,7 @@ import { ApolloClient, createHttpLink, InMemoryCache } from '@apollo/client/core
 import { getAllUsersOnBlockQuery } from './all-users-on-block';
 
 function getSubgraphUrl() {
-  return process.env.TETU_SUBGRAPH_URL;
+  return process.env.TETU_SUBGRAPH_URL ?? 'https://api.thegraph.com/subgraphs/name/alexandersazonof/tetubal';
 }
 
 

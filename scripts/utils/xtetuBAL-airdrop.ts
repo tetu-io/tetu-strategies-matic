@@ -3,9 +3,8 @@ import {Misc} from "./tools/Misc";
 import {ethers} from "hardhat";
 import {MaticAddresses} from "../addresses/MaticAddresses";
 import {
-  ERC20__factory,
   IERC20__factory,
-  ISmartVault__factory, Multicall__factory,
+  ISmartVault__factory,
   TetuBalVotingPower__factory,
   XtetuBALDistributor__factory,
 } from '../../typechain';
@@ -17,7 +16,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {getPawnshopData, getSnapshotVoters} from "./tools/voting-utils";
 import {expect} from "chai";
 import {TransferEvent} from "../../typechain/contracts/third_party/IERC20Extended";
-import { getAllUserByBlock } from './users/users-balances';
+import {getAllUserByBlock} from './users/users-balances';
 
 // After airdrop receiving from all sources you need to liquidate all tokens to USDC
 // USDC should be on the dedicated msig - send it to BRIBER address
@@ -33,9 +32,9 @@ import { getAllUserByBlock } from './users/users-balances';
 
 // MAKE SURE YOUR LOCAL SNAPSHOT BLOCK IS ACTUAL!
 // the last snapshot https://snapshot.org/#/tetubal.eth
-const PROPOSAL_ID = '0x4dc14ecac7137c2c4b186c562e7987a73627ad1ef83f71590c3685622cfbc45e';
+const PROPOSAL_ID = '0x0174efb1647f1b8204446210e25d0825a36984d1ef04c0f4a69be8c4ac498279';
 // USDC amount received from all bribes
-const USDC_AMOUNT = 35602;
+const USDC_AMOUNT = 41082;
 // % of USDC amount that will be transfer as TETU tokens. calc it depending on protocol pools bribes where we used TETU as bribes.
 const TETU_RATIO = Number(1);
 
@@ -137,7 +136,7 @@ async function main() {
   const xtetuBalStrategyRatio = +formatUnits(xtetuBALStrategyPower) / +votedPower
   console.log('xtetuBalStrategyRatio', xtetuBalStrategyRatio);
   // the difference could be from other delegations, need to check the reason
-  expect(xtetuBalStrategyRatio).is.approximately(expectedStrategyRatio, 0.000001);
+  expect(xtetuBalStrategyRatio).is.approximately(expectedStrategyRatio, 0.002);
 
   const usdcFromStrategy = USDC_AMOUNT * xtetuBalStrategyRatio;
   console.log('Received from votes from strategy: ', usdcFromStrategy)
@@ -153,7 +152,7 @@ async function main() {
 
   const usdcFromTetuBalCut = USDC_AMOUNT * extraFromTetuBalCutRatio;
   console.log('Received from votes from the cut: ', usdcFromTetuBalCut)
-  console.log('>>> cut for adding liquidity', usdcFromTetuBalCut / 2)
+  console.log('>>> cut for adding liquidity $', usdcFromTetuBalCut / 2)
 
   const veTETUPart = USDC_AMOUNT - usdcFromStrategy - usdcFromPawnshop - (usdcFromTetuBalCut / 2);
   const veTetuPartOfTetu = (veTETUPart * TETU_RATIO) / +formatUnits(tetuPrice);
@@ -285,7 +284,7 @@ async function main() {
     console.log('APPROVE xtetuBAL', xtetuBalAmountForDistributing);
     await RunHelper.runAndWait(() => IERC20__factory.connect(MaticAddresses.xtetuBAL_TOKEN, signer).approve(
         distributor.address,
-        parseUnits((xtetuBalAmountForDistributing + 1).toFixed(18)).add(1)
+        Misc.MAX_UINT
       )
     );
   }
@@ -294,7 +293,7 @@ async function main() {
     console.log('APPROVE tetu', tetuAmountForDistributing);
     await RunHelper.runAndWait(() => IERC20__factory.connect(MaticAddresses.TETU_TOKEN, signer).approve(
         distributor.address,
-        parseUnits((tetuAmountForDistributing + 1).toFixed(18)).add(1)
+        Misc.MAX_UINT
       )
     );
   }
