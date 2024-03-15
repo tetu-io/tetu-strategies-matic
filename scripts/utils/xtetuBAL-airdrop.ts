@@ -32,9 +32,9 @@ import {getAllUserByBlock} from './users/users-balances';
 
 // MAKE SURE YOUR LOCAL SNAPSHOT BLOCK IS ACTUAL!
 // the last snapshot https://snapshot.org/#/tetubal.eth
-const PROPOSAL_ID = '0x0174efb1647f1b8204446210e25d0825a36984d1ef04c0f4a69be8c4ac498279';
+const PROPOSAL_ID = '0x174fa99709c23df47cd11402c6b09edfdf5684e9b3ced3d56f1be164a7b0f3c3';
 // USDC amount received from all bribes
-const USDC_AMOUNT = 41082;
+const USDC_AMOUNT = 42832;
 // % of USDC amount that will be transfer as TETU tokens. calc it depending on protocol pools bribes where we used TETU as bribes.
 const TETU_RATIO = Number(1);
 

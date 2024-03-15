@@ -1,8 +1,8 @@
 import axios from "axios";
 import {getBalancerGaugesData} from "./tools/voting-utils";
 
-const FREE_VOTES = 49.19;
-const OUR_VOTING_POWER = 254000;
+const FREE_VOTES = 50.5;
+const OUR_VOTING_POWER = 252000;
 const MIN_VALUE_PER_VOTE = 0.18;
 const MIN_TOTAL_VALUE = 100;
 
